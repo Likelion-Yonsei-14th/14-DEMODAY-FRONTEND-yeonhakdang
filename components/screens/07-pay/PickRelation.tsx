@@ -1,9 +1,7 @@
 "use client";
 
-import { HomeIndicator } from "@/components/chrome/HomeIndicator";
-import { StatusBar } from "@/components/chrome/StatusBar";
 import { TopBar } from "@/components/chrome/TopBar";
-import { Screen } from "@/components/layout/Screen";
+import { Bottom, Screen } from "@/components/layout/Screen";
 import { Mascot } from "@/components/mascot/Mascot";
 import { SpeechBubble } from "@/components/mascot/SpeechBubble";
 import { BadgeIcon } from "@/components/ui/BadgeIcon";
@@ -93,7 +91,6 @@ export function PickRelation() {
 
   return (
     <Screen>
-      <StatusBar className="absolute left-0 top-0" />
       <TopBar title="관계 유형 선택" className="absolute left-0 top-[54px]" />
 
       {/* heading (30:1533) */}
@@ -129,13 +126,14 @@ export function PickRelation() {
         {`${state.relation} 귀인이라…\n벌써 보이는 사람이 있어!`}
       </SpeechBubble>
 
-      <BottomCta className="absolute left-0 top-[740px]">
-        <Button
-          label={`${state.relation} 귀인으로 다음 단계`}
-          onPress={() => proto.go(next)}
-        />
-      </BottomCta>
-      <HomeIndicator className="absolute left-0 top-[818px]" />
+      <Bottom from={740}>
+        <BottomCta className="absolute left-0 top-[740px]">
+          <Button
+            label={`${state.relation} 귀인으로 다음 단계`}
+            onPress={() => proto.go(next)}
+          />
+        </BottomCta>
+      </Bottom>
     </Screen>
   );
 }

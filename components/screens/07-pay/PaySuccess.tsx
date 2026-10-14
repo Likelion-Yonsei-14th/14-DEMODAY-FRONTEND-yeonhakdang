@@ -1,8 +1,6 @@
 "use client";
 
-import { HomeIndicator } from "@/components/chrome/HomeIndicator";
-import { StatusBar } from "@/components/chrome/StatusBar";
-import { Screen } from "@/components/layout/Screen";
+import { Bottom, Screen } from "@/components/layout/Screen";
 import { Mascot } from "@/components/mascot/Mascot";
 import { SpeechBubble } from "@/components/mascot/SpeechBubble";
 import { ListItem } from "@/components/pay/OrderRows";
@@ -26,7 +24,6 @@ export function PaySuccess() {
   const subject = state.plan === "package" ? "3종 패키지를" : `${product.name}을`;
   return (
     <Screen>
-      <StatusBar className="absolute left-0 top-0" />
 
       {SPARKLES.map(({ left, top, size, tone }) => (
         <p
@@ -67,20 +64,20 @@ export function PaySuccess() {
         <ListItem label="결제 금액" value={won(orderPrice(state))} onPress={orderDetail} />
       </div>
 
-      <Button
-        label={`${product.name} 결과 보러 가기`}
-        onPress={() => proto.reset(product.result)}
-        className="absolute left-[24px] top-[700px] w-[345px]"
-      />
-      <Button
-        label="보관함에서 나중에 보기"
-        onPress={() => proto.requireLogin("9-1")}
-        type="ghost"
-        size="M"
-        className="absolute left-[86.5px] top-[762px] w-[220px]"
-      />
-
-      <HomeIndicator className="absolute left-0 top-[818px]" />
+      <Bottom from={700}>
+        <Button
+          label={`${product.name} 결과 보러 가기`}
+          onPress={() => proto.reset(product.result)}
+          className="absolute left-[24px] top-[700px] w-[345px]"
+        />
+        <Button
+          label="보관함에서 나중에 보기"
+          onPress={() => proto.requireLogin("9-1")}
+          type="ghost"
+          size="M"
+          className="absolute left-[86.5px] top-[762px] w-[220px]"
+        />
+      </Bottom>
     </Screen>
   );
 }

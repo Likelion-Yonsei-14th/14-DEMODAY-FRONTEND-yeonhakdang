@@ -1,8 +1,6 @@
 "use client";
 
-import { HomeIndicator } from "@/components/chrome/HomeIndicator";
-import { StatusBar } from "@/components/chrome/StatusBar";
-import { Screen } from "@/components/layout/Screen";
+import { Bottom, Screen } from "@/components/layout/Screen";
 import { Mascot } from "@/components/mascot/Mascot";
 import { SpeechBubble } from "@/components/mascot/SpeechBubble";
 import { PriceRow } from "@/components/pay/OrderRows";
@@ -15,7 +13,6 @@ export function PayFailed() {
   const proto = useProto();
   return (
     <Screen>
-      <StatusBar className="absolute left-0 top-0" />
 
       <Mascot
         pose="surprised"
@@ -44,20 +41,20 @@ export function PayFailed() {
         <PriceRow label="주문 상태" value="결제 취소" emphasis />
       </div>
 
-      <Button
-        label="다시 결제하기"
-        onPress={() => proto.backTo("7-3")}
-        className="absolute left-[24px] top-[700px] w-[345px]"
-      />
-      <Button
-        label="상품 상세로 돌아가기"
-        onPress={() => proto.backTo(PRODUCTS[proto.state.product].detail)}
-        type="ghost"
-        size="M"
-        className="absolute left-[86.5px] top-[762px] w-[220px]"
-      />
-
-      <HomeIndicator className="absolute left-0 top-[818px]" />
+      <Bottom from={700}>
+        <Button
+          label="다시 결제하기"
+          onPress={() => proto.backTo("7-3")}
+          className="absolute left-[24px] top-[700px] w-[345px]"
+        />
+        <Button
+          label="상품 상세로 돌아가기"
+          onPress={() => proto.backTo(PRODUCTS[proto.state.product].detail)}
+          type="ghost"
+          size="M"
+          className="absolute left-[86.5px] top-[762px] w-[220px]"
+        />
+      </Bottom>
     </Screen>
   );
 }

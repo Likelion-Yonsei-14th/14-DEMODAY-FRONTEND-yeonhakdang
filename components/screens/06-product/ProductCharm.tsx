@@ -3,7 +3,6 @@
 import Image from "next/image";
 
 import { BottomNav } from "@/components/chrome/BottomNav";
-import { StatusBar } from "@/components/chrome/StatusBar";
 import { TopBar } from "@/components/chrome/TopBar";
 import { Screen } from "@/components/layout/Screen";
 import {
@@ -19,7 +18,7 @@ import { SectionTitle } from "@/components/ui/SectionTitle";
 /** Figma: 6-3 부적 · 상품 상세 (29:1541) — a 1612px-tall frame. */
 export function ProductCharm() {
   return (
-    <Screen height={1612}>
+    <Screen height={1612} bleed>
       <ProductHero
         height={372}
         badge="D-30 합격 기운 충전"
@@ -35,7 +34,6 @@ export function ProductCharm() {
           { left: 330, top: 330, size: 16 },
         ]}
       />
-      <StatusBar theme="light" className="absolute left-0 top-0" />
       <TopBar
         title="​"
         backIcon="icon-back-light"

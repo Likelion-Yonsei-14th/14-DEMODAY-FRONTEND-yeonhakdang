@@ -1,9 +1,7 @@
 "use client";
 
-import { HomeIndicator } from "@/components/chrome/HomeIndicator";
-import { StatusBar } from "@/components/chrome/StatusBar";
 import { TopBar } from "@/components/chrome/TopBar";
-import { Screen } from "@/components/layout/Screen";
+import { Bottom, Screen } from "@/components/layout/Screen";
 import { Mascot } from "@/components/mascot/Mascot";
 import { Button } from "@/components/ui/Button";
 import { useProto } from "@/lib/proto";
@@ -19,7 +17,6 @@ export function NotFound() {
   const proto = useProto();
   return (
     <Screen>
-      <StatusBar className="absolute left-0 top-0" />
       <TopBar type="logo" right="icon-menu" className="absolute left-0 top-[54px]" />
 
       {/* A one-off display numeral (34:1893): Noto Serif KR Black 96/56. */}
@@ -51,12 +48,13 @@ export function NotFound() {
         {"주소가 바뀌었거나 사라진 페이지예요.\n연학이가 첫 화면으로 데려다줄게요."}
       </div>
 
-      <Button
-        label="첫 화면으로 가기"
-        onPress={() => proto.reset("1-1")}
-        className="absolute left-[24px] top-[718px] w-[345px]"
-      />
-      <HomeIndicator className="absolute left-0 top-[818px]" />
+      <Bottom from={718}>
+        <Button
+          label="첫 화면으로 가기"
+          onPress={() => proto.reset("1-1")}
+          className="absolute left-[24px] top-[718px] w-[345px]"
+        />
+      </Bottom>
     </Screen>
   );
 }

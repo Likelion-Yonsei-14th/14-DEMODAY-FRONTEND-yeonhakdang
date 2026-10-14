@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 import { Dim } from "@/components/layout/BottomSheet";
-import { DemoPanel } from "@/components/proto/DemoPanel";
+import { SCREEN_WIDTH, ViewportContext } from "@/components/layout/Screen";
 import { DrawerPanel } from "@/components/screens/09-locker/MenuDrawer";
 import { Toast } from "@/components/ui/Toast";
 import { cn } from "@/lib/cn";
@@ -17,7 +17,7 @@ import {
   type Proto,
   type ProtoState,
 } from "@/lib/proto";
-import { ALL_SCREENS as SCREENS, SECTIONS } from "@/lib/screens";
+import { ALL_SCREENS as SCREENS } from "@/lib/screens";
 
 const SCREEN_IDS = new Set(SCREENS.map((s) => s.id));
 /** Screens that are a bottom sheet over another screen: they animate themselves. */
@@ -30,9 +30,10 @@ type Nav = { stack: string[]; op: Op; from?: string };
 const STORAGE_KEY = "yeonhak-proto-v2";
 /** Per tab: the in-app browser notice (9-4) opens once, not on every refresh. */
 const INAPP_SEEN_KEY = "yeonhak-inapp-seen";
-const DESKTOP_MIN_WIDTH = 900;
-/** Three status-bar taps within this window open the demo panel. */
-const TRIPLE_TAP_MS = 3000;
+/** Up to this width the app fills the screen; wider, it is a centred column… */
+const MOBILE_MAX_WIDTH = 480;
+/** …this wide. */
+const DESKTOP_APP_WIDTH = 430;
 
 /** The #id in the URL; an unknown one is the 404 frame. */
 function readHash(): string | undefined {
@@ -69,7 +70,9 @@ function restore(): { nav: Nav; state: ProtoState; demo: DemoFlags } {
   try {
     saved = JSON.parse(localStorage.getItem(STORAGE_KEY) ?? "{}");
   } catch {}
-  const demo = { ...INITIAL_DEMO, ...saved.demo };
+  // No panel sets these any more: a switch left on by an older save would
+  // stick, so every session starts with them off.
+  const demo = INITIAL_DEMO;
   if (new URLSearchParams(window.location.search).has("invite")) {
     // A friend's invite link starts a fresh session on the invite landing.
     window.history.replaceState(null, "", window.location.pathname);
@@ -89,21 +92,30 @@ function restore(): { nav: Nav; state: ProtoState; demo: DemoFlags } {
   return { nav: { stack: stack.length ? stack : ["1-1"], op: "reset" }, state, demo };
 }
 
-function useViewport() {
+/** The iPhone notch / home bar insets, read off a probe styled with env(). */
+function readSafeArea(probe: HTMLElement | null): { top: number; bottom: number } {
+  if (!probe) return { top: 0, bottom: 0 };
+  const style = getComputedStyle(probe);
+  return { top: parseFloat(style.paddingTop) || 0, bottom: parseFloat(style.paddingBottom) || 0 };
+}
+
+function useViewport(probe: HTMLElement | null) {
   const [size, setSize] = useState(() => ({
     w: window.innerWidth,
     h: window.innerHeight,
+    safe: { top: 0, bottom: 0 },
   }));
   useEffect(() => {
     const onResize = () => {
       // Ignore the on-screen keyboard squeezing the viewport (Android).
       const el = document.activeElement;
       if (el instanceof HTMLInputElement && window.innerHeight < size.h) return;
-      setSize({ w: window.innerWidth, h: window.innerHeight });
+      setSize({ w: window.innerWidth, h: window.innerHeight, safe: readSafeArea(probe) });
     };
+    onResize();
     window.addEventListener("resize", onResize);
     return () => window.removeEventListener("resize", onResize);
-  }, [size.h]);
+  }, [size.h, probe]);
   return size;
 }
 
@@ -113,7 +125,6 @@ export function Prototype() {
   const [state, setState] = useState<ProtoState>(initial.state);
   const [demo, setDemoState] = useState<DemoFlags>(initial.demo);
   const [menuOpen, setMenuOpen] = useState(false);
-  const [demoOpen, setDemoOpen] = useState(false);
   const [toastMsg, setToastMsg] = useState<{ text: string; key: number } | null>(null);
 
   // Callbacks read the latest values through refs so they can stay stable.
@@ -181,32 +192,6 @@ export function Prototype() {
     setDemoState((d) => ({ ...d, ...patch }));
   }, []);
 
-  // The status bar reports every tap; three in a row open the panel.
-  const taps = useRef<number[]>([]);
-  const openDemo = useCallback(() => {
-    const now = Date.now();
-    taps.current = [...taps.current.filter((t) => now - t < TRIPLE_TAP_MS), now];
-    if (taps.current.length < 3) return;
-    taps.current = [];
-    setDemoOpen(true);
-  }, []);
-
-  const restart = useCallback(
-    (invited: boolean) => {
-      setDemoOpen(false);
-      reset(invited ? "1-2" : "1-1", { ...INITIAL_STATE, invited });
-    },
-    [reset],
-  );
-
-  const show = useCallback(
-    (id: string) => {
-      setDemoOpen(false);
-      go(id);
-    },
-    [go],
-  );
-
   const openMenu = useCallback(() => setMenuOpen(true), []);
   const closeMenu = useCallback(() => setMenuOpen(false), []);
 
@@ -235,7 +220,6 @@ export function Prototype() {
       update,
       demo,
       setDemo,
-      openDemo,
       go,
       replace,
       back,
@@ -247,7 +231,7 @@ export function Prototype() {
       openProduct,
       requireLogin,
     }),
-    [state, update, demo, setDemo, openDemo, go, replace, back, backTo, reset, toast, openMenu, closeMenu, openProduct, requireLogin],
+    [state, update, demo, setDemo, go, replace, back, backTo, reset, toast, openMenu, closeMenu, openProduct, requireLogin],
   );
 
   // Browser / gesture back pops the prototype stack: a sentinel history entry
@@ -267,21 +251,30 @@ export function Prototype() {
   }, [back]);
 
   // Mirror the place into the URL hash and local storage. The hash is written
-  // a tick later: on first load and on browser back, Next's router rewrites
-  // the URL to its own canonical "/" after this effect.
+  // later and re-checked: on first load and on browser back, Next's router
+  // rewrites the URL to its own canonical "/" some time after this effect.
   useEffect(() => {
-    const mirror = setTimeout(() =>
-      window.history.replaceState(window.history.state, "", `#${top}`),
-    );
+    const mirror = () => {
+      if (window.location.hash !== `#${top}`) {
+        window.history.replaceState(window.history.state, "", `#${top}`);
+      }
+    };
+    const timers = [0, 150, 400, 1000].map((ms) => setTimeout(mirror, ms));
     try {
       localStorage.setItem(STORAGE_KEY, JSON.stringify({ stack: nav.stack, state, demo }));
     } catch {}
-    return () => clearTimeout(mirror);
+    return () => timers.forEach(clearTimeout);
   }, [nav.stack, state, demo, top]);
 
-  const { w, h } = useViewport();
-  const desktop = w >= DESKTOP_MIN_WIDTH;
-  const scale = desktop ? Math.min(1, (h - 48) / 852) : Math.min(w / 393, h / 852);
+  const [probe, setProbe] = useState<HTMLDivElement | null>(null);
+  const { w, h, safe } = useViewport(probe);
+  // Fill a phone edge to edge; on a wider screen, a phone-width column.
+  const width = w <= MOBILE_MAX_WIDTH ? w : DESKTOP_APP_WIDTH;
+  const scale = width / SCREEN_WIDTH;
+  const viewport = useMemo(
+    () => ({ height: h / scale, safeTop: safe.top / scale, safeBottom: safe.bottom / scale }),
+    [h, scale, safe.top, safe.bottom],
+  );
 
   const current = SCREENS.find((s) => s.id === top) ?? SCREENS[0];
   const { Component } = current;
@@ -299,112 +292,56 @@ export function Prototype() {
               ? "proto-fade"
               : "";
 
-  const device = (
+  return (
     <div
       className={cn(
-        "relative shrink-0 overflow-hidden bg-bg-base",
-        desktop && "rounded-[44px] shadow-[0_24px_80px_rgba(22,26,35,0.28)] ring-[10px] ring-[#161a23]",
+        "proto-root fixed inset-0 flex justify-center",
+        w <= MOBILE_MAX_WIDTH ? "bg-bg-base" : "bg-bg-subtle",
       )}
-      style={{ width: 393 * scale, height: 852 * scale }}
     >
       <div
-        className="absolute left-0 top-0 h-[852px] w-[393px] overflow-hidden"
-        style={{ transform: `scale(${scale})`, transformOrigin: "top left" }}
-      >
-        <ProtoContext.Provider value={proto}>
-          <div key={`${nav.stack.length}-${top}`} className={cn("absolute inset-0", enter)}>
-            <Component />
-          </div>
+        ref={setProbe}
+        aria-hidden
+        className="pointer-events-none invisible fixed"
+        style={{ paddingTop: "env(safe-area-inset-top)", paddingBottom: "env(safe-area-inset-bottom)" }}
+      />
+      <div className="relative shrink-0 overflow-hidden bg-bg-base" style={{ width, height: h }}>
+        <div
+          className="absolute left-0 top-0 overflow-hidden"
+          style={{
+            width: SCREEN_WIDTH,
+            height: viewport.height,
+            transform: `scale(${scale})`,
+            transformOrigin: "top left",
+          }}
+        >
+          <ViewportContext.Provider value={viewport}>
+            <ProtoContext.Provider value={proto}>
+              <div key={`${nav.stack.length}-${top}`} className={cn("absolute inset-0", enter)}>
+                <Component />
+              </div>
 
-          {menuOpen && (
-            <div className="absolute inset-0">
-              <Dim onPress={closeMenu} />
-              <DrawerPanel onClose={closeMenu} />
-            </div>
-          )}
-
-          {demoOpen && (
-            <div className="absolute inset-0">
-              <Dim onPress={() => setDemoOpen(false)} />
-              <div className="proto-sheet-in absolute bottom-0 left-0 w-full rounded-t-[24px] bg-bg-base px-[24px] pb-[40px] pt-[20px] shadow-sheet">
-                <div className="mb-[12px] flex items-center justify-between">
-                  <p className="font-serif text-h3-18">데모 패널</p>
-                  <button
-                    type="button"
-                    onClick={() => setDemoOpen(false)}
-                    className="proto-tap text-caption-12 text-text-tertiary"
-                  >
-                    닫기
-                  </button>
+              {menuOpen && (
+                <div className="absolute inset-0">
+                  <Dim onPress={closeMenu} />
+                  <DrawerPanel onClose={closeMenu} />
                 </div>
-                <DemoPanel demo={demo} onDemo={setDemo} onRestart={restart} onShow={show} />
-              </div>
-            </div>
-          )}
+              )}
 
-          {toastMsg && (
-            <div
-              key={toastMsg.key}
-              className="proto-toast-in pointer-events-none absolute left-0 top-[640px] flex w-full justify-center"
-            >
-              <Toast text={toastMsg.text} />
-            </div>
-          )}
-        </ProtoContext.Provider>
-      </div>
-    </div>
-  );
-
-  if (!desktop) {
-    return (
-      <div className="proto-root fixed inset-0 flex items-center justify-center bg-bg-base">
-        {device}
-      </div>
-    );
-  }
-
-  return (
-    <div className="proto-root fixed inset-0 flex items-center justify-center gap-[56px] bg-bg-subtle">
-      <aside className="flex h-[min(852px,calc(100vh-48px))] w-[280px] flex-col gap-[16px]">
-        <div>
-          <p className="text-overline-12 text-brand-secondary">PROTOTYPE · 393×852</p>
-          <h1 className="mt-[4px] font-serif text-h2-22">연학당 프로토타입</h1>
-          <p className="mt-[6px] text-caption-12 text-text-secondary">
-            화면 속 버튼을 눌러 유저 플로우대로 이동해요. 휴대폰에서는 화면에 꽉 차게
-            보이고, 상태바를 세 번 탭하면 데모 패널이 열려요.
-          </p>
+              {toastMsg && (
+                <div
+                  key={toastMsg.key}
+                  className="proto-toast-in pointer-events-none absolute left-0 flex w-full justify-center"
+                  // Where the frames place it: 178px above the home indicator.
+                  style={{ bottom: 178 + viewport.safeBottom }}
+                >
+                  <Toast text={toastMsg.text} />
+                </div>
+              )}
+            </ProtoContext.Provider>
+          </ViewportContext.Provider>
         </div>
-        <DemoPanel demo={demo} onDemo={setDemo} onRestart={restart} onShow={show} />
-        <nav className="screen-scroll min-h-px flex-1 rounded-[16px] border border-line-default bg-surface-default py-[8px]">
-          {SECTIONS.map((section) => {
-            const screens = section.screens.filter((s) => SCREEN_IDS.has(s.id));
-            if (!screens.length) return null;
-            return (
-              <div key={section.id} className="px-[8px] pb-[6px]">
-                <p className="px-[8px] pb-[2px] pt-[8px] text-caption-11 font-bold text-text-tertiary">
-                  {section.name}
-                </p>
-                {screens.map((s) => (
-                  <button
-                    key={s.id}
-                    type="button"
-                    onClick={() => reset(s.id)}
-                    className={cn(
-                      "block w-full truncate rounded-[8px] px-[8px] py-[5px] text-left text-caption-12",
-                      s.id === top
-                        ? "bg-brand-secondary-tint font-bold text-brand-secondary"
-                        : "text-text-secondary hover:bg-bg-subtle",
-                    )}
-                  >
-                    {s.name}
-                  </button>
-                ))}
-              </div>
-            );
-          })}
-        </nav>
-      </aside>
-      {device}
+      </div>
     </div>
   );
 }

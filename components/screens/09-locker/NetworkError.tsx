@@ -1,9 +1,7 @@
 "use client";
 
-import { HomeIndicator } from "@/components/chrome/HomeIndicator";
-import { StatusBar } from "@/components/chrome/StatusBar";
 import { TopBar } from "@/components/chrome/TopBar";
-import { Screen } from "@/components/layout/Screen";
+import { Bottom, Screen } from "@/components/layout/Screen";
 import { Mascot } from "@/components/mascot/Mascot";
 import { SpeechBubble } from "@/components/mascot/SpeechBubble";
 import { Button } from "@/components/ui/Button";
@@ -14,7 +12,6 @@ export function NetworkError() {
   const proto = useProto();
   return (
     <Screen>
-      <StatusBar className="absolute left-0 top-0" />
       <TopBar type="logo" right="icon-menu" className="absolute left-0 top-[54px]" />
 
       <Mascot
@@ -34,15 +31,16 @@ export function NetworkError() {
         {"와이파이나 데이터 연결을 확인한 뒤\n다시 시도해 주세요. 입력한 정보는 그대로예요."}
       </div>
 
-      <Button
-        label="다시 시도하기"
-        onPress={() => {
-          proto.toast("다시 연결됐어요");
-          proto.back();
-        }}
-        className="absolute left-[24px] top-[718px] w-[345px]"
-      />
-      <HomeIndicator className="absolute left-0 top-[818px]" />
+      <Bottom from={718}>
+        <Button
+          label="다시 시도하기"
+          onPress={() => {
+            proto.toast("다시 연결됐어요");
+            proto.back();
+          }}
+          className="absolute left-[24px] top-[718px] w-[345px]"
+        />
+      </Bottom>
     </Screen>
   );
 }

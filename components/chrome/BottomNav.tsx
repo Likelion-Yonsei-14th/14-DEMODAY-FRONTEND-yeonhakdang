@@ -10,9 +10,8 @@ import { rosterScreen, useProto, type Proto } from "@/lib/proto";
  * Figma: Bottom Nav (16:68).
  * Figma note — "결과 확인 이후 화면에 고정. 합격 궁합·귀인·부적은 유료 탭 →
  * 미구매 시 상품 상세, 구매 시 유료 결과로 이동."
- * The home indicator is baked into this bar, so screens using it do not also
- * render <HomeIndicator />. Each tab ships two exported glyphs; the active one
- * is the same name with an `-active` suffix.
+ * Each tab ships two exported glyphs; the active one is the same name with an
+ * `-active` suffix.
  */
 export const NAV_TABS = [
   { id: "major", label: "내 학과", icon: "nav-major" },
@@ -46,8 +45,9 @@ export function BottomNav({
     <Docked>
       {(docked) => (
         <div
+          data-nav
           className={cn(
-            "relative flex h-[90px] w-full shrink-0 items-start justify-between border-t border-line-default bg-surface-default px-[8px] pb-[30px] pt-[4px]",
+            "relative flex h-[60px] w-full shrink-0 items-start justify-between border-t border-line-default bg-surface-default px-[8px] pt-[4px]",
             className,
             docked && DOCKED,
           )}
@@ -71,7 +71,6 @@ export function BottomNav({
               </p>
             </Tap>
           ))}
-          <div className="absolute bottom-[8px] left-1/2 h-[5px] w-[134px] -translate-x-1/2 rounded-[3px] bg-text-primary" />
         </div>
       )}
     </Docked>

@@ -3,11 +3,11 @@ import type { Metadata, Viewport } from "next";
 import { ProtoLoader } from "@/components/proto/ProtoLoader";
 
 export const metadata: Metadata = {
-  title: "연학당 · 프로토타입",
-  description: "버튼을 눌러 유저 플로우대로 이동하는 스마트폰 프로토타입",
+  title: "연학당",
+  description: "타고난 사주로 나의 학과를 찾다",
 };
 
-/** A phone prototype: fit the device, no pinch zoom, paint under the notch. */
+/** A mobile web app: fit the device, no pinch zoom, paint under the notch. */
 export const viewport: Viewport = {
   width: "device-width",
   initialScale: 1,

@@ -128,8 +128,9 @@ export function stepLabel(s: Pick<ProtoState, "product" | "plan">, screen: strin
 }
 
 /**
- * Presenter switches from the demo panel. `slowAnalysis` and `payFail` are
- * one-shot: the branch they force consumes them, so a retry then succeeds.
+ * Switches that force the failure / empty branches. Nothing turns them on in
+ * the app (they stay off); `slowAnalysis` and `payFail` are one-shot: the
+ * branch they force consumes them, so a retry then succeeds.
  */
 export type DemoFlags = {
   slowAnalysis: boolean;
@@ -169,8 +170,6 @@ export type Proto = {
   update: (patch: Partial<ProtoState>) => void;
   demo: DemoFlags;
   setDemo: (patch: Partial<DemoFlags>) => void;
-  /** Opens the demo panel (mobile: triple-tap the status bar). */
-  openDemo: () => void;
   /** Push a screen. `pop` drops that many entries first. */
   go: (id: string, opts?: { pop?: number }) => void;
   replace: (id: string) => void;
@@ -196,7 +195,6 @@ const STATIC_PROTO: Proto = {
   update: noop,
   demo: INITIAL_DEMO,
   setDemo: noop,
-  openDemo: noop,
   go: noop,
   replace: noop,
   back: noop,

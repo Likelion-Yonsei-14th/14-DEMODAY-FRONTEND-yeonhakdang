@@ -3,8 +3,6 @@
 import Image from "next/image";
 import { useEffect, useState } from "react";
 
-import { HomeIndicator } from "@/components/chrome/HomeIndicator";
-import { StatusBar } from "@/components/chrome/StatusBar";
 import { Screen } from "@/components/layout/Screen";
 import { Mascot } from "@/components/mascot/Mascot";
 import { FiveElement } from "@/components/saju/FiveElement";
@@ -85,7 +83,6 @@ export function AnalyzingLoading() {
 
   return (
     <Screen>
-      <StatusBar className="absolute left-0 top-0" />
 
       <div className="absolute left-[46.5px] top-[120px] size-[300px] opacity-45">
         <Image src="/assets/halo-300.png" alt="" width={300} height={300} className="block size-full" />
@@ -165,8 +162,6 @@ export function AnalyzingLoading() {
           label="민지님과의 궁합도 함께 계산하고 있어요"
         />
       )}
-
-      <HomeIndicator className="absolute left-0 top-[818px]" />
     </Screen>
   );
 }

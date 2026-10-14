@@ -2,9 +2,7 @@
 
 import Image from "next/image";
 
-import { HomeIndicator } from "@/components/chrome/HomeIndicator";
-import { StatusBar } from "@/components/chrome/StatusBar";
-import { Screen } from "@/components/layout/Screen";
+import { Bottom, Screen } from "@/components/layout/Screen";
 import { MascotFaceBadge } from "@/components/mascot/MascotFaceBadge";
 import { ShareCardMajor } from "@/components/share/ShareCardMajor";
 import { Button } from "@/components/ui/Button";
@@ -22,7 +20,6 @@ export function SaveImageGuide() {
   const save = () => proto.toast("이미지를 앨범에 저장했어요");
   return (
     <Screen className="bg-text-primary">
-      <StatusBar theme="light" className="absolute left-0 top-0" />
       <Tap
         label="닫기"
         onPress={proto.back}
@@ -48,24 +45,24 @@ export function SaveImageGuide() {
       </div>
 
       {/* guide (28:1259) — Pattern/Guide/Hint Text (73:2891) */}
-      <div className="absolute left-[44.5px] top-[646px] flex items-center gap-[10px] overflow-clip rounded-full bg-surface-default py-[8px] pl-[8px] pr-[18px]">
-        <MascotFaceBadge size={40} className="border-2" />
-        <HintText
-          title="이미지를 길게 눌러 저장해 주세요"
-          caption="인앱 브라우저에선 다운로드 버튼이 막힐 수 있어요"
-          captionTone="secondary"
+      <Bottom from={646}>
+        <div className="absolute left-[44.5px] top-[646px] flex items-center gap-[10px] overflow-clip rounded-full bg-surface-default py-[8px] pl-[8px] pr-[18px]">
+          <MascotFaceBadge size={40} className="border-2" />
+          <HintText
+            title="이미지를 길게 눌러 저장해 주세요"
+            caption="인앱 브라우저에선 다운로드 버튼이 막힐 수 있어요"
+            captionTone="secondary"
+          />
+        </div>
+
+        <Button
+          label="외부 브라우저로 열기"
+          onPress={() => proto.toast("Safari에서 열었어요 · 이제 저장 버튼을 쓸 수 있어요")}
+          type="outline"
+          size="M"
+          className="absolute left-[86.5px] top-[722px] w-[220px]"
         />
-      </div>
-
-      <Button
-        label="외부 브라우저로 열기"
-        onPress={() => proto.toast("Safari에서 열었어요 · 이제 저장 버튼을 쓸 수 있어요")}
-        type="outline"
-        size="M"
-        className="absolute left-[86.5px] top-[722px] w-[220px]"
-      />
-
-      <HomeIndicator className="absolute left-0 top-[818px]" />
+      </Bottom>
     </Screen>
   );
 }

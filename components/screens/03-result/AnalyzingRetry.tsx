@@ -1,9 +1,7 @@
 "use client";
 
-import { HomeIndicator } from "@/components/chrome/HomeIndicator";
-import { StatusBar } from "@/components/chrome/StatusBar";
 import { TopBar } from "@/components/chrome/TopBar";
-import { Screen } from "@/components/layout/Screen";
+import { Bottom, Screen } from "@/components/layout/Screen";
 import { Mascot } from "@/components/mascot/Mascot";
 import { SpeechBubble } from "@/components/mascot/SpeechBubble";
 import { Button } from "@/components/ui/Button";
@@ -15,7 +13,6 @@ export function AnalyzingRetry() {
   const proto = useProto();
   return (
     <Screen>
-      <StatusBar className="absolute left-0 top-0" />
       <TopBar type="close" title="" className="absolute left-0 top-[54px]" />
 
       <Mascot
@@ -39,20 +36,20 @@ export function AnalyzingRetry() {
         30초 이상 응답이 없으면 자동으로 한 번 더 시도해요
       </InfoBox>
 
-      <Button
-        label="다시 분석하기"
-        onPress={() => proto.replace("3-1")}
-        className="absolute left-[24px] top-[700px] w-[345px]"
-      />
-      <Button
-        label="처음 화면으로"
-        onPress={() => proto.reset("1-1")}
-        type="ghost"
-        size="M"
-        className="absolute left-[96.5px] top-[762px] w-[200px]"
-      />
-
-      <HomeIndicator className="absolute left-0 top-[818px]" />
+      <Bottom from={700}>
+        <Button
+          label="다시 분석하기"
+          onPress={() => proto.replace("3-1")}
+          className="absolute left-[24px] top-[700px] w-[345px]"
+        />
+        <Button
+          label="처음 화면으로"
+          onPress={() => proto.reset("1-1")}
+          type="ghost"
+          size="M"
+          className="absolute left-[96.5px] top-[762px] w-[200px]"
+        />
+      </Bottom>
     </Screen>
   );
 }

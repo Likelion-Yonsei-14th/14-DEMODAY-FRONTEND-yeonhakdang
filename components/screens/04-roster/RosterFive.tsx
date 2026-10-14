@@ -1,7 +1,6 @@
 "use client";
 
 import { BottomNav } from "@/components/chrome/BottomNav";
-import { StatusBar } from "@/components/chrome/StatusBar";
 import { TopBar } from "@/components/chrome/TopBar";
 import { Screen } from "@/components/layout/Screen";
 import { MascotTipSmall } from "@/components/result/ResultSections";
@@ -42,7 +41,6 @@ export function RosterContent() {
 export function RosterFive() {
   return (
     <Screen height={1205}>
-      <StatusBar />
       <TopBar type="logo" right="icon-menu" />
       <RosterContent />
       <BottomNav active="list" className="absolute left-0 top-[1115px]" />

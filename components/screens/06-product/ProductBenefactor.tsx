@@ -1,7 +1,6 @@
 "use client";
 
 import { BottomNav } from "@/components/chrome/BottomNav";
-import { StatusBar } from "@/components/chrome/StatusBar";
 import { TopBar } from "@/components/chrome/TopBar";
 import { Screen } from "@/components/layout/Screen";
 import {
@@ -19,7 +18,7 @@ import { SectionTitle } from "@/components/ui/SectionTitle";
 /** Figma: 6-2 귀인 · 상품 상세 (29:1386) — a 1656px-tall frame. */
 export function ProductBenefactor() {
   return (
-    <Screen height={1656}>
+    <Screen height={1656} bleed>
       <ProductHero
         height={372}
         badge="새내기 인간관계 미리보기"
@@ -34,7 +33,6 @@ export function ProductBenefactor() {
           { left: 330, top: 330, size: 16 },
         ]}
       />
-      <StatusBar theme="light" className="absolute left-0 top-0" />
       <TopBar
         title="​"
         backIcon="icon-back-light"

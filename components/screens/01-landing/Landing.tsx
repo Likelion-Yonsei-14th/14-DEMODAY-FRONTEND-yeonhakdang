@@ -2,10 +2,8 @@
 
 import Image from "next/image";
 
-import { HomeIndicator } from "@/components/chrome/HomeIndicator";
-import { StatusBar } from "@/components/chrome/StatusBar";
 import { TopBar } from "@/components/chrome/TopBar";
-import { Screen } from "@/components/layout/Screen";
+import { Bottom, Screen } from "@/components/layout/Screen";
 import { Mascot } from "@/components/mascot/Mascot";
 import { SpeechBubble } from "@/components/mascot/SpeechBubble";
 import { FiveElementsChips, type ElementKey } from "@/components/saju/FiveElement";
@@ -26,7 +24,6 @@ export function LandingContent({
   const proto = useProto();
   return (
     <>
-      <StatusBar className="absolute left-0 top-0" />
       <TopBar type="logo" right="icon-menu" className="absolute left-0 top-[54px]" />
 
       {/* Celestial backdrop — moon sits under the dotted orbit, both under 연학이. */}
@@ -68,19 +65,19 @@ export function LandingContent({
         ]}
       />
 
-      <Button
-        label="무료로 내 학과 찾기"
-        onPress={() => {
-          proto.update({ invited: false });
-          proto.go("2-1");
-        }}
-        className="absolute left-[24px] top-[718px] w-[345px]"
-      />
-      <p className="absolute left-[24px] top-[786px] w-[345px] text-center text-caption-12 text-text-secondary">
-        지금까지 12,480명이 내 학과를 찾았어요
-      </p>
-
-      <HomeIndicator className="absolute left-0 top-[818px]" />
+      <Bottom from={718}>
+        <Button
+          label="무료로 내 학과 찾기"
+          onPress={() => {
+            proto.update({ invited: false });
+            proto.go("2-1");
+          }}
+          className="absolute left-[24px] top-[718px] w-[345px]"
+        />
+        <p className="absolute left-[24px] top-[786px] w-[345px] text-center text-caption-12 text-text-secondary">
+          지금까지 12,480명이 내 학과를 찾았어요
+        </p>
+      </Bottom>
     </>
   );
 }

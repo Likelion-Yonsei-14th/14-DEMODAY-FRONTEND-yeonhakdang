@@ -2,10 +2,8 @@
 
 import { useEffect, useState } from "react";
 
-import { HomeIndicator } from "@/components/chrome/HomeIndicator";
-import { StatusBar } from "@/components/chrome/StatusBar";
 import { TopBar } from "@/components/chrome/TopBar";
-import { Screen } from "@/components/layout/Screen";
+import { Bottom, Overlay, Screen } from "@/components/layout/Screen";
 import { MascotFaceBadge } from "@/components/mascot/MascotFaceBadge";
 import { PriceRow } from "@/components/pay/OrderRows";
 import { BottomCta } from "@/components/ui/BottomCta";
@@ -139,7 +137,6 @@ export function OrderPayment() {
 
   return (
     <Screen>
-      <StatusBar className="absolute left-0 top-0" />
       <TopBar title="주문 / 결제" className="absolute left-0 top-[54px]" />
 
       {/* content (31:1501) */}
@@ -226,23 +223,26 @@ export function OrderPayment() {
         </div>
       </div>
 
-      <BottomCta className="absolute left-0 top-[740px]">
-        <Button
-          label={`${price} 결제하기`}
-          disabled={!agreed}
-          onPress={() => setPaying(true)}
-        />
-      </BottomCta>
-      <HomeIndicator className="absolute left-0 top-[818px]" />
+      <Bottom from={740}>
+        <BottomCta className="absolute left-0 top-[740px]">
+          <Button
+            label={`${price} 결제하기`}
+            disabled={!agreed}
+            onPress={() => setPaying(true)}
+          />
+        </BottomCta>
+      </Bottom>
 
       {paying && (
-        <PaySheet
-          method={methodName}
-          onCancel={() => {
-            setPaying(false);
-            proto.go("7-5");
-          }}
-        />
+        <Overlay>
+          <PaySheet
+            method={methodName}
+            onCancel={() => {
+              setPaying(false);
+              proto.go("7-5");
+            }}
+          />
+        </Overlay>
       )}
     </Screen>
   );

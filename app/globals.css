@@ -151,6 +151,27 @@ body:has(> main) {
   background: transparent;
 }
 
+/* ── App shell ──────────────────────────────────────────────────────── */
+
+/* The pinned bottom strip runs into the home-bar inset: white under a nav. */
+.screen-dock:has([data-nav]) {
+  background-color: var(--color-surface-default);
+}
+
+/* Dims and sheets take taps; the empty layers around them don't. */
+.screen-overlay,
+.screen-anchor,
+.screen-anchor > div {
+  pointer-events: none;
+}
+.screen-overlay > *,
+.screen-anchor > div > * {
+  pointer-events: auto;
+}
+.screen-overlay > .screen-anchor {
+  pointer-events: none;
+}
+
 /* ── Prototype (/proto) ─────────────────────────────────────────────── */
 
 .proto-root {

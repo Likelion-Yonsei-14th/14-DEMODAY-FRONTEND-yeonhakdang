@@ -1,7 +1,6 @@
 "use client";
 
 import { BottomNav } from "@/components/chrome/BottomNav";
-import { StatusBar } from "@/components/chrome/StatusBar";
 import { Screen } from "@/components/layout/Screen";
 import { MascotFaceBadge } from "@/components/mascot/MascotFaceBadge";
 import { SpeechBubble } from "@/components/mascot/SpeechBubble";
@@ -21,7 +20,7 @@ import { displayName, useProto } from "@/lib/proto";
 export function CompatResult() {
   const proto = useProto();
   return (
-    <Screen height={1658}>
+    <Screen height={1658} bleed>
       <PaidHero
         height={300}
         badge="지원 대학 3곳 분석"
@@ -36,7 +35,6 @@ export function CompatResult() {
           { left: 350, top: 270, size: 16 },
         ]}
       />
-      <StatusBar theme="light" className="absolute left-0 top-0" />
       <PaidTopBar className="absolute left-0 top-[54px]" />
 
       {/* content (32:1611) */}

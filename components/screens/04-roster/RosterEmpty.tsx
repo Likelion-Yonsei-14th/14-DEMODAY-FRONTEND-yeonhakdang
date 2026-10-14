@@ -1,9 +1,8 @@
 "use client";
 
 import { BottomNav } from "@/components/chrome/BottomNav";
-import { StatusBar } from "@/components/chrome/StatusBar";
 import { TopBar } from "@/components/chrome/TopBar";
-import { Screen } from "@/components/layout/Screen";
+import { Bottom, Screen } from "@/components/layout/Screen";
 import { Mascot } from "@/components/mascot/Mascot";
 import { SpeechBubble } from "@/components/mascot/SpeechBubble";
 import { RankLabel } from "@/components/roster/RankLabel";
@@ -16,7 +15,6 @@ export function RosterEmpty() {
   const proto = useProto();
   return (
     <Screen>
-      <StatusBar className="absolute left-0 top-0" />
       <TopBar type="logo" right="icon-menu" className="absolute left-0 top-[54px]" />
 
       <Mascot
@@ -57,11 +55,13 @@ export function RosterEmpty() {
         <RankLabel rank="추가 합격" />
       </div>
 
-      <Button
-        label="친구 초대하고 명단 채우기"
-        onPress={() => proto.go("5-2")}
-        className="absolute left-[24px] top-[676px] w-[345px]"
-      />
+      <Bottom from={676} to={762}>
+        <Button
+          label="친구 초대하고 명단 채우기"
+          onPress={() => proto.go("5-2")}
+          className="absolute left-[24px] top-[676px] w-[345px]"
+        />
+      </Bottom>
 
       <BottomNav active="list" className="absolute left-0 top-[762px]" />
     </Screen>

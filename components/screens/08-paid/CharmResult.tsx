@@ -3,7 +3,6 @@
 import Image from "next/image";
 
 import { BottomNav } from "@/components/chrome/BottomNav";
-import { StatusBar } from "@/components/chrome/StatusBar";
 import { TopBar } from "@/components/chrome/TopBar";
 import { Screen } from "@/components/layout/Screen";
 import { MascotTipSmall } from "@/components/result/ResultSections";
@@ -28,7 +27,6 @@ export function CharmResult() {
 
   return (
     <Screen height={1136}>
-      <StatusBar />
       <TopBar title="합격 부적" />
 
       {/* content (33:1782) */}

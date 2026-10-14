@@ -1,9 +1,7 @@
 "use client";
 
-import { HomeIndicator } from "@/components/chrome/HomeIndicator";
-import { StatusBar } from "@/components/chrome/StatusBar";
 import { TopBar } from "@/components/chrome/TopBar";
-import { Screen } from "@/components/layout/Screen";
+import { Bottom, Screen } from "@/components/layout/Screen";
 import { Mascot } from "@/components/mascot/Mascot";
 import { SpeechBubble } from "@/components/mascot/SpeechBubble";
 import { Button } from "@/components/ui/Button";
@@ -16,7 +14,6 @@ export function LandingInvite() {
   const proto = useProto();
   return (
     <Screen>
-      <StatusBar className="absolute left-0 top-0" />
       <TopBar type="logo" right="icon-menu" className="absolute left-0 top-[54px]" />
 
       {/* invite card (19:194) */}
@@ -61,19 +58,19 @@ export function LandingInvite() {
         <NumberedRow n={3}>궁합 점수로 정해지는 동기 석차 확인</NumberedRow>
       </div>
 
-      <Button
-        label="나도 내 학과 찾고 명단 합류하기"
-        onPress={() => {
-          proto.update({ invited: true });
-          proto.go("2-1");
-        }}
-        className="absolute left-[24px] top-[718px] w-[345px]"
-      />
-      <p className="absolute left-[24px] top-[786px] w-[345px] text-center text-caption-12 text-text-tertiary">
-        잘못된 초대 링크면 일반 첫 화면으로 이동해요
-      </p>
-
-      <HomeIndicator className="absolute left-0 top-[818px]" />
+      <Bottom from={718}>
+        <Button
+          label="나도 내 학과 찾고 명단 합류하기"
+          onPress={() => {
+            proto.update({ invited: true });
+            proto.go("2-1");
+          }}
+          className="absolute left-[24px] top-[718px] w-[345px]"
+        />
+        <p className="absolute left-[24px] top-[786px] w-[345px] text-center text-caption-12 text-text-tertiary">
+          잘못된 초대 링크면 일반 첫 화면으로 이동해요
+        </p>
+      </Bottom>
     </Screen>
   );
 }

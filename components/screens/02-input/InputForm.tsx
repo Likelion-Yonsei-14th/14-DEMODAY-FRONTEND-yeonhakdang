@@ -2,10 +2,8 @@
 
 import { useState } from "react";
 
-import { HomeIndicator } from "@/components/chrome/HomeIndicator";
-import { StatusBar } from "@/components/chrome/StatusBar";
 import { TopBar } from "@/components/chrome/TopBar";
-import { Screen } from "@/components/layout/Screen";
+import { Bottom, Screen } from "@/components/layout/Screen";
 import { MascotTip } from "@/components/mascot/MascotTip";
 import { BottomCta } from "@/components/ui/BottomCta";
 import { Button } from "@/components/ui/Button";
@@ -79,7 +77,6 @@ export function InputForm({ initial }: { initial: InputValues }) {
 
   return (
     <Screen>
-      <StatusBar className="absolute left-0 top-0" />
       <TopBar title="내 정보 입력" className="absolute left-0 top-[54px]" />
 
       {/* form (21:192 · 21:269 · 21:352) */}
@@ -152,14 +149,15 @@ export function InputForm({ initial }: { initial: InputValues }) {
         )}
       </div>
 
-      <BottomCta className="absolute left-0 top-[740px]">
-        <Button
-          label="내 학과 분석하기"
-          disabled={!complete}
-          onPress={() => proto.go("3-1")}
-        />
-      </BottomCta>
-      <HomeIndicator className="absolute left-0 top-[818px]" />
+      <Bottom from={740}>
+        <BottomCta className="absolute left-0 top-[740px]">
+          <Button
+            label="내 학과 분석하기"
+            disabled={!complete}
+            onPress={() => proto.go("3-1")}
+          />
+        </BottomCta>
+      </Bottom>
     </Screen>
   );
 }

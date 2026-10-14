@@ -1,7 +1,5 @@
 "use client";
 
-import { HomeIndicator } from "@/components/chrome/HomeIndicator";
-import { StatusBar } from "@/components/chrome/StatusBar";
 import { TopBar } from "@/components/chrome/TopBar";
 import { Screen } from "@/components/layout/Screen";
 import { ListItem } from "@/components/pay/OrderRows";
@@ -95,7 +93,6 @@ export function LockerMy() {
 
   return (
     <Screen height={914}>
-      <StatusBar className="absolute left-0 top-0" />
       <TopBar title="보관함" className="absolute left-0 top-[54px]" />
 
       {/* content (34:1753) */}
@@ -174,8 +171,6 @@ export function LockerMy() {
           </p>
         </Tap>
       </div>
-
-      <HomeIndicator className="absolute left-0 top-[880px]" />
     </Screen>
   );
 }

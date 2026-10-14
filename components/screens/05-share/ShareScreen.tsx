@@ -4,10 +4,8 @@ import { toPng } from "html-to-image";
 import Image from "next/image";
 import { useCallback, useEffect, useRef, useState } from "react";
 
-import { HomeIndicator } from "@/components/chrome/HomeIndicator";
-import { StatusBar } from "@/components/chrome/StatusBar";
 import { TopBar } from "@/components/chrome/TopBar";
-import { Screen } from "@/components/layout/Screen";
+import { Bottom, Screen } from "@/components/layout/Screen";
 import { MascotFaceBadge } from "@/components/mascot/MascotFaceBadge";
 import {
   ShareActions,
@@ -167,7 +165,6 @@ export function ShareScreen({
 
   return (
     <Screen>
-      <StatusBar className="absolute left-0 top-0" />
       {/* The frame's close bar has no glyph; the prototype adds one to leave. */}
       <TopBar
         type="close"
@@ -192,19 +189,19 @@ export function ShareScreen({
       <div className="absolute left-[24px] top-[214px] h-[412px] w-[345px] rounded-[20px] bg-bg-subtle" />
       <Preview card={card} ratio={ratio} />
 
-      <ShareMessageBox
-        className="absolute left-[24px] top-[640px] w-[345px]"
-        message="내 동기 수석 합격자는 누구? 너도 합격 확인해봐"
-      />
-      <ShareActions onAction={onAction} className="absolute left-[24px] top-[712px] w-[345px]" />
+      <Bottom from={640}>
+        <ShareMessageBox
+          className="absolute left-[24px] top-[640px] w-[345px]"
+          message="내 동기 수석 합격자는 누구? 너도 합격 확인해봐"
+        />
+        <ShareActions onAction={onAction} className="absolute left-[24px] top-[712px] w-[345px]" />
+      </Bottom>
 
       {staticToast && !proto.active && (
         <Toast className="absolute left-[97px] top-[580px]" text={staticToast} />
       )}
 
       {exporting && <CardExporter card={card} ratio={ratio} onDone={onExported} />}
-
-      <HomeIndicator className="absolute left-0 top-[818px]" />
     </Screen>
   );
 }

@@ -2,10 +2,8 @@
 
 import Image from "next/image";
 
-import { HomeIndicator } from "@/components/chrome/HomeIndicator";
-import { StatusBar } from "@/components/chrome/StatusBar";
 import { TopBar } from "@/components/chrome/TopBar";
-import { Screen } from "@/components/layout/Screen";
+import { Bottom, Screen } from "@/components/layout/Screen";
 import { Mascot } from "@/components/mascot/Mascot";
 import { SpeechBubble } from "@/components/mascot/SpeechBubble";
 import { Button } from "@/components/ui/Button";
@@ -23,7 +21,6 @@ export function LoginKakaoContent() {
   const { state } = proto;
   return (
     <>
-      <StatusBar className="absolute left-0 top-0" />
       <TopBar title="" className="absolute left-0 top-[54px]" />
 
       <Headline
@@ -72,23 +69,23 @@ export function LoginKakaoContent() {
         />
       )}
 
-      <Button
-        type="kakao"
-        label="카카오로 3초 만에 시작하기"
-        onPress={() => {
-          // First login asks for 약관 consent; returning users go straight in.
-          if (!state.agreedTerms) return proto.go("2-5");
-          proto.update({ loggedIn: true });
-          proto.go(state.afterLogin, { pop: 1 });
-          proto.toast("카카오로 로그인했어요");
-        }}
-        className="absolute left-[24px] top-[718px] w-[345px]"
-      />
-      <p className="absolute left-[24px] top-[786px] w-[345px] text-center text-caption-12 text-text-tertiary">
-        처음이라면 약관 동의 후 바로 분석이 시작돼요
-      </p>
-
-      <HomeIndicator className="absolute left-0 top-[818px]" />
+      <Bottom from={718}>
+        <Button
+          type="kakao"
+          label="카카오로 3초 만에 시작하기"
+          onPress={() => {
+            // First login asks for 약관 consent; returning users go straight in.
+            if (!state.agreedTerms) return proto.go("2-5");
+            proto.update({ loggedIn: true });
+            proto.go(state.afterLogin, { pop: 1 });
+            proto.toast("카카오로 로그인했어요");
+          }}
+          className="absolute left-[24px] top-[718px] w-[345px]"
+        />
+        <p className="absolute left-[24px] top-[786px] w-[345px] text-center text-caption-12 text-text-tertiary">
+          처음이라면 약관 동의 후 바로 분석이 시작돼요
+        </p>
+      </Bottom>
     </>
   );
 }

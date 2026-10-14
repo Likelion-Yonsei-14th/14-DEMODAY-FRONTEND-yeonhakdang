@@ -2,10 +2,8 @@
 
 import { useState } from "react";
 
-import { HomeIndicator } from "@/components/chrome/HomeIndicator";
-import { StatusBar } from "@/components/chrome/StatusBar";
 import { TopBar } from "@/components/chrome/TopBar";
-import { Screen } from "@/components/layout/Screen";
+import { Bottom, Screen } from "@/components/layout/Screen";
 import {
   ChipUniversity,
   UniversityRow,
@@ -41,7 +39,6 @@ export function PickUniversities() {
 
   return (
     <Screen>
-      <StatusBar className="absolute left-0 top-0" />
       <TopBar title="지원 대학 선택" className="absolute left-0 top-[54px]" />
 
       {/* heading (30:1441) */}
@@ -105,14 +102,15 @@ export function PickUniversities() {
         </p>
       )}
 
-      <BottomCta className="absolute left-0 top-[740px]">
-        <Button
-          label={picked.length ? `${picked.length}곳으로 다음 단계` : "대학을 1곳 이상 골라 주세요"}
-          disabled={picked.length === 0}
-          onPress={() => proto.go(next)}
-        />
-      </BottomCta>
-      <HomeIndicator className="absolute left-0 top-[818px]" />
+      <Bottom from={740}>
+        <BottomCta className="absolute left-0 top-[740px]">
+          <Button
+            label={picked.length ? `${picked.length}곳으로 다음 단계` : "대학을 1곳 이상 골라 주세요"}
+            disabled={picked.length === 0}
+            onPress={() => proto.go(next)}
+          />
+        </BottomCta>
+      </Bottom>
     </Screen>
   );
 }

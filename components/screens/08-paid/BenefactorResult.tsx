@@ -1,7 +1,6 @@
 "use client";
 
 import { BottomNav } from "@/components/chrome/BottomNav";
-import { StatusBar } from "@/components/chrome/StatusBar";
 import { Screen } from "@/components/layout/Screen";
 import { MascotFaceBadge } from "@/components/mascot/MascotFaceBadge";
 import { SpeechBubble } from "@/components/mascot/SpeechBubble";
@@ -18,7 +17,7 @@ export function BenefactorResult() {
   const proto = useProto();
   const { relation } = proto.state;
   return (
-    <Screen height={1458}>
+    <Screen height={1458} bleed>
       <PaidHero
         height={300}
         badge={`관계 유형 · ${relation}`}
@@ -33,7 +32,6 @@ export function BenefactorResult() {
           { left: 350, top: 272, size: 16 },
         ]}
       />
-      <StatusBar theme="light" className="absolute left-0 top-0" />
       <PaidTopBar className="absolute left-0 top-[54px]" />
 
       {/* content (33:1658) */}

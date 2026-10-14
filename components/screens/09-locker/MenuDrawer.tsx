@@ -1,10 +1,11 @@
 "use client";
 
+import { useContext } from "react";
+
 import { BottomNav } from "@/components/chrome/BottomNav";
-import { StatusBar } from "@/components/chrome/StatusBar";
 import { TopBar } from "@/components/chrome/TopBar";
 import { Dim } from "@/components/layout/BottomSheet";
-import { Screen } from "@/components/layout/Screen";
+import { Overlay, Screen, ViewportContext } from "@/components/layout/Screen";
 import { MascotFaceBadge } from "@/components/mascot/MascotFaceBadge";
 import { MajorResultContent } from "@/components/screens/03-result/MajorResult";
 import { HintText } from "@/components/ui/HintText";
@@ -61,6 +62,7 @@ function DrawerRow({
  */
 export function DrawerPanel({ onClose }: { onClose: () => void }) {
   const proto = useProto();
+  const viewport = useContext(ViewportContext);
   const { state } = proto;
   // Navigate after the drawer closes so the target screen isn't covered.
   const then = (action: () => void) => () => {
@@ -71,9 +73,12 @@ export function DrawerPanel({ onClose }: { onClose: () => void }) {
   return (
     <div
       className={cn(
-        "absolute left-[93px] top-0 flex h-[852px] w-[300px] flex-col items-start overflow-clip bg-bg-base pb-[34px] pt-[54px] shadow-sheet",
+        "absolute left-[93px] top-0 flex w-[300px] flex-col items-start overflow-clip bg-bg-base shadow-sheet",
+        // In the app the drawer runs the full height, inside the notch insets.
+        viewport ? "bottom-0" : "h-[852px] pb-[34px] pt-[54px]",
         proto.active && "proto-drawer-in",
       )}
+      style={viewport ? { paddingTop: viewport.safeTop, paddingBottom: viewport.safeBottom } : undefined}
     >
       <div className="relative flex w-[300px] shrink-0 items-start justify-end overflow-clip pb-[4px] pl-[20px] pr-[16px] pt-[12px]">
         <Tap label="메뉴 닫기" onPress={onClose} className="rounded-full">
@@ -150,15 +155,16 @@ export function MenuDrawer() {
   const proto = useProto();
   return (
     <Screen>
-      <StatusBar />
       <TopBar type="logo" right="icon-menu" />
       <MajorResultContent
         heroMascot={{ left: 195, top: 66, width: 150, height: 166.667 }}
       />
       <BottomNav active="major" className="absolute left-0 top-[762px]" />
 
-      <Dim />
-      <DrawerPanel onClose={proto.back} />
+      <Overlay>
+        <Dim />
+        <DrawerPanel onClose={proto.back} />
+      </Overlay>
     </Screen>
   );
 }

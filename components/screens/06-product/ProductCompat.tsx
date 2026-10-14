@@ -1,7 +1,6 @@
 "use client";
 
 import { BottomNav } from "@/components/chrome/BottomNav";
-import { StatusBar } from "@/components/chrome/StatusBar";
 import { TopBar } from "@/components/chrome/TopBar";
 import { Screen } from "@/components/layout/Screen";
 import {
@@ -19,7 +18,7 @@ import { SectionTitle } from "@/components/ui/SectionTitle";
 /** Figma: 6-1 합격 궁합 · 상품 상세 (29:1220) — a 1634px-tall frame. */
 export function ProductCompat() {
   return (
-    <Screen height={1634}>
+    <Screen height={1634} bleed>
       <ProductHero
         height={372}
         badge="원서 접수 전 필수"
@@ -34,7 +33,6 @@ export function ProductCompat() {
           { left: 330, top: 330, size: 16 },
         ]}
       />
-      <StatusBar theme="light" className="absolute left-0 top-0" />
       <TopBar
         title="​"
         backIcon="icon-back-light"

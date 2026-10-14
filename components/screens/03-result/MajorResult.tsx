@@ -1,7 +1,6 @@
 "use client";
 
 import { BottomNav } from "@/components/chrome/BottomNav";
-import { StatusBar } from "@/components/chrome/StatusBar";
 import { TopBar } from "@/components/chrome/TopBar";
 import { Screen, ScreenScroll } from "@/components/layout/Screen";
 import { CardType } from "@/components/result/CardType";
@@ -55,7 +54,6 @@ export function MajorResultContent({
 export function MajorResultFull() {
   return (
     <Screen height={2990}>
-      <StatusBar />
       <TopBar type="logo" right="icon-menu" />
       <MajorResultContent />
       <BottomNav active="major" className="absolute left-0 top-[2900px]" />
@@ -68,8 +66,7 @@ export function MajorResultFirstView() {
   // The prototype raises this toast itself when the analysis finishes.
   const { active } = useProto();
   return (
-    <Screen>
-      <StatusBar />
+    <Screen fit>
       <TopBar type="logo" right="icon-menu" />
       <ScreenScroll>
         <MajorResultContent />

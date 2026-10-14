@@ -1,8 +1,6 @@
 "use client";
 
-import { HomeIndicator } from "@/components/chrome/HomeIndicator";
-import { StatusBar } from "@/components/chrome/StatusBar";
-import { Screen } from "@/components/layout/Screen";
+import { Bottom, Screen } from "@/components/layout/Screen";
 import { MascotFaceBadge } from "@/components/mascot/MascotFaceBadge";
 import { ShareCardMajorSquare } from "@/components/share/ShareCardMajorSquare";
 import { InfoBox } from "@/components/ui/InfoBox";
@@ -15,7 +13,6 @@ export function KakaoMessagePreview() {
   const name = displayName(proto.state);
   return (
     <Screen className="bg-bg-subtle">
-      <StatusBar className="absolute left-0 top-0" />
 
       <p className="absolute left-[24px] top-[74px] whitespace-nowrap text-[12px] font-bold leading-[18px] text-text-tertiary">
         카카오톡 채팅방에 전송되는 형태
@@ -50,12 +47,12 @@ export function KakaoMessagePreview() {
         </p>
       </div>
 
-      <InfoBox className="absolute left-[24px] top-[700px] w-[345px]">
-        링크 미리보기(OG)는 초대자 이름·1위 학과로 동적으로 만들어져요. 링크를 누르면
-        1-2 초대 랜딩으로 이동해요.
-      </InfoBox>
-
-      <HomeIndicator className="absolute left-0 top-[818px]" />
+      <Bottom from={700}>
+        <InfoBox className="absolute left-[24px] top-[700px] w-[345px]">
+          링크 미리보기(OG)는 초대자 이름·1위 학과로 동적으로 만들어져요. 링크를 누르면
+          1-2 초대 랜딩으로 이동해요.
+        </InfoBox>
+      </Bottom>
     </Screen>
   );
 }
