@@ -1,36 +1,52 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# 연학당 · 데모데이 프로토타입
 
-## Getting Started
+Figma 파일 [데모데이 (복사)](https://www.figma.com/design/SyIjHZ302UZNLckGxBm3Zj/)의 33개 화면을
+**유저플로우(Figma "유저플로우" 페이지)대로 버튼이 동작하는** 스마트폰 프로토타입으로 구현했습니다.
 
-First, run the development server:
-
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+```
+npm run dev     # http://localhost:3000
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+- 배포: (Vercel 프로덕션 URL — 연동 후 기입)
+- 데스크톱에서는 폰 프레임과 사이드바가, 휴대폰에서는 화면 전체가 프로토타입입니다.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## 시연 방법
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+| 하고 싶은 것 | 방법 |
+| --- | --- |
+| 처음부터 시작 | `/` 접속. 이전 진행 상황은 `localStorage`에 남아 새로고침해도 이어집니다 |
+| 친구 초대 링크로 시작 | `/?invite=1` — 초대 랜딩(1-2)부터 새 세션으로 시작 |
+| 특정 화면으로 이동 | 데스크톱 사이드바의 화면 목록, 또는 `/#화면번호` (예: `/#6-1`) |
+| 데모 패널 열기 | 데스크톱은 사이드바, 휴대폰은 **상단 상태바(9:41)를 세 번 탭** |
+| 분기 강제 | 패널의 토글: 분석 지연(다음 1회 → 3-2), 결제 실패(다음 1회 → 7-5), 빈 명단(→ 4-2) |
+| 예외 화면 | 패널의 "네트워크 오류(9-2)", "인앱 안내(9-4)" 버튼. 없는 주소는 404(9-3) |
+| 상태 초기화 | 패널의 "처음부터 다시", 보관함의 로그아웃 · 회원 탈퇴 |
 
-## Learn More
+카카오톡 · 인스타그램 인앱 브라우저에서 열면 인앱 안내(9-4)가 탭마다 한 번 자동으로 뜹니다.
 
-To learn more about Next.js, take a look at the following resources:
+## 동작 범위
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+- 입력한 이름은 결과 · 명단 · 보관함 · 공유 카드에, 생년월일은 분석 화면(3-1)에 반영됩니다.
+  분석 결과 내용(학과 TOP 3 등)은 고정입니다.
+- 링크 복사는 실제 클립보드에 초대 링크(`/?invite=1`)를 복사하고, 이미지 저장은 현재 카드를
+  1080px PNG로 내려받습니다. 인앱 브라우저에서는 길게 눌러 저장 안내(5-3)로 이동합니다.
+- 카카오 로그인 · PG 결제창 · 카카오톡 공유는 화면으로 흉내 냅니다. 디자인이 없는 기능(공지,
+  약관 전문, 구매 내역 등)은 "준비 중" 토스트를 띄웁니다.
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+## 구조
 
-## Deploy on Vercel
+| 경로 | 내용 |
+| --- | --- |
+| `app/page.tsx` | 프로토타입 진입점 (클라이언트 전용 렌더) |
+| `app/not-found.tsx` | 없는 주소 → `/#9-3` |
+| `components/proto/Prototype.tsx` | 화면 스택, 브라우저 뒤로가기, 상태 저장, 사이드바 · 데모 패널 · 드로어 · 토스트 |
+| `components/proto/DemoPanel.tsx` | 데모 패널 (리셋, 분기 토글, 예외 화면) |
+| `lib/proto.tsx` | 프로토타입 상태(`ProtoState`) · 데모 토글 · 이동 API (`go` / `back` / `reset` …) |
+| `lib/screens.ts` | 화면 레지스트리 (Figma 프레임 이름 · 노드 ID) |
+| `app/globals.css` | Figma 변수를 Tailwind v4 `@theme` 토큰으로 선언 |
+| `components/screens/NN-*/` | 화면 단위 조립 |
+| `components/chrome/` · `ui/` · `mascot/` · `share/` 등 | Figma 공용 · 섹션별 컴포넌트 |
+| `public/assets/` | Figma에서 내보낸 아이콘 · 일러스트 |
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+모든 버튼은 `components/ui/Tap.tsx`를 거치고, 각 컴포넌트 상단 주석에 대응하는 Figma 노드 ID가
+있습니다. 계획과 결정 사항, Figma 내부 충돌(열린 이슈)은 [`docs/prototype-plan.md`](docs/prototype-plan.md)에 있습니다.

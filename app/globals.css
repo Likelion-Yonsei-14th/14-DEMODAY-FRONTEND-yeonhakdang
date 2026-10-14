@@ -1,26 +1,261 @@
 @import "tailwindcss";
 
-:root {
-  --background: #ffffff;
-  --foreground: #171717;
+/* ──────────────────────────────────────────────────────────────
+   Design tokens — mirrored 1:1 from the Figma variable collection
+   (연학당 / 데모데이). Figma name → token name:
+     bg/base                → bg-base
+     bg/subtle              → bg-subtle
+     surface/default        → surface-default
+     text/primary           → text-primary
+     text/secondary         → text-secondary
+     text/tertiary          → text-tertiary
+     text/inverse           → text-inverse
+     brand/primary          → brand-primary
+     brand/secondary        → brand-secondary
+     brand/secondary-light  → brand-secondary-light
+     brand/secondary-tint   → brand-secondary-tint
+     brand/secondary-dark   → brand-secondary-dark
+     brand/accent           → brand-accent
+     brand/accent-tint      → brand-accent-tint
+     brand/primary-tint     → brand-primary-tint
+     line/default           → line-default
+     line/strong            → line-strong
+     system/kakao           → system-kakao
+   ────────────────────────────────────────────────────────────── */
+@theme {
+  --color-bg-base: #faf8f3;
+  --color-bg-subtle: #f3f0e8;
+  --color-surface-default: #ffffff;
+  --color-text-primary: #161a23;
+  --color-text-secondary: #5b606b;
+  --color-text-tertiary: #8c909a;
+  --color-text-inverse: #ffffff;
+  --color-brand-primary: #c2361f;
+  --color-brand-secondary: #0b3a7a;
+  --color-brand-secondary-light: #4e79b8;
+  --color-brand-secondary-tint: #e8eef7;
+  --color-brand-secondary-dark: #072a5a;
+  --color-brand-accent: #b8892b;
+  --color-brand-accent-tint: #f6eedc;
+  --color-brand-primary-tint: #fbeae6;
+  --color-line-default: #e4e0d6;
+  --color-line-strong: #cfc9ba;
+  --color-system-kakao: #fee500;
+  --color-system-kakao-text: #191919;
+
+  /* Figma effect styles: Shadow/Card, Shadow/Sheet */
+  --shadow-card: 0 4px 16px 0 rgba(22, 26, 35, 0.06);
+  --shadow-sheet: 0 -8px 32px 0 rgba(22, 26, 35, 0.14);
+
+  --font-sans: var(--font-noto-sans-kr), "Noto Sans KR", system-ui, sans-serif;
+  --font-serif: var(--font-noto-serif-kr), "Noto Serif KR", serif;
+
+  /* Text styles — Figma letterSpacing is a percentage, resolved to px here. */
+  --text-display-32: 32px;
+  --text-display-32--line-height: 42px;
+  --text-display-32--letter-spacing: -0.64px;
+  --text-display-32--font-weight: 900;
+
+  /* Number/Score 48 — Noto Serif KR Black */
+  --text-score-48: 48px;
+  --text-score-48--line-height: 56px;
+  --text-score-48--letter-spacing: -0.96px;
+  --text-score-48--font-weight: 900;
+
+  /* Number/Score 28 — Noto Serif KR Black */
+  --text-score-28: 28px;
+  --text-score-28--line-height: 34px;
+  --text-score-28--letter-spacing: -0.28px;
+  --text-score-28--font-weight: 900;
+
+  /* Heading/H1 26 — Noto Serif KR Bold */
+  --text-h1-26: 26px;
+  --text-h1-26--line-height: 36px;
+  --text-h1-26--letter-spacing: -0.26px;
+  --text-h1-26--font-weight: 700;
+
+  /* Heading/H2 22 — Noto Serif KR Bold */
+  --text-h2-22: 22px;
+  --text-h2-22--line-height: 30px;
+  --text-h2-22--letter-spacing: -0.22px;
+  --text-h2-22--font-weight: 700;
+
+  /* Heading/H3 18 — Noto Sans KR Bold */
+  --text-h3-18: 18px;
+  --text-h3-18--line-height: 26px;
+  --text-h3-18--letter-spacing: -0.108px;
+  --text-h3-18--font-weight: 700;
+
+  /* Label/Button 15 — Noto Sans KR Bold */
+  --text-label-button-15: 15px;
+  --text-label-button-15--line-height: 22px;
+  --text-label-button-15--letter-spacing: -0.06px;
+  --text-label-button-15--font-weight: 700;
+
+  --text-label-button-17: 17px;
+  --text-label-button-17--line-height: 24px;
+  --text-label-button-17--letter-spacing: -0.068px;
+  --text-label-button-17--font-weight: 700;
+
+  /* Body/L Bold 16 — 16/24 */
+  --text-body-l-16: 16px;
+  --text-body-l-16--line-height: 24px;
+  --text-body-l-16--letter-spacing: -0.064px;
+
+  /* Body/L 16 (regular) — 16/26 */
+  --text-body-l-input-16: 16px;
+  --text-body-l-input-16--line-height: 26px;
+  --text-body-l-input-16--letter-spacing: -0.064px;
+
+  --text-body-m-14: 14px;
+  --text-body-m-14--line-height: 22px;
+  --text-body-m-14--letter-spacing: -0.028px;
+
+  --text-caption-12: 12px;
+  --text-caption-12--line-height: 18px;
+  --text-caption-12--letter-spacing: 0px;
+
+  --text-caption-11: 11px;
+  --text-caption-11--line-height: 16px;
+  --text-caption-11--letter-spacing: 0px;
+
+  --text-overline-12: 12px;
+  --text-overline-12--line-height: 16px;
+  --text-overline-12--letter-spacing: 1.2px;
+  --text-overline-12--font-weight: 700;
 }
 
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+html {
+  background: #efece3;
 }
 
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: var(--font-sans);
+  color: var(--color-text-primary);
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Figma frames are fixed-width device screens; keep their internal
+   scroll contained rather than bubbling to the page. */
+.screen-scroll {
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  scrollbar-width: none;
+}
+.screen-scroll::-webkit-scrollbar {
+  display: none;
+}
+
+/* The bare /preview routes must not inherit the gallery's page backdrop. */
+body:has(> main) {
+  background: transparent;
+}
+
+/* ── Prototype (/proto) ─────────────────────────────────────────────── */
+
+.proto-root {
+  overscroll-behavior: none;
+  touch-action: manipulation;
+  -webkit-user-select: none;
+  user-select: none;
+}
+.proto-root input {
+  -webkit-user-select: text;
+  user-select: text;
+}
+
+/* Hotspots press in slightly, like a native tap. */
+.proto-tap {
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+  transition:
+    transform 120ms ease,
+    filter 120ms ease;
+}
+.proto-tap:not(:disabled):active {
+  transform: scale(0.97);
+  filter: brightness(0.96);
+}
+.proto-tap:disabled {
+  cursor: default;
+}
+.proto-tap:focus-visible {
+  outline: 2px solid var(--color-brand-secondary);
+  outline-offset: 2px;
+}
+
+.proto-push {
+  animation: proto-push 280ms cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+.proto-pop {
+  animation: proto-pop 280ms cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+.proto-fade {
+  animation: proto-fade 220ms ease-out;
+}
+.proto-fade-in {
+  animation: proto-fade 220ms ease-out;
+}
+.proto-sheet-in {
+  animation: proto-sheet-in 320ms cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+.proto-drawer-in {
+  animation: proto-drawer-in 280ms cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+.proto-toast-in {
+  animation: proto-toast-in 240ms cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+.proto-spinner {
+  animation: proto-spin 800ms linear infinite;
+}
+
+@keyframes proto-push {
+  from {
+    transform: translateX(28%);
+    opacity: 0;
+  }
+}
+@keyframes proto-pop {
+  from {
+    transform: translateX(-20%);
+    opacity: 0;
+  }
+}
+@keyframes proto-fade {
+  from {
+    opacity: 0;
+  }
+}
+@keyframes proto-sheet-in {
+  from {
+    transform: translateY(600px);
+  }
+}
+@keyframes proto-drawer-in {
+  from {
+    transform: translateX(100%);
+  }
+}
+@keyframes proto-toast-in {
+  from {
+    transform: translateY(12px);
+    opacity: 0;
+  }
+}
+@keyframes proto-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .proto-push,
+  .proto-pop,
+  .proto-fade,
+  .proto-fade-in,
+  .proto-sheet-in,
+  .proto-drawer-in,
+  .proto-toast-in {
+    animation: none;
+  }
 }
