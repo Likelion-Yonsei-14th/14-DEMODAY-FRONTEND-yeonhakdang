@@ -15,16 +15,15 @@ import { MascotTipSmall } from "@/components/result/ResultSections";
 import { Chip } from "@/components/ui/Chip";
 import { SectionTitle } from "@/components/ui/SectionTitle";
 
-/** Figma: 6-2 귀인 · 상품 상세 (29:1386) — a 1656px-tall frame. */
+/** Figma: 6-2 귀인 · 상품 상세 (29:1386). */
 export function ProductBenefactor() {
   return (
-    <Screen height={1656} bleed>
+    <Screen height={1818} bleed contentSized>
       <ProductHero
         height={372}
         badge="새내기 인간관계 미리보기"
         title={"앞으로 만나게될\n나의 귀인은?"}
         subtitle="관계별 잘 맞는 사람과 만나는 시기"
-        price={{ price: "1,900원", unit: "단건" }}
         pose="threeQuarter"
         poseInner={{ left: -13.24, top: -1.99, width: 176.471, height: 160.991 }}
         sparkles={[
@@ -35,24 +34,24 @@ export function ProductBenefactor() {
       />
       <TopBar
         title="​"
-        backIcon="icon-back-light"
+        backIcon="product-icon-back"
         className="absolute left-0 top-[54px]"
       />
 
       {/* content (29:1422) */}
-      <div className="flex w-[393px] flex-col items-start gap-[32px] overflow-clip px-[24px] pb-[200px] pt-[28px]">
+      <div className="flex w-[393px] shrink-0 flex-col items-start gap-[32px] overflow-clip px-[24px] pb-[200px] pt-[28px]">
         <MascotTipSmall>{"네 대학 생활을 바꿀\n사람을 미리 알려줄게"}</MascotTipSmall>
 
         <FeatureList
           rows={[
             {
-              icon: "icon-user",
+              icon: "product-icon-user",
               title: "관계 유형별 귀인",
               caption:
                 "선배 · 동기 · 교수님 · 연인, 원하는 관계를 골라요\n대학교 밖에서 찾아 오는 인연도 포함 이에요",
             },
             {
-              icon: "icon-calendar",
+              icon: "product-icon-calendar",
               title: "만나는 시기",
               caption: "귀인 운이 열리는 달과 장소 힌트",
               width: 300,
@@ -102,9 +101,9 @@ export function ProductBenefactor() {
 
       <PriceBottomCta
         product="benefactor"
-        className="absolute left-0 top-[1485px]"
+        className="absolute left-0 top-[1647px]"
       />
-      <BottomNav active="benefactor" className="absolute left-0 top-[1566px]" />
+      <BottomNav productAssets active="benefactor" className="absolute left-0 top-[1728px]" />
     </Screen>
   );
 }

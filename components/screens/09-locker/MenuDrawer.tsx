@@ -73,7 +73,7 @@ export function DrawerPanel({ onClose }: { onClose: () => void }) {
   return (
     <div
       className={cn(
-        "absolute left-[93px] top-0 flex w-[300px] flex-col items-start overflow-clip bg-bg-base shadow-sheet",
+        "screen-scroll absolute left-[93px] top-0 flex w-[300px] flex-col items-start overflow-x-clip bg-bg-base shadow-sheet",
         // In the app the drawer runs the full height, inside the notch insets.
         viewport ? "bottom-0" : "h-[852px] pb-[34px] pt-[54px]",
         proto.active && "proto-drawer-in",
@@ -120,16 +120,9 @@ export function DrawerPanel({ onClose }: { onClose: () => void }) {
         label="유료 상품 · 3종 패키지"
         onPress={then(() => proto.openProduct("compat", "package"))}
       />
-      <DrawerRow
-        icon="icon-info-20"
-        label="공지 · 자주 묻는 질문"
-        onPress={then(() => proto.toast("공지 · FAQ는 준비 중이에요"))}
-      />
-      <DrawerRow
-        icon="icon-lock-20"
-        label="이용약관 · 개인정보 처리방침"
-        onPress={then(() => proto.toast("약관 전문은 준비 중이에요"))}
-      />
+
+      <DrawerRow icon="icon-info-20" label="환불 정책" onPress={then(() => proto.go("10-1"))} />
+      <DrawerRow icon="icon-info-20" label="고객센터 · 환불 신청" onPress={then(() => proto.go("10-2"))} />
 
       <div className="min-h-px w-[10px] flex-1" />
 

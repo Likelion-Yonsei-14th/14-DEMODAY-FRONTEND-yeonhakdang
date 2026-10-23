@@ -15,16 +15,15 @@ import {
 import { MascotTipSmall } from "@/components/result/ResultSections";
 import { SectionTitle } from "@/components/ui/SectionTitle";
 
-/** Figma: 6-1 합격 궁합 · 상품 상세 (29:1220) — a 1634px-tall frame. */
+/** Figma: 6-1 합격 궁합 · 상품 상세 (29:1220). */
 export function ProductCompat() {
   return (
-    <Screen height={1634} bleed>
+    <Screen height={1796} bleed contentSized>
       <ProductHero
         height={372}
         badge="원서 접수 전 필수"
         title={"지원한 대학과 나,\n합격 궁합은?"}
-        subtitle="대학별 궁합 점수와 합격 기운 타임라인"
-        price={{ price: "2,900원", unit: "단건" }}
+        subtitle="대학별 합격 기운 지수와 주 단위 타임라인"
         pose="flying"
         poseInner={{ left: -4.41, top: 8.34, width: 158.824, height: 150.663 }}
         sparkles={[
@@ -35,12 +34,12 @@ export function ProductCompat() {
       />
       <TopBar
         title="​"
-        backIcon="icon-back-light"
+        backIcon="product-icon-back"
         className="absolute left-0 top-[54px]"
       />
 
       {/* content (29:1256) */}
-      <div className="flex w-[393px] flex-col items-start gap-[32px] overflow-clip px-[24px] pb-[200px] pt-[28px]">
+      <div className="flex w-[393px] shrink-0 flex-col items-start gap-[32px] overflow-clip px-[24px] pb-[200px] pt-[28px]">
         <MascotTipSmall>
           {"원서 쓰기 전에\n기운 좋은 대학을 골라줄게!"}
         </MascotTipSmall>
@@ -48,12 +47,12 @@ export function ProductCompat() {
         <FeatureList
           rows={[
             {
-              icon: "icon-crown-22",
-              title: "대학별 합격 궁합 점수",
+              icon: "product-icon-crown",
+              title: "대학별 합격 기운 지수",
               caption: "지원 대학 최대 6곳, 내 사주와 학교 기운을 비교해요",
             },
             {
-              icon: "icon-calendar",
+              icon: "product-icon-calendar",
               title: "월·주 단위 합격 기운 타임라인",
               caption: "원서 접수부터 발표까지 기운이 오르는 시기",
             },
@@ -90,9 +89,9 @@ export function ProductCompat() {
 
       <PriceBottomCta
         product="compat"
-        className="absolute left-0 top-[1463px]"
+        className="absolute left-0 top-[1625px]"
       />
-      <BottomNav active="compat" className="absolute left-0 top-[1544px]" />
+      <BottomNav productAssets active="compat" className="absolute left-0 top-[1706px]" />
     </Screen>
   );
 }

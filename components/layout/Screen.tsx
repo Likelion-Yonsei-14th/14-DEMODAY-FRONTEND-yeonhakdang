@@ -137,12 +137,15 @@ export function Screen({
   height = SCREEN_HEIGHT,
   bleed = false,
   fit = false,
+  contentSized = false,
 }: {
   children: React.ReactNode;
   className?: string;
   height?: number;
   bleed?: boolean;
   fit?: boolean;
+  /** Let long content determine the frame height without compressing its rows. */
+  contentSized?: boolean;
 }) {
   const { active } = useProto();
   const viewport = useContext(ViewportContext);
@@ -169,7 +172,7 @@ export function Screen({
           "relative flex w-[393px] shrink-0 flex-col overflow-hidden bg-bg-base",
           className,
         )}
-        style={{ height }}
+        style={contentSized ? { minHeight: height } : { height }}
       >
         {children}
       </div>
@@ -187,7 +190,7 @@ export function Screen({
       : (dockFrom ?? SCREEN_HEIGHT - HOME_INDICATOR);
 
   const frame: CSSProperties = {
-    height: frameHeight,
+    ...(contentSized ? { minHeight: frameHeight } : { height: frameHeight }),
     marginTop: offset,
     paddingTop: bleed ? 0 : STATUS_BAR,
   };

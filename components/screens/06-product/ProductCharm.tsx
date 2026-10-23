@@ -15,16 +15,15 @@ import {
 import { MascotTipSmall } from "@/components/result/ResultSections";
 import { SectionTitle } from "@/components/ui/SectionTitle";
 
-/** Figma: 6-3 부적 · 상품 상세 (29:1541) — a 1612px-tall frame. */
+/** Figma: 6-3 부적 · 상품 상세 (29:1541). */
 export function ProductCharm() {
   return (
-    <Screen height={1612} bleed>
+    <Screen height={1774} bleed contentSized>
       <ProductHero
         height={372}
         badge="D-30 합격 기운 충전"
         title={"행운 가득 담은\n배경화면 부적"}
-        subtitle="연애운·금전운·학업운·건강운 전반 상승!"
-        price={{ price: "990원", unit: "단건" }}
+        subtitle="내 오행으로 그린 나만의 합격 기운 배경화면"
         pose="happy"
         poseInner={{ left: 4.41, top: 63.53, width: 141.176, height: 95.468 }}
         poseInnerClassName="rounded-[24px] bg-bg-base"
@@ -36,28 +35,28 @@ export function ProductCharm() {
       />
       <TopBar
         title="​"
-        backIcon="icon-back-light"
+        backIcon="product-icon-back"
         className="absolute left-0 top-[54px]"
       />
 
       {/* content (29:1577) */}
-      <div className="flex w-[393px] flex-col items-start gap-[32px] overflow-clip px-[24px] pb-[200px] pt-[28px]">
+      <div className="flex w-[393px] shrink-0 flex-col items-start gap-[32px] overflow-clip px-[24px] pb-[200px] pt-[28px]">
         <MascotTipSmall>{"매일 보는 잠금화면에\n합격 기운을 붙여 줄게"}</MascotTipSmall>
 
         <FeatureList
           rows={[
             {
-              icon: "icon-image",
+              icon: "product-icon-image",
               title: "내 오행으로 그린 부적",
               caption: "내 사주에 부족한 기운을 채우는 색과 문양 \n규칙으로 맞춤 생성",
             },
             {
-              icon: "icon-gift",
+              icon: "product-icon-gift",
               title: "고화질 배경화면 저장",
               caption: "아이폰 잠금화면 비율 그대로 저장돼요",
             },
             {
-              icon: "icon-refresh",
+              icon: "product-icon-refresh",
               title: "마음에 들 때까지 다시 뽑기",
               caption: "최대 3번까지 새로 그릴 수 있어요",
             },
@@ -96,9 +95,9 @@ export function ProductCharm() {
 
       <PriceBottomCta
         product="charm"
-        className="absolute left-0 top-[1441px]"
+        className="absolute left-0 top-[1603px]"
       />
-      <BottomNav active="charm" className="absolute left-0 top-[1522px]" />
+      <BottomNav productAssets active="charm" className="absolute left-0 top-[1684px]" />
     </Screen>
   );
 }
