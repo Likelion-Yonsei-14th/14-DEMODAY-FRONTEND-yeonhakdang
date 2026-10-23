@@ -159,7 +159,7 @@ export function LockerMy() {
           <ListItem
             label="구매 내역"
             value={`${boughtCount}건`}
-            onPress={() => proto.toast("구매 내역은 준비 중이에요")}
+            onPress={() => proto.go("10-2")}
           />
           <ListItem label="내 정보 수정" value="이름 · 생년월일" onPress={() => proto.go("2-1")} />
           <ListItem label="로그아웃" value="" onPress={logout} />

@@ -53,31 +53,6 @@ export function MascotStage({
   );
 }
 
-/** Figma: Pattern/Product/Price Tag (73:2619). */
-export function PriceTag({
-  price,
-  unit,
-  className,
-}: {
-  price: string;
-  unit: string;
-  className?: string;
-}) {
-  return (
-    <div
-      className={cn(
-        "relative flex items-baseline gap-[6px] overflow-clip whitespace-nowrap",
-        className,
-      )}
-    >
-      <p className="relative shrink-0 font-serif text-score-28 text-brand-accent">
-        {price}
-      </p>
-      <p className="relative shrink-0 text-caption-12 text-brand-accent-tint">{unit}</p>
-    </div>
-  );
-}
-
 /**
  * Figma: hero (e.g. 29:1232) — the navy product masthead that the status bar
  * and a white-glyph top bar sit on top of.
@@ -87,7 +62,6 @@ export function ProductHero({
   badge,
   title,
   subtitle,
-  price,
   pose,
   poseInner,
   poseInnerClassName,
@@ -98,7 +72,6 @@ export function ProductHero({
   badge: string;
   title: string;
   subtitle: string;
-  price: { price: string; unit: string };
   pose: MascotPose;
   poseInner: { left: number; top: number; width: number; height: number };
   poseInnerClassName?: string;
@@ -115,10 +88,10 @@ export function ProductHero({
       style={{ height }}
     >
       <div className="absolute left-[170px] top-[-40px] size-[360px]">
-        <Image src="/assets/hero-ring.svg" alt="" width={360} height={360} unoptimized className="block size-full" />
+        <Image src="/assets/product-hero-ring.svg" alt="" width={360} height={360} unoptimized className="block" />
       </div>
       <div className="absolute left-[204px] top-[-4px] size-[280px] opacity-50">
-        <Image src="/assets/hero-halo.png" alt="" width={280} height={280} className="block size-full" />
+        <Image src="/assets/hero-halo.png" alt="" width={280} height={280} loading="eager" className="block size-full" />
       </div>
 
       <MascotStage
@@ -128,14 +101,17 @@ export function ProductHero({
         className="absolute left-[219px] top-[66px]"
       />
 
-      <Chip type="gold" label={badge} className="absolute left-[24px] top-[170px]" />
-      <div className="absolute left-[24px] top-[210px] whitespace-pre-line font-serif text-h1-26 text-text-inverse">
-        {title}
+      <div className="absolute left-[24px] top-[223px] flex flex-col items-start gap-[12px]">
+        <Chip type="gold" label={badge} />
+        <div>
+          <h1 className="whitespace-pre-line font-serif text-h1-26 text-text-inverse">
+            {title}
+          </h1>
+          <p className="whitespace-nowrap text-body-m-14 text-brand-accent-tint">
+            {subtitle}
+          </p>
+        </div>
       </div>
-      <p className="absolute left-[24px] top-[282px] whitespace-nowrap text-body-m-14 text-brand-accent-tint">
-        {subtitle}
-      </p>
-      <PriceTag {...price} className="absolute left-[24px] top-[312px]" />
 
       {sparkles.map(({ left, top, size }) => (
         <p
@@ -237,7 +213,7 @@ export function LockNotice({ className }: { className?: string }) {
         className,
       )}
     >
-      <Icon name="icon-lock" size={16} />
+      <Icon name="product-icon-lock" size={16} />
       <p className="relative shrink-0 whitespace-nowrap text-[12px] font-bold leading-[18px] text-text-inverse">
         구매하면 전체 결과가 열려요
       </p>
@@ -273,7 +249,7 @@ export function OptionProduct({
           : "border border-line-default bg-surface-default",
       )}
     >
-      <Icon name={selected ? "radio-on" : "radio-off"} size={22} />
+      <Icon name={selected ? "product-radio-on" : "product-radio-off"} size={22} />
       <div className="relative flex min-w-px flex-1 flex-col items-start gap-[2px] overflow-clip">
         <div className="relative flex shrink-0 items-center gap-[6px] overflow-clip">
           <p className="relative shrink-0 whitespace-nowrap font-bold text-body-l-16">
@@ -349,6 +325,7 @@ export function PurchaseOptions({
 
 /** Figma: Pattern/Product/Notice Box (74:3262). */
 export function ProductNoticeBox({ className }: { className?: string }) {
+  const proto = useProto();
   return (
     <div
       className={cn(
@@ -360,14 +337,21 @@ export function ProductNoticeBox({ className }: { className?: string }) {
         구매 전 확인해 주세요
       </p>
       {[
-        "· 결과는 구매 즉시 생성되어 보관함에 저장돼요.",
-        "· 결과를 열람하기 전에는 환불을 요청할 수 있어요.",
-        "· 사주 결과는 참고용 콘텐츠이며 합격을 보장하지 않아요.",
-      ].map((line) => (
-        <p key={line} className="relative w-[313px] shrink-0 text-text-tertiary">
-          {line}
+        ["서비스 제공기간", "결제 즉시(약 1분 내) 생성돼요. 보관함에서 회원 탈퇴 전까지 언제든 다시 볼 수 있어요."],
+        ["취소", "결과를 열어보기 전이라면 결제일부터 7일 이내 전액 취소·환불돼요."],
+        ["환불", "결과를 연 뒤에는 디지털 콘텐츠 특성상 단순 변심 환불이 제한돼요(전자상거래법 제17조 제2항 제5호). 3종 패키지는 열지 않은 상품만큼 부분 환불돼요."],
+        ["교환", "디지털 콘텐츠라 교환은 없어요. 열기 전 입력 정보가 잘못됐다면 환불 후 다시 구매할 수 있어요."],
+      ].map(([label, description]) => (
+        <p key={label} className="relative w-full shrink-0 whitespace-pre-wrap text-text-tertiary">
+          · <strong>{label}</strong>{"  "}{description}
         </p>
       ))}
+      <p className="relative w-full shrink-0 text-text-tertiary">
+        · 사주 결과는 참고용 콘텐츠이며 합격을 보장하지 않아요.
+      </p>
+      <Tap onPress={() => proto.go("10-1")} className="w-full font-bold text-brand-secondary">
+        환불 정책 전체 보기 ›
+      </Tap>
     </div>
   );
 }
@@ -400,7 +384,7 @@ export function PriceBottomCta({
             <p className="relative shrink-0 text-h3-18">{price}</p>
           </div>
           <Button
-            label={`${price} 결제하기`}
+            label="확인하러 가기"
             onPress={() => {
               proto.update({ product });
               proto.go(purchaseSteps({ product, plan })[0]);

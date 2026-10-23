@@ -36,6 +36,8 @@ import { LockerMy } from "@/components/screens/09-locker/LockerMy";
 import { MenuDrawer } from "@/components/screens/09-locker/MenuDrawer";
 import { NetworkError } from "@/components/screens/09-locker/NetworkError";
 import { NotFound } from "@/components/screens/09-locker/NotFound";
+import { RefundPolicy } from "@/components/screens/10-policy/RefundPolicy";
+import { PurchaseHistory } from "@/components/screens/10-policy/PurchaseHistory";
 
 export type ScreenDef = {
   /** Figma frame number, e.g. "1-1" — also the prototype URL hash. */
@@ -315,6 +317,25 @@ export const SECTIONS: SectionDef[] = [
         name: "9-5 상단 메뉴 · 드로어 (보관함 진입)",
         nodeId: "34:2004",
         Component: MenuDrawer,
+      },
+    ],
+  },
+  {
+    id: "10",
+    name: "10 정책 · 고객센터 (PG 심사 대응)",
+    nodeId: "226:3212",
+    screens: [
+      {
+        id: "10-1",
+        name: "10-1 환불 정책 (약관 링크·푸터·상품 상세에서 진입)",
+        nodeId: "226:3213",
+        Component: RefundPolicy,
+      },
+      {
+        id: "10-2",
+        name: "10-2 구매 내역 · 환불 신청 (보관함·드로어에서 진입)",
+        nodeId: "226:3325",
+        Component: PurchaseHistory,
       },
     ],
   },

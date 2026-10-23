@@ -156,9 +156,13 @@ export function MascotTipSmall({
 }) {
   return (
     <div
-      className={cn("relative flex items-center gap-[6px] overflow-clip", className)}
+      className={cn("relative flex shrink-0 items-center gap-[6px] overflow-clip", className)}
     >
-      <MascotFaceBadge size={40} className="border-2" />
+      <MascotFaceBadge
+        size={40}
+        className="border-2"
+        imageInsets={{ top: 0, right: 0, bottom: 0, left: 0 }}
+      />
       <SpeechBubble tail="left" className="shrink-0">
         {children}
       </SpeechBubble>

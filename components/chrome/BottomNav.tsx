@@ -36,9 +36,11 @@ function openTab(proto: Proto, tab: NavTabId) {
 export function BottomNav({
   active,
   className,
+  productAssets = false,
 }: {
   active: NavTabId;
   className?: string;
+  productAssets?: boolean;
 }) {
   const proto = useProto();
   return (
@@ -58,7 +60,7 @@ export function BottomNav({
               onPress={() => openTab(proto, id)}
               className="relative flex h-[56px] w-[70px] shrink-0 flex-col items-center justify-center gap-[4px]"
             >
-              <Icon name={id === active ? `${icon}-active` : icon} />
+              <Icon name={`${productAssets ? "product-" : ""}${id === active ? `${icon}-active` : icon}`} />
               <p
                 className={cn(
                   "relative shrink-0 whitespace-nowrap text-[11px] leading-[16px]",

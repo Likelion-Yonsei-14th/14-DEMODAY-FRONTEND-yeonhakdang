@@ -9,9 +9,11 @@ import { cn } from "@/lib/cn";
 export function MascotFaceBadge({
   className,
   size = 40,
+  imageInsets,
 }: {
   className?: string;
   size?: number;
+  imageInsets?: React.CSSProperties;
 }) {
   return (
     <div
@@ -21,12 +23,13 @@ export function MascotFaceBadge({
       )}
       style={{ width: size, height: size }}
     >
-      <div className="absolute bottom-[-16%] left-[-5%] right-[-5%] top-[2%]">
+      <div className="absolute bottom-[-16%] left-[-5%] right-[-5%] top-[2%]" style={imageInsets}>
         <Image
           src="/assets/mascot-face.png"
           alt=""
           fill
-          sizes="96px"
+          unoptimized
+          sizes={`${size}px`}
           className="pointer-events-none object-cover"
         />
       </div>
