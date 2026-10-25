@@ -2,13 +2,16 @@
 
 import { createContext, useContext } from "react";
 
+import { PACKAGE_PRICE, PRODUCTS, type ProductKind } from "@/lib/catalog";
+
 /**
  * Prototype runtime. The shell at `/` provides a live context. Without it
  * (the default below) a screen renders in its static Figma state and taps are
  * no-ops — kept so each screen still matches its frame in isolation.
  */
 
-export type ProductKind = "compat" | "benefactor" | "charm";
+// Prices live in the catalog, which server pages share.
+export { PACKAGE_PRICE, PRODUCTS, won, type ProductKind } from "@/lib/catalog";
 export type Plan = "single" | "package";
 export type Relation = "선배" | "동기" | "교수님" | "연인";
 
@@ -79,28 +82,6 @@ export const INITIAL_STATE: ProtoState = {
   purchased: { compat: false, benefactor: false, charm: false },
   charmRerolls: 3,
 };
-
-export const PRODUCTS: Record<
-  ProductKind,
-  {
-    name: string;
-    single: string;
-    price: number;
-    glyph: string;
-    detail: string;
-    result: string;
-  }
-> = {
-  compat: { name: "합격 궁합", single: "합격 궁합 단건", price: 2900, glyph: "合", detail: "6-1", result: "8-1" },
-  benefactor: { name: "귀인", single: "귀인 단건", price: 1900, glyph: "貴", detail: "6-2", result: "8-2" },
-  charm: { name: "부적", single: "부적 단건", price: 990, glyph: "符", detail: "6-3", result: "8-3" },
-};
-
-export const PACKAGE_PRICE = 3790;
-
-export function won(n: number): string {
-  return `${n.toLocaleString("ko-KR")}원`;
-}
 
 export function orderPrice(s: Pick<ProtoState, "product" | "plan">): number {
   return s.plan === "package" ? PACKAGE_PRICE : PRODUCTS[s.product].price;

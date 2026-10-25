@@ -14,6 +14,7 @@ import {
 } from "@/components/product/ProductSections";
 import { MascotTipSmall } from "@/components/result/ResultSections";
 import { SectionTitle } from "@/components/ui/SectionTitle";
+import { PACKAGE_PRICE, SINGLES_TOTAL, won } from "@/lib/catalog";
 
 /** Figma: 6-1 합격 궁합 · 상품 상세 (29:1220). */
 export function ProductCompat() {
@@ -77,7 +78,7 @@ export function ProductCompat() {
         </div>
 
         <PurchaseOptions
-          caption="3종 패키지로 사면 2,000원 아껴요"
+          caption={`3종 패키지로 사면 ${won(SINGLES_TOTAL - PACKAGE_PRICE)} 아껴요`}
           single={{
             title: "합격 궁합 단건",
             description: "대학 최대 6곳 · 타임라인 포함",

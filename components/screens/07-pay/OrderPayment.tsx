@@ -12,6 +12,7 @@ import { CheckboxRow } from "@/components/ui/CheckboxRow";
 import { HintText } from "@/components/ui/HintText";
 import { Icon } from "@/components/ui/Icon";
 import { Tap } from "@/components/ui/Tap";
+import { openPolicy } from "@/lib/business";
 import { cn } from "@/lib/cn";
 import {
   PACKAGE_PRICE,
@@ -212,7 +213,7 @@ export function OrderPayment() {
           checked={agreed}
           showMore
           onToggle={() => setAgreed(!agreed)}
-          onMore={() => proto.toast("주문 약관은 준비 중이에요")}
+          onMore={() => openPolicy("/refund")}
         />
 
         <div className="relative flex w-[345px] shrink-0 items-center justify-between overflow-clip whitespace-nowrap pt-[4px] font-bold">

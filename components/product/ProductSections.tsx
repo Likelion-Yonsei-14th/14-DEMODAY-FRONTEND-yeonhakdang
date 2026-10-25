@@ -10,6 +10,7 @@ import { Icon } from "@/components/ui/Icon";
 import { SectionTitle } from "@/components/ui/SectionTitle";
 import { Tap } from "@/components/ui/Tap";
 import { cn } from "@/lib/cn";
+import { SINGLES_TOTAL } from "@/lib/catalog";
 import {
   PACKAGE_PRICE,
   orderPrice,
@@ -314,7 +315,7 @@ export function PurchaseOptions({
         title="3종 패키지"
         description="합격 궁합 + 귀인 + 부적"
         price={won(PACKAGE_PRICE)}
-        original="5,790원"
+        original={won(SINGLES_TOTAL)}
         badge="35% 할인"
         selected={state.plan === "package"}
         onPress={() => update({ plan: "package" })}

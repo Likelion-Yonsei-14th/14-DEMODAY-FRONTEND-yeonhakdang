@@ -10,14 +10,15 @@ import { Button } from "@/components/ui/Button";
 import { CheckboxRow } from "@/components/ui/CheckboxRow";
 import { Icon } from "@/components/ui/Icon";
 import { Tap } from "@/components/ui/Tap";
+import { openPolicy } from "@/lib/business";
 import { cn } from "@/lib/cn";
 import { useProto } from "@/lib/proto";
 
 const TERMS = [
-  { label: "[필수] 만 14세 이상이에요", required: true, more: false },
-  { label: "[필수] 서비스 이용약관", required: true, more: true },
-  { label: "[필수] 개인정보(생년월일·출생시간) 수집·이용", required: true, more: true },
-  { label: "[선택] 합격 기운·이벤트 소식 받기", required: false, more: true },
+  { label: "[필수] 만 14세 이상이에요", required: true },
+  { label: "[필수] 서비스 이용약관", required: true, href: "/terms" },
+  { label: "[필수] 개인정보(생년월일·출생시간) 수집·이용", required: true, href: "/privacy" },
+  { label: "[선택] 합격 기운·이벤트 소식 받기", required: false, href: "/privacy" },
 ];
 
 /** Figma: 2-5 약관 동의 · 바텀시트 (최초 로그인) (22:377) */
@@ -70,9 +71,9 @@ export function TermsSheet() {
                   key={term.label}
                   label={term.label}
                   checked={checks[i]}
-                  showMore={term.more}
+                  showMore={!!term.href}
                   onToggle={() => toggle(i)}
-                  onMore={() => proto.toast("약관 전문은 준비 중이에요")}
+                  onMore={() => term.href && openPolicy(term.href)}
                 />
               ))}
             </div>

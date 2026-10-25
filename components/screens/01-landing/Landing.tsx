@@ -1,10 +1,13 @@
 "use client";
 
 import Image from "next/image";
+import Link from "next/link";
 
 import { TopBar } from "@/components/chrome/TopBar";
 import { Bottom, Screen } from "@/components/layout/Screen";
 import { Mascot } from "@/components/mascot/Mascot";
+import { BusinessFooter } from "@/components/policy/BusinessFooter";
+import { ProductPriceList } from "@/components/public/PriceRows";
 import { SpeechBubble } from "@/components/mascot/SpeechBubble";
 import { FiveElementsChips, type ElementKey } from "@/components/saju/FiveElement";
 import { Button } from "@/components/ui/Button";
@@ -82,11 +85,26 @@ export function LandingContent({
   );
 }
 
-/** Figma: 1-1 랜딩 (19:108) */
+/**
+ * Figma: 1-1 랜딩 (19:108). Below the fold, past the frame, the prices and the
+ * 사업자 정보 footer — the same facts the server-rendered `/` HTML carries.
+ */
 export function Landing() {
+  const { active } = useProto();
   return (
-    <Screen>
+    <Screen contentSized>
       <LandingContent />
+      {/* The frame's own content, absolutely placed, ends where the pinned CTA
+          starts (718); in a static frame the CTA sits in place, so skip it too. */}
+      <div aria-hidden className={active ? "h-[664px] shrink-0" : "h-[798px] shrink-0"} />
+      <section aria-labelledby="landing-prices" className="flex w-full flex-col items-start gap-[12px] px-[24px] pb-[24px] pt-[8px]">
+        <h2 id="landing-prices" className="text-h3-18">유료 상품 및 가격</h2>
+        <ProductPriceList />
+        <Link href="/products" className="text-caption-12 font-bold text-brand-secondary">
+          상품 자세히 보기 ›
+        </Link>
+      </section>
+      <BusinessFooter />
     </Screen>
   );
 }

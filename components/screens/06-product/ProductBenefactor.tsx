@@ -14,6 +14,7 @@ import {
 import { MascotTipSmall } from "@/components/result/ResultSections";
 import { Chip } from "@/components/ui/Chip";
 import { SectionTitle } from "@/components/ui/SectionTitle";
+import { PACKAGE_PRICE, SINGLES_TOTAL, won } from "@/lib/catalog";
 
 /** Figma: 6-2 귀인 · 상품 상세 (29:1386). */
 export function ProductBenefactor() {
@@ -88,7 +89,7 @@ export function ProductBenefactor() {
 
         {/* 구매 옵션 (P-02) (74:3567) */}
         <PurchaseOptions
-          caption="3종 패키지로 사면 2,000원 아껴요"
+          caption={`3종 패키지로 사면 ${won(SINGLES_TOTAL - PACKAGE_PRICE)} 아껴요`}
           single={{
             title: "귀인 단건",
             description: "관계 유형 1개 선택",
