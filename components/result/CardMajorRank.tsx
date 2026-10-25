@@ -45,7 +45,7 @@ export function CardMajorRank({
         </p>
         <div className="relative flex min-w-px flex-1 flex-col items-start gap-[2px] overflow-clip">
           <p className="relative shrink-0 font-bold text-body-l-16">{major}</p>
-          <p className="relative shrink-0 text-caption-12 text-text-secondary">
+          <p className="relative w-full shrink-0 overflow-hidden text-ellipsis text-caption-12 text-text-secondary">
             {college}
           </p>
         </div>

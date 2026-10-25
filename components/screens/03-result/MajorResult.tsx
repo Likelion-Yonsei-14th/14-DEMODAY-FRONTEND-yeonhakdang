@@ -12,8 +12,10 @@ import {
   ResultHero,
   Top3Majors,
 } from "@/components/result/ResultSections";
+import { WhyThisMajor } from "@/components/result/WhyThisMajor";
 import { Toast } from "@/components/ui/Toast";
 import { useProto } from "@/lib/proto";
+import { useAnalysis } from "@/lib/useAnalysis";
 
 /**
  * The 학과 결과 content (25:670). Figma draws this as one tall frame for
@@ -25,16 +27,20 @@ export function MajorResultContent({
 }: {
   heroMascot?: { left: number; top: number; width: number; height: number };
 } = {}) {
+  const { dayMaster, tags, counts, charCount, insight } = useAnalysis();
   return (
     <div className="flex w-[393px] flex-col items-start gap-[32px] px-[24px] pb-[130px] pt-[8px]">
       <ResultHero mascot={heroMascot} />
       <CardType
-        title={"갑목(甲木)\n개척하는 리더형"}
-        description="곧게 뻗는 큰 나무의 기운. 사람을 모으고 방향을 정하는 데 강해, 조직을 이끌고 새 길을 여는 학과에서 빛나요."
-        tags={["#추진력", "#리더십", "#목(木)기운 3개"]}
+        title={`${dayMaster.name}(${dayMaster.hanja})\n${dayMaster.type}`}
+        description={dayMaster.description}
+        tags={tags}
       />
-      <Top3Majors />
-      <ElementDistribution insight="목(木)이 강하고 금(金)이 약해요. 결단과 분석을 돕는 금 기운의 학과·사람을 만나면 균형이 좋아져요." />
+      <div className="flex w-full flex-col gap-[12px]">
+        <Top3Majors />
+        <WhyThisMajor />
+      </div>
+      <ElementDistribution counts={counts} charCount={charCount} insight={insight} />
       <MajorTypeMatch />
       <ResultActions />
       <MoreFromYeonhak />

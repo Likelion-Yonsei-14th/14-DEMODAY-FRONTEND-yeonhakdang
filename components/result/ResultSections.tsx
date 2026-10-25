@@ -10,6 +10,8 @@ import { Button } from "@/components/ui/Button";
 import { SectionTitle } from "@/components/ui/SectionTitle";
 import { cn } from "@/lib/cn";
 import { displayName, rosterScreen, useProto } from "@/lib/proto";
+import { ELEMENT_HANJA } from "@/lib/saju";
+import { useAnalysis } from "@/lib/useAnalysis";
 
 /**
  * Figma: Pattern/Result/Hero (73:2761) — 345×236 headline block.
@@ -24,6 +26,7 @@ export function ResultHero({
   className?: string;
 }) {
   const { state } = useProto();
+  const { dayMaster, strongest } = useAnalysis();
   return (
     <div className={cn("relative h-[236px] w-[345px] shrink-0", className)}>
       <p className="absolute left-0 top-[30px] whitespace-nowrap text-overline-12 text-brand-secondary">
@@ -33,7 +36,7 @@ export function ResultHero({
         {"큰 나무처럼\n길을 여는\n리더형이에요"}
       </div>
       <p className="absolute left-0 top-[166px] whitespace-nowrap text-body-m-14 text-text-secondary">
-        木 기운이 강한 갑목(甲木) 일간
+        {ELEMENT_HANJA[strongest]} 기운이 강한 {dayMaster.name}({dayMaster.hanja}) 일간
       </p>
       <MajorMascot
         className="absolute"
@@ -52,35 +55,9 @@ export function ResultHero({
   );
 }
 
-/** Figma: Pattern/Result/Top 3 Majors (74:3698). */
-export const TOP_MAJORS = [
-  {
-    rank: 1 as const,
-    major: "경영학과",
-    college: "상경대학",
-    score: "94",
-    barRatio: 290.46 / 309,
-    reason: "목(木)의 뻗어나가는 기운과 편재(偏財)가 만나 사람과 자원을 움직이는 힘이 커요.",
-  },
-  {
-    rank: 2 as const,
-    major: "정치외교학과",
-    college: "사회과학대학",
-    score: "89",
-    barRatio: 271.92 / 309,
-    reason: "화(火)의 표현력이 더해져 설득하고 협상하는 자리에서 강점을 보여요.",
-  },
-  {
-    rank: 3 as const,
-    major: "언론홍보영상학부",
-    college: "사회과학대학",
-    score: "86",
-    barRatio: 250.29 / 309,
-    reason: "식신(食神)의 기운이 있어 이야기를 만들고 퍼뜨리는 일과 잘 맞아요.",
-  },
-];
-
+/** Figma: Pattern/Result/Top 3 Majors (74:3698). Scores come from the 학과 표. */
 export function Top3Majors({ className }: { className?: string }) {
+  const { top } = useAnalysis();
   return (
     <div
       className={cn(
@@ -90,10 +67,18 @@ export function Top3Majors({ className }: { className?: string }) {
     >
       <SectionTitle
         title="나에게 맞는 학과 TOP 3"
-        caption="적합도 점수는 오행·십성 분포를 학과 매핑표와 비교해 산출해요"
+        caption="적합도 점수는 오행 분포를 학과 매핑표와 비교해 산출해요"
       />
-      {TOP_MAJORS.map((major) => (
-        <CardMajorRank key={major.rank} {...major} />
+      {top.map((pick, i) => (
+        <CardMajorRank
+          key={pick.major.id}
+          rank={(i + 1) as 1 | 2 | 3}
+          major={pick.major.대표학과[0]}
+          college={`${pick.major.대계열.replace(/계열$/, "")} · ${pick.major.중계열}`}
+          score={String(pick.display)}
+          barRatio={pick.display / 100}
+          reason={pick.major.근거}
+        />
       ))}
     </div>
   );

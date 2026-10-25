@@ -1,0 +1,14 @@
+{
+  "tendencyWeight": 0.7,
+  "complementWeight": 0.3,
+  "presenceShare": 0.5,
+  "dayMasterShare": 0.5,
+  "sameAsDayMaster": 1,
+  "fedByDayMaster": 0.5,
+  "subElementWeight": 0.5,
+  "fillsWeakest": 1,
+  "fillsSecondWeakest": 0.5,
+  "displayMin": 60,
+  "displayMax": 99,
+  "topCount": 3
+}
