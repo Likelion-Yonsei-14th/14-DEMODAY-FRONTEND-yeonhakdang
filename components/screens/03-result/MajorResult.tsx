@@ -5,6 +5,7 @@ import { TopBar } from "@/components/chrome/TopBar";
 import { Screen, ScreenScroll } from "@/components/layout/Screen";
 import { CardType } from "@/components/result/CardType";
 import { ElementDistribution } from "@/components/result/ElementDistribution";
+import { typeTone } from "@/components/result/elementTone";
 import {
   MajorTypeMatch,
   MoreFromYeonhak,
@@ -35,6 +36,7 @@ export function MajorResultContent({
         title={`${dayMaster.name}(${dayMaster.hanja})\n${dayMaster.type}`}
         description={dayMaster.description}
         tags={tags}
+        tone={typeTone(dayMaster.name)}
       />
       <div className="flex w-full flex-col gap-[12px]">
         <Top3Majors />

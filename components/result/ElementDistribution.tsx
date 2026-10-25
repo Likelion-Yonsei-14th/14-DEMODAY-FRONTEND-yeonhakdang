@@ -2,6 +2,8 @@ import { SectionTitle } from "@/components/ui/SectionTitle";
 import { cn } from "@/lib/cn";
 import { ELEMENTS, ELEMENT_HANJA, type Element } from "@/lib/saju";
 
+import { ELEMENT_FILL } from "@/components/result/elementTone";
+
 /** Figma: Pattern/Result/Element Row (74:2453) + Element Track (73:2808). */
 export type ElementBar = {
   /** e.g. "木 목" */
@@ -13,21 +15,13 @@ export type ElementBar = {
   ratio: number;
 };
 
-const FILL: Record<Element, string> = {
-  목: "bg-brand-secondary",
-  화: "bg-brand-primary",
-  토: "bg-brand-accent",
-  금: "bg-line-strong",
-  수: "bg-brand-secondary-light",
-};
-
 /** One bar per element; the most common element fills the track. */
 export function elementBars(counts: Record<Element, number>): ElementBar[] {
   const max = Math.max(1, ...ELEMENTS.map((e) => counts[e]));
   return ELEMENTS.map((e) => ({
     label: `${ELEMENT_HANJA[e]} ${e}`,
     count: String(counts[e]),
-    fillClass: FILL[e],
+    fillClass: ELEMENT_FILL[e],
     ratio: counts[e] / max,
   }));
 }
