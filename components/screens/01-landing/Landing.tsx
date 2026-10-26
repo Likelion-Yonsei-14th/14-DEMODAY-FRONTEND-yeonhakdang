@@ -72,7 +72,7 @@ export function LandingContent({
         <Button
           label="무료로 내 학과 찾기"
           onPress={() => {
-            proto.update({ invited: false });
+            proto.update({ inviter: null });
             proto.go("2-1");
           }}
           className="absolute left-[24px] top-[718px] w-[345px]"

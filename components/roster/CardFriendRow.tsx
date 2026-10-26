@@ -46,8 +46,8 @@ export function CardFriendRow({
         </p>
       </div>
       <div className="relative flex min-w-px flex-1 flex-col items-start gap-[2px] overflow-clip">
-        <div className="relative flex shrink-0 items-center gap-[6px] overflow-clip">
-          <p className="relative shrink-0 whitespace-nowrap font-bold text-body-l-16">
+        <div className="relative flex max-w-full shrink-0 items-center gap-[6px] overflow-clip">
+          <p className="relative min-w-0 truncate font-bold text-body-l-16">
             {name}
           </p>
           <RankLabel rank={rank} />
@@ -59,7 +59,7 @@ export function CardFriendRow({
             </div>
           )}
         </div>
-        <p className="relative shrink-0 whitespace-nowrap text-caption-12 text-text-secondary">
+        <p className="relative max-w-full shrink-0 truncate text-caption-12 text-text-secondary">
           {sub}
         </p>
       </div>

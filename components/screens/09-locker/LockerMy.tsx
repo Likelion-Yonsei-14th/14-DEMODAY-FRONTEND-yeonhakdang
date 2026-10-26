@@ -15,6 +15,7 @@ import {
   useProto,
   type ProductKind,
 } from "@/lib/proto";
+import { useRoster } from "@/lib/useRoster";
 
 /**
  * Figma: Pattern/Locker/Result Row (74:2567) — 36px badge + title/caption and
@@ -55,7 +56,7 @@ function LockerRow({
       </div>
       <div className="relative flex min-w-px flex-1 flex-col items-start overflow-clip whitespace-nowrap">
         <p className="relative shrink-0 font-bold text-body-m-14">{title}</p>
-        <p className="relative shrink-0 text-caption-12 text-text-tertiary">
+        <p className="relative max-w-full shrink-0 truncate text-caption-12 text-text-tertiary">
           {caption}
         </p>
       </div>
@@ -78,6 +79,7 @@ const PAID_ROWS: Array<{ kind: ProductKind; icon: string; bought: (relation: str
 export function LockerMy() {
   const proto = useProto();
   const { state } = proto;
+  const roster = useRoster();
   const name = displayName(state);
   const boughtCount = Object.values(state.purchased).filter(Boolean).length;
 
@@ -131,7 +133,11 @@ export function LockerMy() {
           <LockerRow
             icon="icon-user-18"
             title="동기 합격자 명단"
-            caption={rosterScreen(proto) === "4-1" ? "동기 5명 · 수석 민지" : "아직 동기가 없어요"}
+            caption={
+              rosterScreen(proto) === "4-1" && roster.entries[0]
+                ? `동기 ${roster.entries.length}명 · 수석 ${roster.entries[0].name}`
+                : "아직 동기가 없어요"
+            }
             onPress={() => proto.go(rosterScreen(proto))}
           />
           {PAID_ROWS.map(({ kind, icon, bought }) => {

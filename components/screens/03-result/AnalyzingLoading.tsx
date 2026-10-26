@@ -1,7 +1,7 @@
 "use client";
 
 import Image from "next/image";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 import { Screen } from "@/components/layout/Screen";
 import { Mascot } from "@/components/mascot/Mascot";
@@ -10,7 +10,9 @@ import { Chip } from "@/components/ui/Chip";
 import { Icon } from "@/components/ui/Icon";
 import { LoadingStepRow } from "@/components/ui/LoadingStepRow";
 import { ProgressBar } from "@/components/ui/ProgressBar";
-import { useProto, type ProtoState } from "@/lib/proto";
+import { addFriend, friendKey } from "@/lib/friends";
+import { selfAsFriend, useProto, type ProtoState } from "@/lib/proto";
+import { CONTENT } from "@/lib/saju";
 
 /**
  * Figma: 3-1 분석 중 · 로딩 (24:403)
@@ -56,6 +58,10 @@ export function AnalyzingLoading() {
   }, [proto.active, target]);
 
   const { replace, toast, update, state, setDemo } = proto;
+  const stateRef = useRef(state);
+  useEffect(() => {
+    stateRef.current = state;
+  });
   useEffect(() => {
     if (!slow) return;
     const stalled = setTimeout(() => {
@@ -68,12 +74,18 @@ export function AnalyzingLoading() {
   useEffect(() => {
     if (progress < 100) return;
     const done = setTimeout(() => {
-      update({ analyzed: true });
+      const s = stateRef.current;
+      // The friend who invited me goes on my 명단 (not me opening my own link).
+      const inviter = s.inviter && friendKey(s.inviter) !== friendKey(selfAsFriend(s)) ? s.inviter : null;
+      update({
+        analyzed: true,
+        ...(inviter && { friends: addFriend(s.friends, inviter, Date.now()) }),
+      });
       replace("3-4");
-      if (state.invited) toast("민지님과 서로의 합격자 명단에 등록됐어요");
+      if (inviter) toast(`${inviter.name}님이 합격자 명단에 등록됐어요`);
     }, 350);
     return () => clearTimeout(done);
-  }, [progress, replace, toast, update, state.invited]);
+  }, [progress, replace, toast, update]);
 
   const stage = STEP_ENDS.findIndex((end) => progress < end);
   const stepState = (i: number) =>
@@ -146,7 +158,7 @@ export function AnalyzingLoading() {
         <LoadingStepRow
           state={stepState(2)}
           title="학과 매칭 · 적합도 산출"
-          caption={caption(2, "120개 학과와 비교 중")}
+          caption={caption(2, `${CONTENT.majors.length}개 학과와 비교 중`)}
         />
         <LoadingStepRow
           state={stepState(3)}
@@ -155,11 +167,11 @@ export function AnalyzingLoading() {
         />
       </div>
 
-      {state.invited && (
+      {state.inviter && (
         <Chip
           type="gold"
-          className="absolute left-[86px] top-[70px]"
-          label="민지님과의 궁합도 함께 계산하고 있어요"
+          className="absolute left-1/2 top-[70px] max-w-[345px] -translate-x-1/2"
+          label={`${state.inviter.name}님과의 궁합도 함께 계산하고 있어요`}
         />
       )}
     </Screen>

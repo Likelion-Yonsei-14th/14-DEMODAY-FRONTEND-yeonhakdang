@@ -22,3 +22,4 @@ export type { Analysis, ReasonStep } from "./analyze.ts";
 export type { MajorScore } from "./score.ts";
 export { ELEMENTS, ELEMENT_HANJA, elementLabel, type Element } from "./elements.ts";
 export { PILLAR_LABELS } from "./pillars.ts";
+export { compatibility, rankFriends, type Compat, type Rank } from "./compat.ts";

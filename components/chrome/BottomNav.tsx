@@ -37,10 +37,12 @@ export function BottomNav({
   active,
   className,
   productAssets = false,
+  style,
 }: {
   active: NavTabId;
   className?: string;
   productAssets?: boolean;
+  style?: React.CSSProperties;
 }) {
   const proto = useProto();
   return (
@@ -48,6 +50,7 @@ export function BottomNav({
       {(docked) => (
         <div
           data-nav
+          style={docked ? undefined : style}
           className={cn(
             "relative flex h-[60px] w-full shrink-0 items-start justify-between border-t border-line-default bg-surface-default px-[8px] pt-[4px]",
             className,

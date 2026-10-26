@@ -62,10 +62,10 @@ export function LoginKakaoContent() {
         ]}
       />
 
-      {state.invited && (
+      {state.inviter && (
         <Chip
-          className="absolute left-[56px] top-[638px]"
-          label="민지님의 초대가 이어져요 · 로그인 후 명단 자동 등록"
+          className="absolute left-1/2 top-[638px] max-w-[345px] -translate-x-1/2"
+          label={`${state.inviter.name}님의 초대가 이어져요 · 로그인 후 명단 자동 등록`}
         />
       )}
 

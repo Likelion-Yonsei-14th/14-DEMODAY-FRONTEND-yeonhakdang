@@ -36,7 +36,7 @@ export function Chip({
     >
       <p
         className={cn(
-          "relative shrink-0 whitespace-nowrap text-[12px] font-bold leading-[18px]",
+          "relative min-w-0 truncate text-[12px] font-bold leading-[18px]",
           text,
         )}
       >

@@ -2,9 +2,10 @@
 
 import Image from "next/image";
 
-import { RankLabel, type RankKind } from "@/components/roster/RankLabel";
+import { RankLabel } from "@/components/roster/RankLabel";
 import { cn } from "@/lib/cn";
 import { displayName, useProto } from "@/lib/proto";
+import { useRoster } from "@/lib/useRoster";
 
 /**
  * Figma: Share Card / 합격자 명단 · 9:16 (27:1048) — authored at its native
@@ -12,13 +13,8 @@ import { displayName, useProto } from "@/lib/proto";
  */
 export const SHARE_CARD_ROSTER_TALL = { width: 360, height: 640 };
 
-const ROWS: Array<{ name: string; rank: RankKind; score: string }> = [
-  { name: "민지", rank: "수석 동기", score: "92" },
-  { name: "서준", rank: "차석", score: "88" },
-  { name: "하린", rank: "합격", score: "81" },
-  { name: "도윤", rank: "합격", score: "76" },
-  { name: "지우", rank: "추가 합격", score: "64" },
-];
+/** The card fits the top 5. */
+const ROW_COUNT = 5;
 
 export function ShareCardRosterTall({
   scale = 1,
@@ -28,6 +24,7 @@ export function ShareCardRosterTall({
   className?: string;
 }) {
   const owner = displayName(useProto().state);
+  const rows = useRoster().entries.slice(0, ROW_COUNT);
   return (
     <div
       className={cn("relative shrink-0", className)}
@@ -69,9 +66,9 @@ export function ShareCardRosterTall({
 
         {/* 명단 (27:1057) */}
         <div className="absolute left-[28px] top-[186px] flex flex-col items-start overflow-clip rounded-[16px] border-[1.5px] border-brand-accent bg-surface-default shadow-card">
-          {ROWS.map(({ name, rank, score }, i) => (
+          {rows.map(({ key, name, rank, score }, i) => (
             <div
-              key={name}
+              key={key}
               className={cn(
                 "relative flex h-[44px] w-[304px] shrink-0 items-center gap-[10px] overflow-clip px-[16px] py-[11px]",
                 i > 0 && "border-t border-line-default",

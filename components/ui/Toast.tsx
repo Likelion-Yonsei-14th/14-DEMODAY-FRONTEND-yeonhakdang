@@ -12,12 +12,12 @@ export function Toast({
   return (
     <div
       className={cn(
-        "relative flex items-center gap-[8px] rounded-full bg-text-primary py-[12px] pl-[16px] pr-[20px]",
+        "relative flex max-w-[345px] items-center gap-[8px] rounded-full bg-text-primary py-[12px] pl-[16px] pr-[20px]",
         className,
       )}
     >
       <Icon name="icon-check-toast" size={20} />
-      <p className="relative shrink-0 whitespace-nowrap font-bold text-body-m-14 text-text-inverse">
+      <p className="relative min-w-0 truncate font-bold text-body-m-14 text-text-inverse">
         {text}
       </p>
     </div>

@@ -72,7 +72,7 @@ export function MajorResultFull() {
 /** Figma: 3-4 학과 결과 · 첫 화면 (초대 친구 명단 자동 등록 토스트) (25:667) */
 export function MajorResultFirstView() {
   // The prototype raises this toast itself when the analysis finishes.
-  const { active } = useProto();
+  const { active, state } = useProto();
   return (
     <Screen fit>
       <TopBar type="logo" right="icon-menu" />
@@ -83,7 +83,7 @@ export function MajorResultFirstView() {
       {!active && (
         <Toast
           className="absolute left-[42.5px] top-[700px]"
-          text="민지님과 서로의 합격자 명단에 등록됐어요"
+          text={`${state.inviter?.name ?? "친구"}님이 합격자 명단에 등록됐어요`}
         />
       )}
     </Screen>

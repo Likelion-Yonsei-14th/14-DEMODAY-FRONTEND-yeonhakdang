@@ -33,7 +33,7 @@ export function ResultHero({
         {displayName(state)}님의 사주 학과
       </p>
       <div className="absolute left-0 top-[54px] whitespace-pre-line font-serif text-h1-26">
-        {"큰 나무처럼\n길을 여는\n리더형이에요"}
+        {dayMaster.headline}
       </div>
       <p className="absolute left-0 top-[166px] whitespace-nowrap text-body-m-14 text-text-secondary">
         {ELEMENT_HANJA[strongest]} 기운이 강한 {dayMaster.name}({dayMaster.hanja}) 일간

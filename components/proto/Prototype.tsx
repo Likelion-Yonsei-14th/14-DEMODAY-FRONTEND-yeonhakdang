@@ -7,16 +7,20 @@ import { SCREEN_WIDTH, ViewportContext } from "@/components/layout/Screen";
 import { DrawerPanel } from "@/components/screens/09-locker/MenuDrawer";
 import { Toast } from "@/components/ui/Toast";
 import { cn } from "@/lib/cn";
+import { addFriend, decodeInvite, friendKey } from "@/lib/friends";
 import {
   INITIAL_DEMO,
   INITIAL_STATE,
   PRODUCTS,
   ProtoContext,
+  FIGMA_STATE,
   isInAppBrowser,
+  selfAsFriend,
   type DemoFlags,
   type Proto,
   type ProtoState,
 } from "@/lib/proto";
+import { analyzeBirth } from "@/lib/saju";
 import { ALL_SCREENS as SCREENS } from "@/lib/screens";
 
 const SCREEN_IDS = new Set(SCREENS.map((s) => s.id));
@@ -43,6 +47,7 @@ function readHash(): string | undefined {
 }
 
 type Saved = { stack?: string[]; state?: ProtoState; demo?: DemoFlags };
+type Start = { nav: Nav; state: ProtoState; demo: DemoFlags; /** A toast to raise on load. */ notice?: string };
 
 /** Opened inside 카카오톡 / 인스타그램: the 9-4 notice, once per tab. */
 function firstInAppVisit(): boolean {
@@ -55,7 +60,7 @@ function firstInAppVisit(): boolean {
 }
 
 /** The restored session, with the in-app notice laid over it when due. */
-function start(): { nav: Nav; state: ProtoState; demo: DemoFlags } {
+function start(): Start {
   const restored = restore();
   if (!firstInAppVisit()) return restored;
   return { ...restored, nav: { stack: [...restored.nav.stack, "9-4"], op: "reset" } };
@@ -63,9 +68,9 @@ function start(): { nav: Nav; state: ProtoState; demo: DemoFlags } {
 
 /**
  * Restores the last session (so a refresh keeps your place), honouring an
- * invite link (`?invite=1`) or a #id link.
+ * invite link (`?invite=<code>`) or a #id link.
  */
-function restore(): { nav: Nav; state: ProtoState; demo: DemoFlags } {
+function restore(): Start {
   let saved: Saved = {};
   try {
     saved = JSON.parse(localStorage.getItem(STORAGE_KEY) ?? "{}");
@@ -73,20 +78,31 @@ function restore(): { nav: Nav; state: ProtoState; demo: DemoFlags } {
   // No panel sets these any more: a switch left on by an older save would
   // stick, so every session starts with them off.
   const demo = INITIAL_DEMO;
-  if (new URLSearchParams(window.location.search).has("invite")) {
-    // A friend's invite link starts a fresh session on the invite landing.
-    window.history.replaceState(null, "", window.location.pathname);
-    return {
-      nav: { stack: ["1-2"], op: "reset" },
-      state: { ...INITIAL_STATE, invited: true },
-      demo,
-    };
-  }
   const stack = saved.stack?.filter((id) => SCREEN_IDS.has(id)) ?? [];
   const hash = readHash();
   const state = { ...INITIAL_STATE, ...saved.state };
+  const params = new URLSearchParams(window.location.search);
+  if (params.has("invite")) {
+    window.history.replaceState(null, "", window.location.pathname);
+    // A broken or old (`?invite=1`) link falls through to the usual start.
+    const inviter = decodeInvite(params.get("invite"));
+    const self = selfAsFriend(state);
+    if (inviter && friendKey(inviter) !== friendKey(self)) {
+      // Already analyzed: keep my result, just put the inviter on my 명단.
+      if (state.analyzed && analyzeBirth(self).ok) {
+        return {
+          nav: { stack: ["4-1"], op: "reset" },
+          state: { ...state, friends: addFriend(state.friends, inviter, Date.now()) },
+          demo,
+          notice: `${inviter.name}님이 합격자 명단에 등록됐어요`,
+        };
+      }
+      // Otherwise a fresh session on the invite landing.
+      return { nav: { stack: ["1-2"], op: "reset" }, state: { ...INITIAL_STATE, inviter }, demo };
+    }
+  }
   if (hash && hash !== stack.at(-1)) {
-    const fresh = hash === "1-2" ? { ...INITIAL_STATE, invited: true } : state;
+    const fresh = hash === "1-2" ? { ...INITIAL_STATE, inviter: FIGMA_STATE.inviter } : state;
     return { nav: { stack: [hash], op: "reset" }, state: fresh, demo };
   }
   return { nav: { stack: stack.length ? stack : ["1-1"], op: "reset" }, state, demo };
@@ -125,7 +141,9 @@ export function Prototype() {
   const [state, setState] = useState<ProtoState>(initial.state);
   const [demo, setDemoState] = useState<DemoFlags>(initial.demo);
   const [menuOpen, setMenuOpen] = useState(false);
-  const [toastMsg, setToastMsg] = useState<{ text: string; key: number } | null>(null);
+  const [toastMsg, setToastMsg] = useState<{ text: string; key: number } | null>(() =>
+    initial.notice ? { text: initial.notice, key: 0 } : null,
+  );
 
   // Callbacks read the latest values through refs so they can stay stable.
   const stateRef = useRef(state);
@@ -187,6 +205,11 @@ export function Prototype() {
     setToastMsg({ text, key: Date.now() });
     toastTimer.current = setTimeout(() => setToastMsg(null), 2400);
   }, []);
+
+  // A notice raised on load (an invite opened after my analysis) times out too.
+  useEffect(() => {
+    if (initial.notice) toastTimer.current = setTimeout(() => setToastMsg(null), 2400);
+  }, [initial.notice]);
 
   const setDemo = useCallback((patch: Partial<DemoFlags>) => {
     setDemoState((d) => ({ ...d, ...patch }));

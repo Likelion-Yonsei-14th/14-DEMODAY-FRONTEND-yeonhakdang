@@ -158,7 +158,7 @@ export function ShareScreen({
       return proto.toast("인스타그램 스토리로 보냈어요");
     }
     navigator.clipboard
-      ?.writeText(inviteUrl())
+      ?.writeText(inviteUrl(proto.state))
       .then(() => proto.toast("초대 링크를 복사했어요"))
       .catch(() => proto.toast("링크를 복사하지 못했어요"));
   };

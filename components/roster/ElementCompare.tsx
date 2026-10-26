@@ -19,7 +19,7 @@ export function ElementCompare({
       )}
     >
       <FiveElement element={element} active size={52} />
-      <p className="relative shrink-0 text-[12px] font-bold leading-[18px]">
+      <p className="relative max-w-[96px] shrink-0 truncate text-[12px] font-bold leading-[18px]">
         {caption}
       </p>
     </div>

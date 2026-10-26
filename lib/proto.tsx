@@ -3,6 +3,8 @@
 import { createContext, useContext } from "react";
 
 import { PACKAGE_PRICE, PRODUCTS, type ProductKind } from "@/lib/catalog";
+import { encodeInvite, friendKey, type Friend, type FriendInput } from "@/lib/friends";
+import { birthError } from "@/lib/saju";
 
 /**
  * Prototype runtime. The shell at `/` provides a live context. Without it
@@ -16,8 +18,12 @@ export type Plan = "single" | "package";
 export type Relation = "선배" | "동기" | "교수님" | "연인";
 
 export type ProtoState = {
-  /** Entered through a friend's invite link (1-2). */
-  invited: boolean;
+  /** Who sent the invite link this session came through (1-2); null otherwise. */
+  inviter: FriendInput | null;
+  /** 합격자 명단 — kept on this device until there is a backend. */
+  friends: Friend[];
+  /** When the 명단 was last opened: friends added after it get NEW. */
+  rosterSeenAt: number;
   name: string;
   /** "YYYY.MM.DD", possibly partial while typing. */
   birth: string;
@@ -40,13 +46,33 @@ export type ProtoState = {
   payMethod: "kakao" | "toss";
   purchased: Record<ProductKind, boolean>;
   charmRerolls: number;
-  /** Friend whose 궁합 sheet (4-3) is open. */
+  /** friendKey of the friend whose 궁합 sheet (4-3) is open. */
   friend: string;
 };
 
+const example = (name: string, birth: string): FriendInput => ({
+  name,
+  birth,
+  calendar: 0,
+  leapMonth: false,
+  time: "",
+  unknownTime: true,
+});
+
+/** The Figma roster: 민지 invited 김연학, the others joined later. */
+const EXAMPLE_FRIENDS: Friend[] = [
+  { ...example("민지", "2008.11.09"), addedAt: 1 },
+  { ...example("서준", "2008.04.14"), addedAt: 5 },
+  { ...example("하린", "2008.05.21"), addedAt: 2 },
+  { ...example("도윤", "2008.07.27"), addedAt: 3 },
+  { ...example("지우", "2008.03.21"), addedAt: 4 },
+];
+
 /** What the static frames show. */
 export const FIGMA_STATE: ProtoState = {
-  invited: true,
+  inviter: EXAMPLE_FRIENDS[0],
+  friends: EXAMPLE_FRIENDS,
+  rosterSeenAt: 4,
   name: "김연학",
   birth: "2008.03.15",
   gender: 0,
@@ -65,13 +91,15 @@ export const FIGMA_STATE: ProtoState = {
   payMethod: "kakao",
   purchased: { compat: true, benefactor: true, charm: false },
   charmRerolls: 2,
-  friend: "민지",
+  friend: friendKey(EXAMPLE_FRIENDS[0]),
 };
 
 /** A first-time visitor. */
 export const INITIAL_STATE: ProtoState = {
   ...FIGMA_STATE,
-  invited: false,
+  inviter: null,
+  friends: [],
+  rosterSeenAt: 0,
   name: "",
   birth: "",
   unknownTime: false,
@@ -125,14 +153,26 @@ export const INITIAL_DEMO: DemoFlags = {
   emptyRoster: false,
 };
 
-/** 4-1 for a friend who came through an invite, otherwise the empty roster. */
+/** 4-1 once the 명단 has anyone on it, otherwise the empty roster. */
 export function rosterScreen(proto: Pick<Proto, "state" | "demo">): string {
-  return proto.state.invited && !proto.demo.emptyRoster ? "4-1" : "4-2";
+  return proto.state.friends.length > 0 && !proto.demo.emptyRoster ? "4-1" : "4-2";
 }
 
-/** The link a friend receives: it opens the invite landing (1-2). */
-export function inviteUrl(): string {
-  return `${window.location.origin}/?invite=1`;
+/** Me, as a friend's 명단 would hold me. */
+export function selfAsFriend(s: ProtoState): FriendInput {
+  const { birth, calendar, leapMonth, time, unknownTime } = s;
+  return { name: displayName(s), birth, calendar, leapMonth, time, unknownTime };
+}
+
+/**
+ * The link a friend receives: it opens the invite landing (1-2) with me as
+ * the inviter. Without a valid birth yet, it is a plain link to the app.
+ */
+export function inviteUrl(s: ProtoState): string {
+  const self = selfAsFriend(s);
+  return birthError(self)
+    ? window.location.origin
+    : `${window.location.origin}/?invite=${encodeInvite(self)}`;
 }
 
 /** 카카오톡 / 인스타그램 / 페이스북 in-app browsers. */
