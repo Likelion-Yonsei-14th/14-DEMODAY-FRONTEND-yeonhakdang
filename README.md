@@ -33,6 +33,9 @@ npm run dev     # http://localhost:3000
 - 카카오톡 공유는 실제 SDK를 사용합니다(아래 설정 필요, 키가 없으면 메시지 미리보기 5-4로 대체).
   카카오 로그인 · PG 결제창은 화면으로 흉내 냅니다. 디자인이 없는 기능(공지,
   약관 전문, 구매 내역 등)은 "준비 중" 토스트를 띄웁니다.
+- `BACKEND_ORIGIN`과 `NEXT_PUBLIC_USE_BACKEND=true`를 설정하면 로그인 · 약관 동의 · 결제 · 보관함 ·
+  구매 내역 · 환불이 실제 백엔드를 사용합니다. 설정과 남은 준비 사항은
+  [`docs/BACKEND_INTEGRATION.md`](docs/BACKEND_INTEGRATION.md)에 있습니다.
 
 ## 구조
 

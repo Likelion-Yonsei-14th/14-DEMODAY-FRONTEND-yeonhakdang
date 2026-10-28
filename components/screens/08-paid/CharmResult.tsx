@@ -10,6 +10,7 @@ import { Button } from "@/components/ui/Button";
 import { Chip } from "@/components/ui/Chip";
 import { Icon } from "@/components/ui/Icon";
 import { displayName, useProto } from "@/lib/proto";
+import { useOpenRecord } from "@/lib/useOpenRecord";
 
 /** Each 다시 뽑기 swaps in the next design; the result art comes first. */
 const CHARMS = [
@@ -22,6 +23,7 @@ const CHARMS = [
 /** Figma: 8-3 부적 · 결과 (PR-01·02) (33:1762) — a 1136px-tall frame. */
 export function CharmResult() {
   const proto = useProto();
+  useOpenRecord("charm");
   const { charmRerolls } = proto.state;
   const charm = proto.active ? CHARMS[(3 - charmRerolls) % CHARMS.length] : CHARMS[0];
 

@@ -11,10 +11,12 @@ import { Chip } from "@/components/ui/Chip";
 import { InfoBox } from "@/components/ui/InfoBox";
 import { SectionTitle } from "@/components/ui/SectionTitle";
 import { useProto } from "@/lib/proto";
+import { useOpenRecord } from "@/lib/useOpenRecord";
 
 /** Figma: 8-2 귀인 · 결과 (PR-04) (33:1626) — a 1458px-tall frame. */
 export function BenefactorResult() {
   const proto = useProto();
+  useOpenRecord("benefactor");
   const { relation } = proto.state;
   return (
     <Screen height={1458} bleed>

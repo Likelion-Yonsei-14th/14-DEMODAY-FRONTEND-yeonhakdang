@@ -7,6 +7,22 @@ import { SCREEN_WIDTH, ViewportContext } from "@/components/layout/Screen";
 import { DrawerPanel } from "@/components/screens/09-locker/MenuDrawer";
 import { Toast } from "@/components/ui/Toast";
 import { cn } from "@/lib/cn";
+import {
+  ApiError,
+  LOGIN_PATH,
+  USE_BACKEND,
+  checkoutReturn,
+  confirmation,
+  errorMessage,
+  getMe,
+  getPolicies,
+  getProducts,
+  hasRequiredConsents,
+  onUnauthorized,
+  priceMismatches,
+} from "@/lib/backend";
+import { PACKAGE_PRICE } from "@/lib/catalog";
+import { confirmOrder, syncLocker } from "@/lib/checkout";
 import { addFriend, decodeInvite, friendKey } from "@/lib/friends";
 import {
   INITIAL_DEMO,
@@ -83,6 +99,13 @@ function restore(): Start {
   const hash = readHash();
   const state = { ...INITIAL_STATE, ...saved.state };
   const params = new URLSearchParams(window.location.search);
+  // Back from the PG page: the server confirms the order (see Prototype).
+  const returned = checkoutReturn(window.location.search);
+  if (USE_BACKEND && returned) {
+    window.history.replaceState(null, "", window.location.pathname);
+    const pay = state.plan === "package" ? "7-3b" : "7-3";
+    return { nav: { stack: [pay], op: "reset" }, state: { ...state, pendingOrder: returned }, demo };
+  }
   // 구매하기 on a public page (`/?checkout=1&product=…&plan=…`): straight into
   // that product's purchase, past its detail screen.
   if (params.get("checkout") === "1") {
@@ -231,6 +254,100 @@ export function Prototype() {
   const openMenu = useCallback(() => setMenuOpen(true), []);
   const closeMenu = useCallback(() => setMenuOpen(false), []);
 
+  // Before leaving the page (카카오, PG window): the mirror effect below would
+  // run too late, so merge the patch and write the saved session right away.
+  const saveNow = useCallback((patch: Partial<ProtoState>) => {
+    const next = { ...stateRef.current, ...patch };
+    stateRef.current = next;
+    setState(next);
+    try {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify({ stack: navRef.current.stack, state: next, demo: INITIAL_DEMO }));
+    } catch {}
+  }, []);
+
+  const login = useCallback(() => {
+    saveNow({ loginPending: true });
+    window.location.assign(LOGIN_PATH);
+  }, [saveNow]);
+
+  // Any call that finds the session gone (expired, logged out elsewhere) logs this tab out.
+  useEffect(() => {
+    if (!USE_BACKEND) return;
+    onUnauthorized(() => update({ loggedIn: false, agreedTerms: false, account: null }));
+    return () => onUnauthorized(null);
+  }, [update]);
+
+  // With the backend on, the server's session decides 로그인 · 약관 · 보유 상품.
+  // It also finishes what sent the visitor away: 카카오 login (which always
+  // returns to #9-1) and a mobile PG page (which returns with ?checkoutOrder=).
+  useEffect(() => {
+    if (!USE_BACKEND) return;
+    let cancelled = false;
+    const confirm = async (orderId: string) => {
+      // A 502 is "PortOne did not answer", not "failed": ask again a few times.
+      for (let attempt = 0; ; attempt++) {
+        try {
+          return await confirmOrder(orderId, update);
+        } catch (error) {
+          if (!(error instanceof ApiError && error.status === 502) || attempt === 2) throw error;
+          await new Promise((r) => setTimeout(r, 2000));
+        }
+      }
+    };
+    (async () => {
+      const s = stateRef.current;
+      try {
+        const me = await getMe();
+        if (cancelled) return;
+        if (!me) {
+          update({ loggedIn: false, agreedTerms: false, loginPending: false, account: null, purchased: { compat: false, benefactor: false, charm: false }, orders: {} });
+          if (s.loginPending) toast("로그인하지 못했어요. 다시 시도해 주세요.");
+          if (s.pendingOrder) {
+            update({ pendingOrder: null });
+            toast("로그인이 풀려서 결제를 확인하지 못했어요. 구매 내역에서 확인해 주세요.");
+          }
+          return;
+        }
+        const agreed = hasRequiredConsents(me, await getPolicies());
+        update({ loggedIn: true, agreedTerms: agreed, loginPending: false, account: me.id });
+        await syncLocker(update);
+        if (cancelled) return;
+        if (s.pendingOrder) {
+          update({ pendingOrder: null });
+          const result = confirmation(await confirm(s.pendingOrder.id));
+          if (cancelled) return;
+          if (result === "paid") return replace("7-4");
+          if (result === "pending") {
+            // Money may have moved: show the order, never 결제 실패.
+            toast("결제를 확인하고 있어요. 구매 내역에서 상태를 확인해 주세요.");
+            return replace("10-2");
+          }
+          if (s.pendingOrder.message) toast(s.pendingOrder.message);
+          replace("7-5");
+        } else if (s.loginPending) {
+          if (!agreed) return replace("2-5");
+          if (s.afterLogin !== navRef.current.stack.at(-1)) replace(s.afterLogin);
+          toast("카카오로 로그인했어요");
+        }
+      } catch (error) {
+        if (!cancelled) toast(errorMessage(error));
+      }
+    })();
+    // Prices on screen come from the catalog; the server's are what it charges.
+    if (process.env.NODE_ENV !== "production") {
+      const shown = { ...Object.fromEntries(Object.entries(PRODUCTS).map(([k, p]) => [k, p.price])), package: PACKAGE_PRICE };
+      getProducts()
+        .then((server) => {
+          const off = priceMismatches(server, shown as Parameters<typeof priceMismatches>[1]);
+          if (off.length) console.warn(`[연학당] 화면 가격과 서버 가격이 달라요 — ${off.join(", ")}`);
+        })
+        .catch(() => {});
+    }
+    return () => {
+      cancelled = true;
+    };
+  }, [update, replace, toast]);
+
   const openProduct = useCallback<Proto["openProduct"]>(
     (kind, plan = "single") => {
       update({ product: kind, plan });
@@ -276,8 +393,10 @@ export function Prototype() {
       openProduct,
       beginPurchase,
       requireLogin,
+      login,
+      saveNow,
     }),
-    [state, update, demo, setDemo, go, replace, back, backTo, reset, toast, openMenu, closeMenu, openProduct, beginPurchase, requireLogin],
+    [state, update, demo, setDemo, go, replace, back, backTo, reset, toast, openMenu, closeMenu, openProduct, beginPurchase, requireLogin, login, saveNow],
   );
 
   // Browser / gesture back pops the prototype stack: a sentinel history entry

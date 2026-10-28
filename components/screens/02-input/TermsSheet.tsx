@@ -10,7 +10,9 @@ import { Button } from "@/components/ui/Button";
 import { CheckboxRow } from "@/components/ui/CheckboxRow";
 import { Icon } from "@/components/ui/Icon";
 import { Tap } from "@/components/ui/Tap";
+import { USE_BACKEND, errorMessage, getPolicies, saveConsents } from "@/lib/backend";
 import { openPolicy } from "@/lib/business";
+import { syncLocker } from "@/lib/checkout";
 import { cn } from "@/lib/cn";
 import { useProto } from "@/lib/proto";
 
@@ -30,6 +32,25 @@ export function TermsSheet() {
   );
   const all = proto.active ? checks.every(Boolean) : true;
   const ready = TERMS.every((t, i) => !t.required || checks[i]);
+  const [saving, setSaving] = useState(false);
+
+  // Each item is stored on its own, against the server's current policy version.
+  const agreeOnServer = async () => {
+    setSaving(true);
+    try {
+      const { version } = await getPolicies();
+      const [age14, terms, privacy, marketing] = checks;
+      await saveConsents(version, { age14, terms, privacy, marketing });
+      proto.update({ agreedTerms: true });
+      await syncLocker(proto.update);
+      proto.replace(proto.state.afterLogin);
+      proto.toast("카카오로 로그인했어요");
+    } catch (error) {
+      proto.toast(errorMessage(error));
+    } finally {
+      setSaving(false);
+    }
+  };
 
   const toggle = (i: number) =>
     setChecks((c) => c.map((on, j) => (j === i ? !on : on)));
@@ -87,8 +108,9 @@ export function TermsSheet() {
             <div className="relative flex shrink-0 flex-col items-start overflow-clip px-[24px] pb-[46px] pt-[4px]">
               <Button
                 label={proto.state.afterInput || proto.state.afterLogin.startsWith("7-") ? "동의하고 구매 계속하기" : "동의하고 결과 보기"}
-                disabled={!ready}
+                disabled={!ready || saving}
                 onPress={() => {
+                  if (USE_BACKEND) return void agreeOnServer();
                   proto.update({ loggedIn: true, agreedTerms: true });
                   // Drop 2-4 and this sheet so back returns to where login began.
                   proto.go(proto.state.afterLogin, { pop: 2 });

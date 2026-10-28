@@ -6,9 +6,9 @@ import { ListItem } from "@/components/pay/OrderRows";
 import { Chip } from "@/components/ui/Chip";
 import { Icon } from "@/components/ui/Icon";
 import { Tap } from "@/components/ui/Tap";
+import { deleteAccount, signOut } from "@/lib/account";
 import { cn } from "@/lib/cn";
 import {
-  INITIAL_STATE,
   PRODUCTS,
   displayName,
   rosterScreen,
@@ -83,15 +83,8 @@ export function LockerMy() {
   const name = displayName(state);
   const boughtCount = Object.values(state.purchased).filter(Boolean).length;
 
-  const logout = () => {
-    proto.reset("1-1", { ...INITIAL_STATE, agreedTerms: state.agreedTerms });
-    proto.toast("로그아웃했어요");
-  };
-
-  const withdraw = () => {
-    proto.reset("1-1", INITIAL_STATE);
-    proto.toast("탈퇴했어요 · 모든 결과를 지웠어요");
-  };
+  const logout = () => void signOut(proto);
+  const withdraw = () => void deleteAccount(proto);
 
   return (
     <Screen height={914}>

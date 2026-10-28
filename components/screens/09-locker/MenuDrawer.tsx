@@ -11,8 +11,9 @@ import { MajorResultContent } from "@/components/screens/03-result/MajorResult";
 import { HintText } from "@/components/ui/HintText";
 import { Icon } from "@/components/ui/Icon";
 import { Tap } from "@/components/ui/Tap";
+import { signOut } from "@/lib/account";
 import { cn } from "@/lib/cn";
-import { INITIAL_STATE, displayName, useProto } from "@/lib/proto";
+import { displayName, useProto } from "@/lib/proto";
 
 /** Figma: Drawer menu rows (34:2128…) — icon + label + chevron. */
 function DrawerRow({
@@ -129,8 +130,7 @@ export function DrawerPanel({ onClose }: { onClose: () => void }) {
       <Tap
         onPress={then(() => {
           if (!state.loggedIn) return proto.toast("아직 로그인하지 않았어요");
-          proto.reset("1-1", { ...INITIAL_STATE, agreedTerms: state.agreedTerms });
-          proto.toast("로그아웃했어요");
+          void signOut(proto);
         })}
         className="relative flex shrink-0 items-center gap-[8px] overflow-clip py-[12px] pl-[20px]"
       >

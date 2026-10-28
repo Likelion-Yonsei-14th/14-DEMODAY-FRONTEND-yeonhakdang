@@ -15,10 +15,12 @@ import { Button } from "@/components/ui/Button";
 import { Chip } from "@/components/ui/Chip";
 import { SectionTitle } from "@/components/ui/SectionTitle";
 import { displayName, useProto } from "@/lib/proto";
+import { useOpenRecord } from "@/lib/useOpenRecord";
 
 /** Figma: 8-1 합격 궁합 · 결과 (PR-03) (32:1579) — a 1658px-tall frame. */
 export function CompatResult() {
   const proto = useProto();
+  useOpenRecord("compat");
   return (
     <Screen height={1658} bleed>
       <PaidHero

@@ -2,6 +2,7 @@
 
 import { createContext, useContext } from "react";
 
+import type { SavedResult } from "@/lib/backend";
 import { PACKAGE_PRICE, PRODUCTS, type ProductKind } from "@/lib/catalog";
 import { encodeInvite, friendKey, type Friend, type FriendInput } from "@/lib/friends";
 import { birthError } from "@/lib/saju";
@@ -51,6 +52,19 @@ export type ProtoState = {
   charmRerolls: number;
   /** friendKey of the friend whose 궁합 sheet (4-3) is open. */
   friend: string;
+  /* ── With the backend on (lib/backend.ts); unused by the demo ── */
+  /** Left for 카카오 login: on return, resume at `afterLogin`. */
+  loginPending: boolean;
+  /** The logged-in member's server id (from /api/me); null when logged out. */
+  account: string | null;
+  /** The analysis summary last saved to the server, its id, and whose it is. */
+  savedResult: SavedResult | null;
+  /** The checkout in progress: one Idempotency-Key per order request. */
+  checkout: { request: string; key: string; orderId: string | null } | null;
+  /** Back from the PG page (`?checkoutOrder=`): confirm this order; `message` is PortOne's failure text. */
+  pendingOrder: { id: string; message: string | null } | null;
+  /** The order that holds each owned product, for /open and refunds. */
+  orders: Partial<Record<ProductKind, string>>;
 };
 
 const example = (name: string, birth: string): FriendInput => ({
@@ -96,6 +110,12 @@ export const FIGMA_STATE: ProtoState = {
   purchased: { compat: true, benefactor: true, charm: false },
   charmRerolls: 2,
   friend: friendKey(EXAMPLE_FRIENDS[0]),
+  loginPending: false,
+  account: null,
+  savedResult: null,
+  checkout: null,
+  pendingOrder: null,
+  orders: {},
 };
 
 /** A first-time visitor. */
@@ -151,7 +171,8 @@ export function preparePurchase(state: ProtoState, product: ProductKind, plan = 
   const target = hasProfile ? next : "2-1";
   return {
     state: { ...state, product, plan, afterInput: hasProfile ? null : next, afterLogin: target },
-    screen: state.loggedIn && state.agreedTerms ? target : "2-4",
+    // Logged in without 약관 (backend on): straight to the sheet, not 카카오 again.
+    screen: !state.loggedIn ? "2-4" : state.agreedTerms ? target : "2-5",
   };
 }
 
@@ -227,6 +248,10 @@ export type Proto = {
   beginPurchase: (kind: ProductKind) => void;
   /** Go to `target`, routing through 카카오 login first if needed. */
   requireLogin: (target: string) => void;
+  /** With the backend on: leave for the real 카카오 login, resuming at `afterLogin`. */
+  login: () => void;
+  /** Merge `patch` and write the saved session now, before the page is left (PG window). */
+  saveNow: (patch: Partial<ProtoState>) => void;
 };
 
 const noop = () => {};
@@ -248,6 +273,8 @@ const STATIC_PROTO: Proto = {
   openProduct: noop,
   beginPurchase: noop,
   requireLogin: noop,
+  login: noop,
+  saveNow: noop,
 };
 
 export const ProtoContext = createContext<Proto>(STATIC_PROTO);

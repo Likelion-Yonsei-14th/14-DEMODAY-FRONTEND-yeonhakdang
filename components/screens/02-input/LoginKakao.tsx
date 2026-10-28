@@ -10,6 +10,7 @@ import { Button } from "@/components/ui/Button";
 import { BenefitList } from "@/components/ui/CheckRow";
 import { Chip } from "@/components/ui/Chip";
 import { Headline } from "@/components/ui/Headline";
+import { USE_BACKEND } from "@/lib/backend";
 import { useProto } from "@/lib/proto";
 
 /**
@@ -75,6 +76,12 @@ export function LoginKakaoContent() {
           type="kakao"
           label="카카오로 3초 만에 시작하기"
           onPress={() => {
+            // The real 카카오 login; 약관 (2-5) follows on return when needed.
+            if (USE_BACKEND) {
+              // Already logged in, only 약관 missing: no second trip to 카카오.
+              if (state.loggedIn && !state.agreedTerms) return proto.replace("2-5");
+              return proto.login();
+            }
             // First login asks for 약관 consent; returning users go straight in.
             if (!state.agreedTerms) return proto.go("2-5");
             proto.update({ loggedIn: true });

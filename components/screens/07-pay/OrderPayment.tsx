@@ -14,8 +14,10 @@ import { CheckboxRow } from "@/components/ui/CheckboxRow";
 import { HintText } from "@/components/ui/HintText";
 import { Icon } from "@/components/ui/Icon";
 import { Tap } from "@/components/ui/Tap";
+import { ApiError, USE_BACKEND, errorMessage } from "@/lib/backend";
 import { openPolicy } from "@/lib/business";
 import { SINGLES_TOTAL } from "@/lib/catalog";
+import { checkout } from "@/lib/checkout";
 import { cn } from "@/lib/cn";
 import {
   PACKAGE_PRICE,
@@ -89,7 +91,7 @@ function orderSummary(s: ProtoState): string {
  * Stand-in for the 카카오페이 / 토스 checkout window. It approves after a
  * moment; 결제 취소 inside it is how the prototype reaches 7-5.
  */
-function PaySheet({ method, order, onCancel }: { method: string; order: ProtoState; onCancel: () => void }) {
+function PaySheet({ method, order, onCancel }: { method: string; order: ProtoState; onCancel?: () => void }) {
   return (
     <div className="absolute inset-0">
       <div className="proto-fade-in absolute inset-0 bg-[#161a23] opacity-55" />
@@ -101,7 +103,8 @@ function PaySheet({ method, order, onCancel }: { method: string; order: ProtoSta
           <p className="font-bold text-body-l-16">{orderTitle(order)} · {won(orderPrice(order))}</p>
         </div>
         <div className="proto-spinner size-[28px] rounded-full border-[3px] border-brand-secondary-tint border-t-brand-secondary" />
-        <Button label="결제 취소" type="ghost" size="M" onPress={onCancel} className="w-[200px]" />
+        {/* The real PG window has its own cancel; this sheet only waits for it. */}
+        {onCancel && <Button label="결제 취소" type="ghost" size="M" onPress={onCancel} className="w-[200px]" />}
       </div>
     </div>
   );
@@ -114,7 +117,10 @@ export function OrderPayment() {
   const [agreed, setAgreed] = useState(!proto.active);
   const [refundAgreed, setRefundAgreed] = useState(!proto.active);
   const [payment, setPayment] = useState<ProtoState | null>(null);
-  const paying = payment !== null;
+  /** The real checkout is running (backend on); a mobile PG return is confirmed too. */
+  const [checkingOut, setCheckingOut] = useState(false);
+  const serverBusy = checkingOut || state.pendingOrder !== null;
+  const paying = payment !== null || serverBusy;
 
   const price = won(orderPrice(state));
   const isPackage = state.plan === "package";
@@ -141,6 +147,33 @@ export function OrderPayment() {
     }, 1800);
     return () => clearTimeout(approve);
   }, [payment, payFail, go, setDemo, replace, update]);
+
+  const payOnServer = async () => {
+    setCheckingOut(true);
+    try {
+      const outcome = await checkout(proto);
+      if (outcome.kind === "paid") return replace("7-4");
+      if (outcome.kind === "pending") {
+        // Money may have moved: show the order, never 결제 실패.
+        proto.toast("결제를 확인하고 있어요. 구매 내역에서 상태를 확인해 주세요.");
+        return replace("10-2");
+      }
+      if (outcome.kind === "failed") {
+        if (outcome.message) proto.toast(outcome.message);
+        go("7-5");
+      }
+    } catch (error) {
+      if (error instanceof ApiError && error.status === 401) return proto.requireLogin(isPackage ? "7-3b" : "7-3");
+      if (error instanceof ApiError && error.code === "REQUIRED_CONSENT") {
+        // The sheet replaces this screen and puts it back once agreed.
+        update({ agreedTerms: false, afterLogin: isPackage ? "7-3b" : "7-3" });
+        return replace("2-5");
+      }
+      proto.toast(errorMessage(error));
+    } finally {
+      setCheckingOut(false);
+    }
+  };
 
   return (
     <Screen height={1372} bleed contentSized>
@@ -268,6 +301,7 @@ export function OrderPayment() {
                 proto.toast("합격 궁합을 볼 대학을 먼저 골라 주세요");
                 return proto.go("7-1");
               }
+              if (USE_BACKEND) return void payOnServer();
               setPayment({ ...state });
             }}
           />
@@ -284,6 +318,11 @@ export function OrderPayment() {
               proto.go("7-5");
             }}
           />
+        </Overlay>
+      )}
+      {serverBusy && (
+        <Overlay>
+          <PaySheet method={methodName} order={state} />
         </Overlay>
       )}
     </Screen>
