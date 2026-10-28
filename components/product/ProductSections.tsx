@@ -14,7 +14,6 @@ import { SINGLES_TOTAL } from "@/lib/catalog";
 import {
   PACKAGE_PRICE,
   orderPrice,
-  purchaseSteps,
   useProto,
   won,
   type ProductKind,
@@ -386,10 +385,7 @@ export function PriceBottomCta({
           </div>
           <Button
             label="확인하러 가기"
-            onPress={() => {
-              proto.update({ product });
-              proto.go(purchaseSteps({ product, plan })[0]);
-            }}
+            onPress={() => proto.beginPurchase(product)}
             className="min-w-px flex-1"
           />
         </div>

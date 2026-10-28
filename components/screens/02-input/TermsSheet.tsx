@@ -86,7 +86,7 @@ export function TermsSheet() {
 
             <div className="relative flex shrink-0 flex-col items-start overflow-clip px-[24px] pb-[46px] pt-[4px]">
               <Button
-                label="동의하고 결과 보기"
+                label={proto.state.afterInput || proto.state.afterLogin.startsWith("7-") ? "동의하고 구매 계속하기" : "동의하고 결과 보기"}
                 disabled={!ready}
                 onPress={() => {
                   proto.update({ loggedIn: true, agreedTerms: true });

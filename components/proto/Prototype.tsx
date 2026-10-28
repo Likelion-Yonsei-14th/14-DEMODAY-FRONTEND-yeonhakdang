@@ -15,6 +15,7 @@ import {
   ProtoContext,
   FIGMA_STATE,
   isInAppBrowser,
+  preparePurchase,
   selfAsFriend,
   type DemoFlags,
   type Proto,
@@ -82,6 +83,17 @@ function restore(): Start {
   const hash = readHash();
   const state = { ...INITIAL_STATE, ...saved.state };
   const params = new URLSearchParams(window.location.search);
+  // 구매하기 on a public page (`/?checkout=1&product=…&plan=…`): straight into
+  // that product's purchase, past its detail screen.
+  if (params.get("checkout") === "1") {
+    window.history.replaceState(null, "", window.location.pathname);
+    const product = params.get("product");
+    if (product === "compat" || product === "benefactor" || product === "charm") {
+      const plan = params.get("plan") === "package" ? "package" : "single";
+      const entry = preparePurchase(state, product, plan);
+      return { nav: { stack: [PRODUCTS[product].detail, entry.screen], op: "reset" }, state: entry.state, demo };
+    }
+  }
   if (params.has("invite")) {
     window.history.replaceState(null, "", window.location.pathname);
     // A broken or old (`?invite=1`) link falls through to the usual start.
@@ -103,6 +115,7 @@ function restore(): Start {
   }
   if (hash && hash !== stack.at(-1)) {
     const fresh = hash === "1-2" ? { ...INITIAL_STATE, inviter: FIGMA_STATE.inviter } : state;
+    if (hash === "7-3b") fresh.plan = "package";
     return { nav: { stack: [hash], op: "reset" }, state: fresh, demo };
   }
   return { nav: { stack: stack.length ? stack : ["1-1"], op: "reset" }, state, demo };
@@ -226,7 +239,16 @@ export function Prototype() {
     [go, update],
   );
 
-  // Per the flow: no login to use the service; only the 보관함 asks for 카카오.
+  const beginPurchase = useCallback<Proto["beginPurchase"]>(
+    (kind) => {
+      const entry = preparePurchase(stateRef.current, kind);
+      update(entry.state);
+      go(entry.screen);
+    },
+    [go, update],
+  );
+
+  // The free analysis needs no login; the 보관함 and 구매 ask for 카카오.
   const requireLogin = useCallback(
     (target: string) => {
       if (stateRef.current.loggedIn) return go(target);
@@ -252,9 +274,10 @@ export function Prototype() {
       openMenu,
       closeMenu,
       openProduct,
+      beginPurchase,
       requireLogin,
     }),
-    [state, update, demo, setDemo, go, replace, back, backTo, reset, toast, openMenu, closeMenu, openProduct, requireLogin],
+    [state, update, demo, setDemo, go, replace, back, backTo, reset, toast, openMenu, closeMenu, openProduct, beginPurchase, requireLogin],
   );
 
   // Browser / gesture back pops the prototype stack: a sentinel history entry
