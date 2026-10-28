@@ -13,7 +13,6 @@ import { cn } from "@/lib/cn";
 import {
   PACKAGE_PRICE,
   orderPrice,
-  purchaseSteps,
   useProto,
   won,
   type ProductKind,
@@ -325,7 +324,6 @@ export function PurchaseOptions({
 
 /** Figma: Pattern/Product/Notice Box (74:3262). */
 export function ProductNoticeBox({ className }: { className?: string }) {
-  const proto = useProto();
   return (
     <div
       className={cn(
@@ -349,9 +347,9 @@ export function ProductNoticeBox({ className }: { className?: string }) {
       <p className="relative w-full shrink-0 text-text-tertiary">
         · 사주 결과는 참고용 콘텐츠이며 합격을 보장하지 않아요.
       </p>
-      <Tap onPress={() => proto.go("10-1")} className="w-full font-bold text-brand-secondary">
+      <a href="/refund" className="w-full font-bold text-brand-secondary">
         환불 정책 전체 보기 ›
-      </Tap>
+      </a>
     </div>
   );
 }
@@ -385,10 +383,7 @@ export function PriceBottomCta({
           </div>
           <Button
             label="확인하러 가기"
-            onPress={() => {
-              proto.update({ product });
-              proto.go(purchaseSteps({ product, plan })[0]);
-            }}
+            onPress={() => proto.beginPurchase(product)}
             className="min-w-px flex-1"
           />
         </div>

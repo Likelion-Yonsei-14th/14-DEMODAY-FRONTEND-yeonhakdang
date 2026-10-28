@@ -135,6 +135,13 @@ body {
   -webkit-font-smoothing: antialiased;
 }
 
+/* Public documents keep the same 393px design geometry as the app shell. */
+.public-page {
+  width: 393px;
+  margin-inline: auto;
+  zoom: calc(min(100vw, 430px) / 393px);
+}
+
 /* Figma frames are fixed-width device screens; keep their internal
    scroll contained rather than bubbling to the page. */
 .screen-scroll {

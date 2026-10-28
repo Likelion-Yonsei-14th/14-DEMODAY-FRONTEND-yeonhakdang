@@ -1,9 +1,8 @@
 "use client";
 
 import { TopBar } from "@/components/chrome/TopBar";
-import { Screen, ScreenScroll } from "@/components/layout/Screen";
+import { Screen } from "@/components/layout/Screen";
 import { BusinessFooter } from "@/components/policy/BusinessFooter";
-import { useProto } from "@/lib/proto";
 
 const SUMMARY = [
   "결과를 열기 전: 결제일부터 7일 이내 전액 환불",
@@ -40,7 +39,7 @@ const ARTICLES = [
   ["제7조 회사 사정으로 인한 환불", "결과 미제공, 중복 결제, 시스템 장애로 열람 불가, 안내와 다른 결과 제공 시 열람 여부와 관계없이 환불 또는 재제공."],
   ["제8조 입력 정보 오류", "열람 전 입력 실수를 발견하면 환불 후 재구매 가능. 열람 후에는 환불 불가."],
   ["제9조 미성년자의 결제", "만 14세 이상 가입. 만 19세 미만은 법정대리인 동의 필요. 동의 없는 결제는 본인 또는 법정대리인이 취소 가능(속임수·허락된 용돈 범위 등은 제한)."],
-  ["제10·11조 신청 및 환불 방법", "고객센터 [이메일]·[전화번호]로 카카오 계정 이름, 결제일, 상품, 결제 수단, 사유를 알려 주세요. 3영업일 이내 결제한 수단(신용카드·카카오페이·토스페이)의 결제 취소로 환불하며, 실제 입금 시점은 카드사·은행 정책에 따릅니다."],
+  ["제10·11조 신청 및 환불 방법", "고객센터 emilygylee@yonsei.ac.kr·[유선 전화번호]로 카카오 계정 이름, 결제일, 상품, 결제 수단, 사유를 알려 주세요. 3영업일 이내 결제한 수단(신용카드·카카오페이·토스페이)의 결제 취소로 환불하며, 실제 입금 시점은 카드사·은행 정책에 따릅니다."],
   ["제13조 분쟁의 해결", "협의가 되지 않으면 한국소비자원 또는 전자문서·전자거래분쟁조정위원회에 조정 신청 가능."],
 ];
 
@@ -55,16 +54,13 @@ function PriceRows({ rows }: { rows: string[][] }) {
 
 /** Figma: 10-1 환불 정책 (226:3213), 393 × 2219. */
 export function RefundPolicy() {
-  const proto = useProto();
-
   return (
-    <Screen height={2219} fit>
-      {!proto.active && <div className="h-[54px] shrink-0" />}
-      <TopBar title="환불 정책" />
-      <ScreenScroll>
+    <Screen height={2243} bleed contentSized>
+      <TopBar title="환불 정책" className="absolute left-0 top-[54px]" />
+      <div className="w-full shrink-0 pt-[106px]">
         <div className="flex w-full flex-col items-start gap-[16px] px-[24px] pb-[32px] pt-[16px] [overflow-wrap:anywhere]">
           <h1 className="w-full font-serif text-h2-22">연학당 청약철회 및 환불규정</h1>
-          <p className="w-full text-caption-12 text-text-tertiary">시행일 [2026년 10월 29일]</p>
+          <p className="w-full text-caption-12 text-text-tertiary">시행일 2026년 10월 29일 · 공개 주소 /refund</p>
 
           <section aria-labelledby="refund-summary" className="flex w-full flex-col gap-[8px] rounded-[16px] bg-brand-secondary-tint p-[16px]">
             <h2 id="refund-summary" className="font-bold text-body-m-14 text-brand-secondary">한눈에 보기</h2>
@@ -93,7 +89,7 @@ export function RefundPolicy() {
           ))}
         </div>
         <BusinessFooter />
-      </ScreenScroll>
+      </div>
     </Screen>
   );
 }

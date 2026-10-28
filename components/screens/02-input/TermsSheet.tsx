@@ -14,10 +14,10 @@ import { cn } from "@/lib/cn";
 import { useProto } from "@/lib/proto";
 
 const TERMS = [
-  { label: "[필수] 만 14세 이상이에요", required: true, more: false },
-  { label: "[필수] 서비스 이용약관", required: true, more: true },
-  { label: "[필수] 개인정보(생년월일·출생시간) 수집·이용", required: true, more: true },
-  { label: "[선택] 합격 기운·이벤트 소식 받기", required: false, more: true },
+  { label: "[필수] 만 14세 이상이에요", required: true },
+  { label: "[필수] 서비스 이용약관", required: true, href: "/terms" },
+  { label: "[필수] 개인정보(생년월일·출생시간) 수집·이용", required: true, href: "/privacy" },
+  { label: "[선택] 합격 기운·이벤트 소식 받기", required: false, href: "/privacy" },
 ];
 
 /** Figma: 2-5 약관 동의 · 바텀시트 (최초 로그인) (22:377) */
@@ -70,9 +70,9 @@ export function TermsSheet() {
                   key={term.label}
                   label={term.label}
                   checked={checks[i]}
-                  showMore={term.more}
+                  showMore={Boolean(term.href)}
+                  moreHref={term.href}
                   onToggle={() => toggle(i)}
-                  onMore={() => proto.toast("약관 전문은 준비 중이에요")}
                 />
               ))}
             </div>
@@ -85,7 +85,7 @@ export function TermsSheet() {
 
             <div className="relative flex shrink-0 flex-col items-start overflow-clip px-[24px] pb-[46px] pt-[4px]">
               <Button
-                label="동의하고 결과 보기"
+                label={proto.state.afterInput || proto.state.afterLogin.startsWith("7-") ? "동의하고 구매 계속하기" : "동의하고 결과 보기"}
                 disabled={!ready}
                 onPress={() => {
                   proto.update({ loggedIn: true, agreedTerms: true });

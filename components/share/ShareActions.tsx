@@ -9,13 +9,13 @@ import { cn } from "@/lib/cn";
  */
 export type ShareActionKind =
   | "이미지 저장"
-  | "카카오톡"
+  | "카카오톡 공유"
   | "인스타 스토리"
   | "링크 복사";
 
 const ACTIONS: Record<ShareActionKind, { icon: string; disc: string }> = {
   "이미지 저장": { icon: "icon-download", disc: "bg-brand-secondary-tint" },
-  카카오톡: { icon: "icon-kakao-share", disc: "bg-system-kakao" },
+  "카카오톡 공유": { icon: "icon-kakao-share", disc: "bg-system-kakao" },
   "인스타 스토리": { icon: "icon-instagram", disc: "bg-brand-primary-tint" },
   "링크 복사": { icon: "icon-link", disc: "bg-bg-subtle" },
 };
@@ -23,7 +23,7 @@ const ACTIONS: Record<ShareActionKind, { icon: string; disc: string }> = {
 /** The order the frames lay the row out in. */
 export const SHARE_ACTION_ORDER: ShareActionKind[] = [
   "이미지 저장",
-  "카카오톡",
+  "카카오톡 공유",
   "인스타 스토리",
   "링크 복사",
 ];
@@ -31,14 +31,17 @@ export const SHARE_ACTION_ORDER: ShareActionKind[] = [
 export function ShareAction({
   kind,
   onPress,
+  disabled = false,
 }: {
   kind: ShareActionKind;
   onPress?: () => void;
+  disabled?: boolean;
 }) {
   const { icon, disc } = ACTIONS[kind];
   return (
     <Tap
       onPress={onPress}
+      disabled={disabled}
       className="relative flex shrink-0 flex-col items-center gap-[8px] overflow-clip"
     >
       <div
@@ -58,9 +61,11 @@ export function ShareAction({
 
 export function ShareActions({
   onAction,
+  disabled = false,
   className,
 }: {
   onAction?: (kind: ShareActionKind) => void;
+  disabled?: boolean;
   className?: string;
 }) {
   return (
@@ -74,6 +79,7 @@ export function ShareActions({
         <ShareAction
           key={kind}
           kind={kind}
+          disabled={disabled}
           onPress={onAction && (() => onAction(kind))}
         />
       ))}

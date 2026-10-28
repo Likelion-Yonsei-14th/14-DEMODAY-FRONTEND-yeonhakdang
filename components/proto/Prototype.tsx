@@ -13,6 +13,7 @@ import {
   PRODUCTS,
   ProtoContext,
   isInAppBrowser,
+  preparePurchase,
   type DemoFlags,
   type Proto,
   type ProtoState,
@@ -73,18 +74,29 @@ function restore(): { nav: Nav; state: ProtoState; demo: DemoFlags } {
   // No panel sets these any more: a switch left on by an older save would
   // stick, so every session starts with them off.
   const demo = INITIAL_DEMO;
-  if (new URLSearchParams(window.location.search).has("invite")) {
+  const params = new URLSearchParams(window.location.search);
+  if (params.get("checkout") === "1") {
+    const product = params.get("product");
+    if (product === "compat" || product === "benefactor" || product === "charm") {
+      const entry = preparePurchase(
+        { ...INITIAL_STATE, ...saved.state }, product,
+        params.get("plan") === "package" ? "package" : "single",
+      );
+      return { nav: { stack: [PRODUCTS[product].detail, entry.screen], op: "reset" }, state: entry.state, demo };
+    }
+  }
+  if (params.get("invite") === "1") {
     // A friend's invite link starts a fresh session on the invite landing.
-    window.history.replaceState(null, "", window.location.pathname);
     return {
       nav: { stack: ["1-2"], op: "reset" },
-      state: { ...INITIAL_STATE, invited: true },
+      state: { ...INITIAL_STATE, invited: true, inviterName: params.get("from")?.trim().slice(0, 20) || "친구" },
       demo,
     };
   }
   const stack = saved.stack?.filter((id) => SCREEN_IDS.has(id)) ?? [];
   const hash = readHash();
   const state = { ...INITIAL_STATE, ...saved.state };
+  if (hash === "7-3b") state.plan = "package";
   if (hash && hash !== stack.at(-1)) {
     const fresh = hash === "1-2" ? { ...INITIAL_STATE, invited: true } : state;
     return { nav: { stack: [hash], op: "reset" }, state: fresh, demo };
@@ -203,7 +215,13 @@ export function Prototype() {
     [go, update],
   );
 
-  // Per the flow: no login to use the service; only the 보관함 asks for 카카오.
+  const beginPurchase = useCallback<Proto["beginPurchase"]>((kind) => {
+    const entry = preparePurchase(stateRef.current, kind);
+    update(entry.state);
+    go(entry.screen);
+  }, [go, update]);
+
+  // Free analysis stays public; the locker and purchase entry ask for login.
   const requireLogin = useCallback(
     (target: string) => {
       if (stateRef.current.loggedIn) return go(target);
@@ -229,9 +247,10 @@ export function Prototype() {
       openMenu,
       closeMenu,
       openProduct,
+      beginPurchase,
       requireLogin,
     }),
-    [state, update, demo, setDemo, go, replace, back, backTo, reset, toast, openMenu, closeMenu, openProduct, requireLogin],
+    [state, update, demo, setDemo, go, replace, back, backTo, reset, toast, openMenu, closeMenu, openProduct, beginPurchase, requireLogin],
   );
 
   // Browser / gesture back pops the prototype stack: a sentinel history entry
@@ -255,8 +274,8 @@ export function Prototype() {
   // rewrites the URL to its own canonical "/" some time after this effect.
   useEffect(() => {
     const mirror = () => {
-      if (window.location.hash !== `#${top}`) {
-        window.history.replaceState(window.history.state, "", `#${top}`);
+      if (window.location.hash !== `#${top}` || window.location.search) {
+        window.history.replaceState(window.history.state, "", `${window.location.pathname}#${top}`);
       }
     };
     const timers = [0, 150, 400, 1000].map((ms) => setTimeout(mirror, ms));

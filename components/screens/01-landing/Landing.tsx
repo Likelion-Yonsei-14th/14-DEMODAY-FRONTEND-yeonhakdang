@@ -3,6 +3,8 @@
 import Image from "next/image";
 
 import { TopBar } from "@/components/chrome/TopBar";
+import { BusinessFooter } from "@/components/policy/BusinessFooter";
+import { ProductCatalog } from "@/components/product/ProductCatalog";
 import { Bottom, Screen } from "@/components/layout/Screen";
 import { Mascot } from "@/components/mascot/Mascot";
 import { SpeechBubble } from "@/components/mascot/SpeechBubble";
@@ -18,10 +20,13 @@ import { useProto } from "@/lib/proto";
  */
 export function LandingContent({
   elementOrder = ["화", "수", "목", "금", "토"],
+  dockCta = true,
 }: {
   elementOrder?: ElementKey[];
+  dockCta?: boolean;
 }) {
   const proto = useProto();
+  const Cta = dockCta ? Bottom : InlineCta;
   return (
     <>
       <TopBar type="logo" right="icon-menu" className="absolute left-0 top-[54px]" />
@@ -65,11 +70,11 @@ export function LandingContent({
         ]}
       />
 
-      <Bottom from={718}>
+      <Cta from={718}>
         <Button
           label="무료로 내 학과 찾기"
           onPress={() => {
-            proto.update({ invited: false });
+            proto.update({ invited: false, afterInput: null });
             proto.go("2-1");
           }}
           className="absolute left-[24px] top-[718px] w-[345px]"
@@ -77,16 +82,24 @@ export function LandingContent({
         <p className="absolute left-[24px] top-[786px] w-[345px] text-center text-caption-12 text-text-secondary">
           지금까지 12,480명이 내 학과를 찾았어요
         </p>
-      </Bottom>
+      </Cta>
     </>
   );
+}
+
+function InlineCta({ children }: { children: React.ReactNode; from: number }) {
+  return <>{children}</>;
 }
 
 /** Figma: 1-1 랜딩 (19:108) */
 export function Landing() {
   return (
-    <Screen>
-      <LandingContent />
+    <Screen height={1701} bleed contentSized>
+      <LandingContent dockCta={false} />
+      <div className="relative mt-[852px] w-full shrink-0">
+        <ProductCatalog />
+        <BusinessFooter />
+      </div>
     </Screen>
   );
 }

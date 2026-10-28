@@ -1,6 +1,8 @@
 import type { Metadata, Viewport } from "next";
 
 import { ProtoLoader } from "@/components/proto/ProtoLoader";
+import { PublicPage } from "@/components/proto/PublicPage";
+import { Landing } from "@/components/screens/01-landing/Landing";
 
 export const metadata: Metadata = {
   title: "연학당",
@@ -18,5 +20,5 @@ export const viewport: Viewport = {
 };
 
 export default function ProtoPage() {
-  return <ProtoLoader />;
+  return <ProtoLoader><PublicPage><Landing /></PublicPage></ProtoLoader>;
 }

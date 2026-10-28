@@ -11,7 +11,7 @@ import { InfoBox } from "@/components/ui/InfoBox";
 import { cn } from "@/lib/cn";
 import { useProto } from "@/lib/proto";
 
-/** Figma: 10-2 구매 내역 · 환불 신청 (226:3325), 393 × 883.
+/** Figma: 10-2 구매 내역 · 환불 신청 (226:3325), 393 × 943.
  * Orders are the supplied prototype fixtures; no payment API is connected.
  */
 export function PurchaseHistory() {
@@ -19,7 +19,7 @@ export function PurchaseHistory() {
   const [refundOpen, setRefundOpen] = useState(false);
 
   return (
-    <Screen height={883} fit>
+    <Screen height={943} fit>
       {!proto.active && <div className="h-[54px] shrink-0" />}
       <TopBar title="구매 내역" />
       <ScreenScroll>
@@ -47,7 +47,7 @@ export function PurchaseHistory() {
             <p className="text-caption-12 text-text-tertiary">2026.10.14 · 토스페이 · 주문번호 HS-20261014-0732</p>
             <p className="text-caption-12 text-text-secondary">결과를 열어봐서 단순 변심 환불은 어려워요. 결과가 안 보이거나 오류가 있다면 고객센터로 알려 주세요.</p>
           </article>
-          <InfoBox>환불 신청은 접수 후 3영업일 이내 결제 취소로 처리돼요. 문의: [고객센터 이메일] · [전화번호] (평일 10:00–18:00)</InfoBox>
+          <InfoBox>환불 신청은 접수 후 3영업일 이내 결제 취소로 처리돼요. 문의: <a href="mailto:emilygylee@yonsei.ac.kr" className="underline">emilygylee@yonsei.ac.kr</a> · [유선 전화번호] (평일 10:00–18:00)</InfoBox>
         </div>
         <BusinessFooter />
       </ScreenScroll>

@@ -9,6 +9,7 @@ export function CheckboxRow({
   showMore = false,
   onToggle,
   onMore,
+  moreHref,
   className,
 }: {
   label: string;
@@ -16,6 +17,8 @@ export function CheckboxRow({
   showMore?: boolean;
   onToggle?: () => void;
   onMore?: () => void;
+  /** Open policy text without losing the current form's consent choices. */
+  moreHref?: string;
   className?: string;
 }) {
   return (
@@ -38,7 +41,11 @@ export function CheckboxRow({
         </div>
         <p className="relative min-w-px flex-1 text-body-m-14">{label}</p>
       </Tap>
-      {showMore && (
+      {showMore && moreHref ? (
+        <a href={moreHref} target="_blank" rel="noopener noreferrer" aria-label={`${label} 보기 (새 탭)`} className="relative shrink-0 text-caption-12 text-text-tertiary underline [text-underline-position:from-font]">
+          보기
+        </a>
+      ) : showMore && (
         <Tap onPress={onMore} className="relative shrink-0">
           <p className="relative shrink-0 whitespace-nowrap text-caption-12 text-text-tertiary underline [text-underline-position:from-font]">
             보기

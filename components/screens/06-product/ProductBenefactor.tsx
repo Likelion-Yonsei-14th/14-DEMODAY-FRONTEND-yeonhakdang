@@ -3,6 +3,7 @@
 import { BottomNav } from "@/components/chrome/BottomNav";
 import { TopBar } from "@/components/chrome/TopBar";
 import { Screen } from "@/components/layout/Screen";
+import { BusinessFooter } from "@/components/policy/BusinessFooter";
 import {
   FeatureList,
   LockNotice,
@@ -18,7 +19,7 @@ import { SectionTitle } from "@/components/ui/SectionTitle";
 /** Figma: 6-2 귀인 · 상품 상세 (29:1386). */
 export function ProductBenefactor() {
   return (
-    <Screen height={1818} bleed contentSized>
+    <Screen height={2296} bleed contentSized>
       <ProductHero
         height={372}
         badge="새내기 인간관계 미리보기"
@@ -39,7 +40,7 @@ export function ProductBenefactor() {
       />
 
       {/* content (29:1422) */}
-      <div className="flex w-[393px] shrink-0 flex-col items-start gap-[32px] overflow-clip px-[24px] pb-[200px] pt-[28px]">
+      <div className="flex min-h-[1446px] w-[393px] shrink-0 flex-col items-start gap-[32px] overflow-clip px-[24px] pb-[200px] pt-[28px]">
         <MascotTipSmall>{"네 대학 생활을 바꿀\n사람을 미리 알려줄게"}</MascotTipSmall>
 
         <FeatureList
@@ -99,11 +100,13 @@ export function ProductBenefactor() {
         <ProductNoticeBox />
       </div>
 
+      <BusinessFooter />
+      <div className="h-[171px] shrink-0" />
       <PriceBottomCta
         product="benefactor"
-        className="absolute left-0 top-[1647px]"
+        className="absolute left-0 top-[2125px]"
       />
-      <BottomNav productAssets active="benefactor" className="absolute left-0 top-[1728px]" />
+      <BottomNav productAssets active="benefactor" className="absolute left-0 top-[2206px]" />
     </Screen>
   );
 }

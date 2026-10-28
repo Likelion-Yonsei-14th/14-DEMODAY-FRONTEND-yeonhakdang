@@ -38,6 +38,7 @@ import { NetworkError } from "@/components/screens/09-locker/NetworkError";
 import { NotFound } from "@/components/screens/09-locker/NotFound";
 import { RefundPolicy } from "@/components/screens/10-policy/RefundPolicy";
 import { PurchaseHistory } from "@/components/screens/10-policy/PurchaseHistory";
+import { AboutPage, TermsPage, PrivacyPage } from "@/components/policy/PolicyPages";
 
 export type ScreenDef = {
   /** Figma frame number, e.g. "1-1" — also the prototype URL hash. */
@@ -251,6 +252,12 @@ export const SECTIONS: SectionDef[] = [
         Component: PaySuccess,
       },
       {
+        id: "7-3b",
+        name: "7-3b 주문 · 3종 패키지 적용 (사이트 금액 = 결제창 금액 3,790원)",
+        nodeId: "251:3426",
+        Component: OrderPayment,
+      },
+      {
         id: "7-5",
         name: "7-5 결제 실패 · 취소 (PAY-04)",
         nodeId: "31:1625",
@@ -337,6 +344,9 @@ export const SECTIONS: SectionDef[] = [
         nodeId: "226:3325",
         Component: PurchaseHistory,
       },
+      { id: "10-3", name: "10-3 서비스 소개", nodeId: "238:3339", Component: AboutPage },
+      { id: "10-4", name: "10-4 이용약관", nodeId: "238:3406", Component: TermsPage },
+      { id: "10-5", name: "10-5 개인정보처리방침", nodeId: "238:3480", Component: PrivacyPage },
     ],
   },
 ];

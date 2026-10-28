@@ -15,6 +15,7 @@ export type Relation = "선배" | "동기" | "교수님" | "연인";
 export type ProtoState = {
   /** Entered through a friend's invite link (1-2). */
   invited: boolean;
+  inviterName: string;
   name: string;
   /** "YYYY.MM.DD", possibly partial while typing. */
   birth: string;
@@ -29,12 +30,14 @@ export type ProtoState = {
   agreedTerms: boolean;
   /** Where to land once the 카카오 login (2-4 → 2-5) finishes. */
   afterLogin: string;
+  /** Resume a purchase after collecting the visitor's birth information. */
+  afterInput: string | null;
   /** The product currently being viewed / bought. */
   product: ProductKind;
   plan: Plan;
   universities: string[];
   relation: Relation;
-  payMethod: "kakao" | "toss";
+  payMethod: "card" | "kakao" | "toss";
   purchased: Record<ProductKind, boolean>;
   charmRerolls: number;
   /** Friend whose 궁합 sheet (4-3) is open. */
@@ -44,6 +47,7 @@ export type ProtoState = {
 /** What the static frames show. */
 export const FIGMA_STATE: ProtoState = {
   invited: true,
+  inviterName: "친구",
   name: "김연학",
   birth: "2008.03.15",
   gender: 0,
@@ -55,11 +59,12 @@ export const FIGMA_STATE: ProtoState = {
   loggedIn: true,
   agreedTerms: true,
   afterLogin: "9-1",
+  afterInput: null,
   product: "compat",
   plan: "single",
   universities: ["연세대학교", "고려대학교", "한양대학교"],
   relation: "선배",
-  payMethod: "kakao",
+  payMethod: "card",
   purchased: { compat: true, benefactor: true, charm: false },
   charmRerolls: 2,
   friend: "민지",
@@ -115,7 +120,7 @@ export function orderTitle(s: Pick<ProtoState, "product" | "plan">): string {
  * "1 / 2" and "2 / 2", so 지원 대학 / 관계 유형 come before payment.
  */
 export function purchaseSteps(s: Pick<ProtoState, "product" | "plan">): string[] {
-  if (s.plan === "package") return ["7-1", "7-2", "7-3"];
+  if (s.plan === "package") return ["7-1", "7-2", "7-3b"];
   if (s.product === "compat") return ["7-1", "7-3"];
   if (s.product === "benefactor") return ["7-2", "7-3"];
   return ["7-3"];
@@ -124,7 +129,20 @@ export function purchaseSteps(s: Pick<ProtoState, "product" | "plan">): string[]
 export function stepLabel(s: Pick<ProtoState, "product" | "plan">, screen: string): string {
   const steps = purchaseSteps(s);
   const title = s.plan === "package" ? "3종 패키지" : PRODUCTS[s.product].name;
-  return `${title} · ${steps.indexOf(screen) + 1} / ${steps.length}`;
+  const current = screen === "7-3" && s.plan === "package" ? "7-3b" : screen;
+  return `${title} · ${steps.indexOf(current) + 1} / ${steps.length}`;
+}
+
+/** Public product pages and the app enter the same purchase flow. */
+export function preparePurchase(state: ProtoState, product: ProductKind, plan = state.plan) {
+  const next = purchaseSteps({ product, plan })[0];
+  const hasProfile = state.name.trim().length >= 2 && /^\d{4}\.\d{2}\.\d{2}$/.test(state.birth)
+    && (state.unknownTime || Boolean(state.time));
+  const target = hasProfile ? next : "2-1";
+  return {
+    state: { ...state, product, plan, afterInput: hasProfile ? null : next, afterLogin: target },
+    screen: state.loggedIn && state.agreedTerms ? target : "2-4",
+  };
 }
 
 /**
@@ -150,8 +168,12 @@ export function rosterScreen(proto: Pick<Proto, "state" | "demo">): string {
 }
 
 /** The link a friend receives: it opens the invite landing (1-2). */
-export function inviteUrl(): string {
-  return `${window.location.origin}/?invite=1`;
+export function inviteUrl(name = "친구"): string {
+  const url = new URL("/", process.env.NEXT_PUBLIC_SITE_URL || window.location.origin);
+  if (!["https:", "http:"].includes(url.protocol)) throw new Error("공유 주소 설정을 확인해 주세요.");
+  url.searchParams.set("invite", "1");
+  url.searchParams.set("from", name.trim().slice(0, 20) || "친구");
+  return url.href;
 }
 
 /** 카카오톡 / 인스타그램 / 페이스북 in-app browsers. */
@@ -183,6 +205,8 @@ export type Proto = {
   closeMenu: () => void;
   /** Open a product's detail page with the single plan selected. */
   openProduct: (kind: ProductKind, plan?: Plan) => void;
+  /** Preserve the selected product through login and any missing profile input. */
+  beginPurchase: (kind: ProductKind) => void;
   /** Go to `target`, routing through 카카오 login first if needed. */
   requireLogin: (target: string) => void;
 };
@@ -204,6 +228,7 @@ const STATIC_PROTO: Proto = {
   openMenu: noop,
   closeMenu: noop,
   openProduct: noop,
+  beginPurchase: noop,
   requireLogin: noop,
 };
 
