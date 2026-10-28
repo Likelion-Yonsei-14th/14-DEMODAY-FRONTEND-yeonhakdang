@@ -8,18 +8,19 @@ export const BUSINESS = {
   /** 상호 */
   name: "부캉이",
   /** 간이과세자라면 "간이과세자", 아니면 "" */
-  taxType: "[간이과세자인 경우 '간이과세자' 표기]",
-  representative: "[대표자명]",
-  registrationNumber: "[000-00-00000]",
+  taxType: "",
+  representative: "이가영",
+  registrationNumber: "898-23-02520",
   /** 통신판매업 신고번호 */
-  mailOrderNumber: "[제0000-서울서대문-0000호]",
-  address: "[사업장 주소]",
-  phone: "[휴대폰 또는 일반전화]",
-  email: "[고객센터 이메일]",
+  mailOrderNumber: "[신고 후 기재]",
+  address: "서울특별시 성동구 성수이로 137, 102동 302호(성수동2가, 성수동아이파크)",
+  /** 유선 전화번호 (휴대폰 불가) */
+  phone: "[유선 전화번호]",
+  email: "emilygylee@yonsei.ac.kr",
   /** 호스팅 서비스 제공자 */
-  hosting: "[호스팅사명]",
+  hosting: "Vercel Inc.",
   /** 개인정보 보호책임자 */
-  privacyOfficer: "[개인정보 보호책임자 성명]",
+  privacyOfficer: "이가영 (대표)",
   /** 청소년 보호책임자 */
   youthOfficer: "[청소년 보호책임자 성명]",
 } as const;
@@ -27,7 +28,7 @@ export const BUSINESS = {
 export const SERVICE_NAME = "연학당";
 
 /** 약관·정책 시행일 */
-export const POLICY_EFFECTIVE_DATE = "[2026년 10월 29일]";
+export const POLICY_EFFECTIVE_DATE = "2026년 10월 29일";
 
 export const POLICY_LINKS = [
   { href: "/terms", label: "이용약관" },
