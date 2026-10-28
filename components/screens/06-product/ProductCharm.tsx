@@ -5,6 +5,7 @@ import Image from "next/image";
 import { BottomNav } from "@/components/chrome/BottomNav";
 import { TopBar } from "@/components/chrome/TopBar";
 import { Screen } from "@/components/layout/Screen";
+import { BusinessFooter } from "@/components/policy/BusinessFooter";
 import {
   FeatureList,
   PriceBottomCta,
@@ -19,7 +20,7 @@ import { PACKAGE_PRICE, SINGLES_TOTAL, won } from "@/lib/catalog";
 /** Figma: 6-3 부적 · 상품 상세 (29:1541). */
 export function ProductCharm() {
   return (
-    <Screen height={1774} bleed contentSized>
+    <Screen height={2281} bleed contentSized>
       <ProductHero
         height={372}
         badge="D-30 합격 기운 충전"
@@ -41,7 +42,7 @@ export function ProductCharm() {
       />
 
       {/* content (29:1577) */}
-      <div className="flex w-[393px] shrink-0 flex-col items-start gap-[32px] overflow-clip px-[24px] pb-[200px] pt-[28px]">
+      <div className="flex min-h-[1431px] w-[393px] shrink-0 flex-col items-start gap-[32px] overflow-clip px-[24px] pb-[200px] pt-[28px]">
         <MascotTipSmall>{"매일 보는 잠금화면에\n합격 기운을 붙여 줄게"}</MascotTipSmall>
 
         <FeatureList
@@ -94,11 +95,13 @@ export function ProductCharm() {
         <ProductNoticeBox />
       </div>
 
+      <BusinessFooter />
+      <div className="h-[171px] shrink-0" />
       <PriceBottomCta
         product="charm"
-        className="absolute left-0 top-[1603px]"
+        className="absolute left-0 top-[2110px]"
       />
-      <BottomNav productAssets active="charm" className="absolute left-0 top-[1684px]" />
+      <BottomNav productAssets active="charm" className="absolute left-0 top-[2191px]" />
     </Screen>
   );
 }

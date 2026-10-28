@@ -28,6 +28,7 @@ function ProductCard({
   includes,
   features,
   note,
+  checkout,
 }: {
   id: string;
   glyph: string;
@@ -37,6 +38,8 @@ function ProductCard({
   includes: string;
   features: string[];
   note?: string;
+  /** The app's entry into this product's purchase (login → 정보 입력 → 결제). */
+  checkout: string;
 }) {
   return (
     <section
@@ -64,6 +67,12 @@ function ProductCard({
         <div className="flex gap-[8px]"><dt className="shrink-0 font-bold text-text-secondary">구성</dt><dd className="text-text-secondary">{includes}</dd></div>
         <div className="flex gap-[8px]"><dt className="shrink-0 font-bold text-text-secondary">제공</dt><dd className="text-text-secondary">{DELIVERY}</dd></div>
       </dl>
+      <Link
+        href={checkout}
+        className="flex h-[44px] w-full items-center justify-center rounded-[12px] border border-brand-primary text-label-button-15 text-brand-primary"
+      >
+        {won(price)} 구매하기
+      </Link>
     </section>
   );
 }
@@ -90,6 +99,7 @@ export default function ProductsPage() {
               summary={p.summary}
               includes={p.includes}
               features={p.features}
+              checkout={`/?checkout=1&product=${kind}`}
             />
           );
         })}
@@ -103,6 +113,7 @@ export default function ProductsPage() {
           summary={`합격 궁합 + 귀인 + 부적을 한 번에 — 단건으로 살 때보다 ${won(SINGLES_TOTAL - PACKAGE_PRICE)} 저렴해요.`}
           includes={PRODUCT_KINDS.map((k) => `${PRODUCTS[k].name}(${PRODUCTS[k].includes})`).join(", ")}
           features={["열지 않은 상품만큼 부분 환불 가능 (환불정책 참고)"]}
+          checkout="/?checkout=1&product=compat&plan=package"
         />
 
         <section aria-labelledby="refund-summary" className="flex w-full flex-col gap-[8px] rounded-[16px] bg-brand-secondary-tint p-[16px]">

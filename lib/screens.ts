@@ -251,6 +251,12 @@ export const SECTIONS: SectionDef[] = [
         Component: PaySuccess,
       },
       {
+        id: "7-3b",
+        name: "7-3b 주문 · 3종 패키지 적용 (사이트 금액 = 결제창 금액)",
+        nodeId: "251:3426",
+        Component: OrderPayment,
+      },
+      {
         id: "7-5",
         name: "7-5 결제 실패 · 취소 (PAY-04)",
         nodeId: "31:1625",

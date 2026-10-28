@@ -38,12 +38,15 @@ export type ProtoState = {
   agreedTerms: boolean;
   /** Where to land once the 카카오 login (2-4 → 2-5) finishes. */
   afterLogin: string;
+  /** Resume a purchase after collecting the visitor's birth information. */
+  afterInput: string | null;
   /** The product currently being viewed / bought. */
   product: ProductKind;
   plan: Plan;
   universities: string[];
   relation: Relation;
-  payMethod: "kakao" | "toss";
+  /** card = 신용·체크카드 through the NHN KCP window. */
+  payMethod: "card" | "kakao" | "toss";
   purchased: Record<ProductKind, boolean>;
   charmRerolls: number;
   /** friendKey of the friend whose 궁합 sheet (4-3) is open. */
@@ -84,11 +87,12 @@ export const FIGMA_STATE: ProtoState = {
   loggedIn: true,
   agreedTerms: true,
   afterLogin: "9-1",
+  afterInput: null,
   product: "compat",
   plan: "single",
   universities: ["연세대학교", "고려대학교", "한양대학교"],
   relation: "선배",
-  payMethod: "kakao",
+  payMethod: "card",
   purchased: { compat: true, benefactor: true, charm: false },
   charmRerolls: 2,
   friend: friendKey(EXAMPLE_FRIENDS[0]),
@@ -124,7 +128,7 @@ export function orderTitle(s: Pick<ProtoState, "product" | "plan">): string {
  * "1 / 2" and "2 / 2", so 지원 대학 / 관계 유형 come before payment.
  */
 export function purchaseSteps(s: Pick<ProtoState, "product" | "plan">): string[] {
-  if (s.plan === "package") return ["7-1", "7-2", "7-3"];
+  if (s.plan === "package") return ["7-1", "7-2", "7-3b"];
   if (s.product === "compat") return ["7-1", "7-3"];
   if (s.product === "benefactor") return ["7-2", "7-3"];
   return ["7-3"];
@@ -133,7 +137,22 @@ export function purchaseSteps(s: Pick<ProtoState, "product" | "plan">): string[]
 export function stepLabel(s: Pick<ProtoState, "product" | "plan">, screen: string): string {
   const steps = purchaseSteps(s);
   const title = s.plan === "package" ? "3종 패키지" : PRODUCTS[s.product].name;
-  return `${title} · ${steps.indexOf(screen) + 1} / ${steps.length}`;
+  const current = screen === "7-3" && s.plan === "package" ? "7-3b" : screen;
+  return `${title} · ${steps.indexOf(current) + 1} / ${steps.length}`;
+}
+
+/**
+ * Where 구매하기 leads, from the app or a public product page: through 카카오
+ * login and, when birth info is missing, 정보 입력 — then on into the steps.
+ */
+export function preparePurchase(state: ProtoState, product: ProductKind, plan = state.plan) {
+  const next = purchaseSteps({ product, plan })[0];
+  const hasProfile = state.name.trim() !== "" && !birthError(selfAsFriend(state));
+  const target = hasProfile ? next : "2-1";
+  return {
+    state: { ...state, product, plan, afterInput: hasProfile ? null : next, afterLogin: target },
+    screen: state.loggedIn && state.agreedTerms ? target : "2-4",
+  };
 }
 
 /**
@@ -167,12 +186,12 @@ export function selfAsFriend(s: ProtoState): FriendInput {
 /**
  * The link a friend receives: it opens the invite landing (1-2) with me as
  * the inviter. Without a valid birth yet, it is a plain link to the app.
+ * NEXT_PUBLIC_SITE_URL pins the deployed address; otherwise this origin.
  */
 export function inviteUrl(s: ProtoState): string {
+  const origin = process.env.NEXT_PUBLIC_SITE_URL?.trim().replace(/\/+$/, "") || window.location.origin;
   const self = selfAsFriend(s);
-  return birthError(self)
-    ? window.location.origin
-    : `${window.location.origin}/?invite=${encodeInvite(self)}`;
+  return birthError(self) ? origin : `${origin}/?invite=${encodeInvite(self)}`;
 }
 
 /** 카카오톡 / 인스타그램 / 페이스북 in-app browsers. */
@@ -204,6 +223,8 @@ export type Proto = {
   closeMenu: () => void;
   /** Open a product's detail page with the single plan selected. */
   openProduct: (kind: ProductKind, plan?: Plan) => void;
+  /** Start buying `kind`, keeping it through login and any missing 정보 입력. */
+  beginPurchase: (kind: ProductKind) => void;
   /** Go to `target`, routing through 카카오 login first if needed. */
   requireLogin: (target: string) => void;
 };
@@ -225,6 +246,7 @@ const STATIC_PROTO: Proto = {
   openMenu: noop,
   closeMenu: noop,
   openProduct: noop,
+  beginPurchase: noop,
   requireLogin: noop,
 };
 

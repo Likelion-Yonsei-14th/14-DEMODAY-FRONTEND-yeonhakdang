@@ -139,9 +139,13 @@ export function InputForm({ initial }: { initial: InputValues }) {
       <Bottom from={740}>
         <BottomCta className="absolute left-0 top-[740px]">
           <Button
-            label="내 학과 분석하기"
+            label={proto.state.afterInput ? "입력 완료 · 구매 계속하기" : "내 학과 분석하기"}
             disabled={!complete}
-            onPress={() => proto.go("3-1")}
+            onPress={() => {
+              const next = proto.state.afterInput ?? "3-1";
+              proto.update({ afterInput: null });
+              proto.go(next);
+            }}
           />
         </BottomCta>
       </Bottom>
