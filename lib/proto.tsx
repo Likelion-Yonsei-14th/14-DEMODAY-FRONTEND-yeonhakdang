@@ -167,12 +167,12 @@ export function selfAsFriend(s: ProtoState): FriendInput {
 /**
  * The link a friend receives: it opens the invite landing (1-2) with me as
  * the inviter. Without a valid birth yet, it is a plain link to the app.
+ * NEXT_PUBLIC_SITE_URL pins the deployed address; otherwise this origin.
  */
 export function inviteUrl(s: ProtoState): string {
+  const origin = process.env.NEXT_PUBLIC_SITE_URL?.trim().replace(/\/+$/, "") || window.location.origin;
   const self = selfAsFriend(s);
-  return birthError(self)
-    ? window.location.origin
-    : `${window.location.origin}/?invite=${encodeInvite(self)}`;
+  return birthError(self) ? origin : `${origin}/?invite=${encodeInvite(self)}`;
 }
 
 /** 카카오톡 / 인스타그램 / 페이스북 in-app browsers. */
