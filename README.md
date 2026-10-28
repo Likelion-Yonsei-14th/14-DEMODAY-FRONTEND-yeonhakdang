@@ -30,7 +30,8 @@ npm run dev     # http://localhost:3000
   분석 결과 내용(학과 TOP 3 등)은 고정입니다.
 - 링크 복사는 실제 클립보드에 초대 링크(`/?invite=1`)를 복사하고, 이미지 저장은 현재 카드를
   1080px PNG로 내려받습니다. 인앱 브라우저에서는 실제 생성된 이미지를 길게 눌러 저장합니다.
-- 카카오톡 공유는 실제 SDK를 사용합니다(아래 설정 필요, 키가 없으면 메시지 미리보기 5-4로 대체).
+- 카카오톡 공유는 실제 SDK를 사용합니다(아래 설정 필요). 키가 없으면 휴대폰은 기기 공유 창(카카오톡 포함),
+  PC는 링크 복사로 대체합니다.
   카카오 로그인 · PG 결제창은 화면으로 흉내 냅니다. 디자인이 없는 기능(공지,
   약관 전문, 구매 내역 등)은 "준비 중" 토스트를 띄웁니다.
 - `BACKEND_ORIGIN`과 `NEXT_PUBLIC_USE_BACKEND=true`를 설정하면 로그인 · 약관 동의 · 결제 · 보관함 ·
@@ -57,12 +58,21 @@ npm run dev     # http://localhost:3000
 
 ## 실제 공유 설정
 
-1. `.env.example`을 `.env.local`로 복사합니다.
-2. `NEXT_PUBLIC_KAKAO_JAVASCRIPT_KEY`에 Kakao Developers 앱의 **JavaScript 키**를 넣습니다.
-3. `NEXT_PUBLIC_SITE_URL`에 실제 HTTPS 배포 주소를 넣습니다. 미설정이면 현재 origin을 사용합니다.
-4. Kakao Developers의 **앱 → 플랫폼 키 → JavaScript 키 → JavaScript SDK 도메인**에 실행 도메인(로컬 테스트 시 포트 포함)을 등록합니다.
-5. **앱 → 제품 링크 관리 → 웹 도메인**에 초대 링크의 도메인을 등록합니다.
-6. 환경변수를 변경하면 개발 서버를 재시작하거나 배포를 다시 빌드합니다.
+카카오 앱은 백엔드 카카오 로그인과 **같은 앱**을 씁니다. 키가 빌드에 들어가야 하므로 환경변수를 바꾼 뒤에는 꼭 다시 빌드·배포합니다.
+
+**배포 (Vercel)**
+
+1. Kakao Developers → 내 애플리케이션 → 앱 → **앱 키**에서 **JavaScript 키**를 복사합니다 (REST API 키·Admin 키 아님).
+2. Vercel → 프로젝트 → Settings → Environment Variables에 `NEXT_PUBLIC_KAKAO_JAVASCRIPT_KEY` = 위 키를 Production(필요하면 Preview도)에 추가합니다.
+3. Kakao Developers → 앱 → 플랫폼 키 → JavaScript 키 → **JavaScript SDK 도메인**에 `https://yeonhakdang.vercel.app`을 등록합니다.
+4. Kakao Developers → 앱 → 제품 링크 관리 → **웹 도메인**에 `https://yeonhakdang.vercel.app`을 등록합니다. 등록하지 않은 도메인의 링크는 카톡 메시지에서 열리지 않습니다.
+5. Vercel → Deployments에서 최신 배포를 **Redeploy**합니다.
+
+**로컬**
+
+1. `.env.example`을 `.env.local`로 복사하고 `NEXT_PUBLIC_KAKAO_JAVASCRIPT_KEY`를 넣습니다.
+2. 위 3·4번에 `http://localhost:3000`도 등록합니다. 다만 카톡을 받은 휴대폰에서는 localhost 링크가 열리지 않으므로, 받은 링크까지 확인하려면 배포 주소로 테스트합니다.
+3. `NEXT_PUBLIC_SITE_URL`에 실제 HTTPS 배포 주소를 넣으면 로컬에서 보내도 링크가 배포 주소로 갑니다. 비워 두면 현재 origin을 사용합니다.
 
 공식 안내: [SDK 초기화](https://developers.kakao.com/docs/ko/javascript/getting-started),
 [카카오톡 공유](https://developers.kakao.com/docs/ko/kakaotalk-share/js-link).
@@ -71,9 +81,13 @@ npm run dev     # http://localhost:3000
 SDK 2.8.4를 공식 SRI로 검증하며, 클릭 전에 로드합니다. 로딩이 늦으면 준비 후 다시 누르도록 안내하여 팝업 차단을 방지합니다.
 SDK 호출은 실제 전송 완료를 보장하지 않으므로 전송 성공 토스트를 표시하지 않습니다.
 카카오 메시지는 대표 이미지와 초대자 이름·링크를 공유하며, 개인화 PNG는 이미지 저장/공유로 제공합니다.
-키가 없으면 카카오톡 공유는 메시지 미리보기(5-4)로 대체되고, 네트워크 오류 시 링크 복사를 이용할 수 있습니다.
+키가 없으면 카카오톡 공유는 기기 공유 창(휴대폰, 목록에 카카오톡 포함) → 링크 복사(PC) 순으로 대체합니다.
 클립보드가 차단되면 직접 복사할 입력창을 표시합니다.
-인스타 스토리는 9:16 PNG를 만든 뒤 OS 이미지 공유 또는 직접 저장을 사용합니다. 웹에서 특정 앱의 스토리로 자동 게시하지 않습니다.
+공유 카드 이미지는 공유 화면이 열리면 백그라운드에서 미리 만들어 둡니다(`lib/cardImage.ts`). 카드에 쓰인 글자에 필요한
+폰트 조각만 넣어서, 한글 웹폰트 조각 전체(약 620개)를 매번 내려받던 때보다 훨씬 빠릅니다.
+이미지 저장은 PC에서 바로 다운로드, 인앱 브라우저에서는 길게 눌러 저장하는 시트를 엽니다.
+인스타 스토리는 9:16 PNG로 기기 공유 창을 엽니다(휴대폰에서 인스타그램 선택). 공유 창이 없는 환경(PC 등)은 이미지를 저장하고
+휴대폰 인스타그램에서 올리도록 안내합니다. 웹에서 특정 앱의 스토리로 자동 게시하지는 못합니다.
 
 검증: `npm test`, `npm run lint`, `npm run build`.
 실기기에서는 등록된 HTTPS 주소에서 카카오톡 전송/취소/받은 링크, Safari·Chrome·카카오 인앱의 PNG 저장을 확인합니다.

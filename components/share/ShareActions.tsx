@@ -31,17 +31,19 @@ export const SHARE_ACTION_ORDER: ShareActionKind[] = [
 export function ShareAction({
   kind,
   onPress,
-  disabled = false,
+  busy = false,
 }: {
   kind: ShareActionKind;
   onPress?: () => void;
-  disabled?: boolean;
+  /** Working on it (making the image): a spinner replaces the icon. The
+   *  button stays enabled — and keeps its pointer — the screen ignores repeats. */
+  busy?: boolean;
 }) {
   const { icon, disc } = ACTIONS[kind];
   return (
     <Tap
       onPress={onPress}
-      disabled={disabled}
+      label={busy ? `${kind} 준비 중` : undefined}
       className="relative flex shrink-0 flex-col items-center gap-[8px] overflow-clip"
     >
       <div
@@ -50,7 +52,11 @@ export function ShareAction({
           disc,
         )}
       >
-        <Icon name={icon} />
+        {busy ? (
+          <div role="status" aria-label="이미지를 만들고 있어요" className="proto-spinner size-[24px] rounded-full border-[3px] border-line-default border-t-text-secondary" />
+        ) : (
+          <Icon name={icon} />
+        )}
       </div>
       <p className="relative shrink-0 whitespace-nowrap text-caption-12 text-text-secondary">
         {kind}
@@ -61,11 +67,12 @@ export function ShareAction({
 
 export function ShareActions({
   onAction,
-  disabled = false,
+  busy,
   className,
 }: {
   onAction?: (kind: ShareActionKind) => void;
-  disabled?: boolean;
+  /** The action still working, if any. */
+  busy?: ShareActionKind | null;
   className?: string;
 }) {
   return (
@@ -79,7 +86,7 @@ export function ShareActions({
         <ShareAction
           key={kind}
           kind={kind}
-          disabled={disabled}
+          busy={busy === kind}
           onPress={onAction && (() => onAction(kind))}
         />
       ))}

@@ -79,6 +79,40 @@ export async function copyText(value: string) {
   } finally { input.remove(); previous?.focus(); }
 }
 
+/**
+ * Without the Kakao SDK: the device share sheet, which lists 카카오톡 on phones.
+ * "shared" / "cancelled" when the sheet opened; "unsupported" means the caller
+ * should fall back (copy the link). Call straight from a click.
+ */
+export async function shareLink(url: string, text: string): Promise<"shared" | "cancelled" | "unsupported"> {
+  if (typeof navigator.share !== "function") return "unsupported";
+  try {
+    await navigator.share({ title: "연학당", text, url });
+    return "shared";
+  } catch (error) {
+    if (error instanceof DOMException && error.name === "AbortError") return "cancelled";
+    return "unsupported";
+  }
+}
+
+/** The PNG data URL as a File, built without fetching so share() keeps the click's activation. */
+export function imageFile(dataUrl: string, filename: string): File {
+  const bytes = Uint8Array.from(atob(dataUrl.split(",")[1]), (c) => c.charCodeAt(0));
+  return new File([bytes], filename, { type: "image/png" });
+}
+
+/** The OS share sheet with the image (Instagram is one of its targets on phones). */
+export async function shareImageFile(file: File): Promise<"shared" | "cancelled" | "unsupported"> {
+  if (!navigator.canShare?.({ files: [file] })) return "unsupported";
+  try {
+    await navigator.share({ files: [file] });
+    return "shared";
+  } catch (error) {
+    if (error instanceof DOMException && error.name === "AbortError") return "cancelled";
+    return "unsupported";
+  }
+}
+
 export function downloadImage(url: string, filename: string) {
   const anchor = document.createElement("a");
   anchor.href = url;
