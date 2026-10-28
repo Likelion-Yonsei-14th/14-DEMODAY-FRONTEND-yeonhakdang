@@ -10,6 +10,7 @@ import { Button } from "@/components/ui/Button";
 import { CheckboxRow } from "@/components/ui/CheckboxRow";
 import { Icon } from "@/components/ui/Icon";
 import { Tap } from "@/components/ui/Tap";
+import { openPolicy } from "@/lib/business";
 import { cn } from "@/lib/cn";
 import { useProto } from "@/lib/proto";
 
@@ -70,9 +71,9 @@ export function TermsSheet() {
                   key={term.label}
                   label={term.label}
                   checked={checks[i]}
-                  showMore={Boolean(term.href)}
-                  moreHref={term.href}
+                  showMore={!!term.href}
                   onToggle={() => toggle(i)}
+                  onMore={() => term.href && openPolicy(term.href)}
                 />
               ))}
             </div>
@@ -85,7 +86,7 @@ export function TermsSheet() {
 
             <div className="relative flex shrink-0 flex-col items-start overflow-clip px-[24px] pb-[46px] pt-[4px]">
               <Button
-                label={proto.state.afterInput || proto.state.afterLogin.startsWith("7-") ? "동의하고 구매 계속하기" : "동의하고 결과 보기"}
+                label="동의하고 결과 보기"
                 disabled={!ready}
                 onPress={() => {
                   proto.update({ loggedIn: true, agreedTerms: true });

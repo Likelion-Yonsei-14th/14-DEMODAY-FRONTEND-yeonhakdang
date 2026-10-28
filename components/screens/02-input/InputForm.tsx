@@ -14,6 +14,7 @@ import { StepProgress } from "@/components/ui/StepProgress";
 import { TextField } from "@/components/ui/TextField";
 import { cn } from "@/lib/cn";
 import { useProto, type ProtoState } from "@/lib/proto";
+import { birthError } from "@/lib/saju";
 
 export type InputValues = Pick<
   ProtoState,
@@ -36,21 +37,6 @@ function formatBirth(raw: string): string {
   return `${d.slice(0, 4)}.${d.slice(4, 6)}.${d.slice(6)}`;
 }
 
-function birthError(birth: string): string | undefined {
-  const d = birth.replace(/\D/g, "");
-  if (d.length < 8) return undefined;
-  const y = Number(d.slice(0, 4));
-  const m = Number(d.slice(4, 6));
-  const day = Number(d.slice(6, 8));
-  const date = new Date(y, m - 1, day);
-  const exists =
-    date.getFullYear() === y && date.getMonth() === m - 1 && date.getDate() === day;
-  if (!exists) return "존재하지 않는 날짜예요. 다시 확인해 주세요";
-  // A fixed range rather than "today", so the frames prerender identically.
-  if (y < 1900 || y > 2020) return "1900~2020년 사이의 날짜로 입력해 주세요";
-  return undefined;
-}
-
 /**
  * The 2-1 / 2-2 / 2-3 정보 입력 screen. The three Figma frames are states of
  * this one form — empty, filled with 시간 모름, and a date-validation error —
@@ -64,7 +50,8 @@ export function InputForm({ initial }: { initial: InputValues }) {
   const set = (patch: Partial<InputValues>) =>
     proto.active ? proto.update(patch) : setLocal((s) => ({ ...s, ...patch }));
 
-  const error = birthError(v.birth);
+  // 양력·음력·윤달 all checked against the 만세력, so 음력 2월 30일 is caught too.
+  const error = birthError(v);
   const nameOk = v.name.trim().length >= 2;
   const birthOk = v.birth.length === 10 && !error;
   const complete = nameOk && birthOk && (v.unknownTime || v.time !== "");
@@ -152,13 +139,9 @@ export function InputForm({ initial }: { initial: InputValues }) {
       <Bottom from={740}>
         <BottomCta className="absolute left-0 top-[740px]">
           <Button
-            label={proto.state.afterInput ? "입력 완료 · 구매 계속하기" : "내 학과 분석하기"}
+            label="내 학과 분석하기"
             disabled={!complete}
-            onPress={() => {
-              const next = proto.state.afterInput ?? "3-1";
-              proto.update({ afterInput: null });
-              proto.go(next);
-            }}
+            onPress={() => proto.go("3-1")}
           />
         </BottomCta>
       </Bottom>

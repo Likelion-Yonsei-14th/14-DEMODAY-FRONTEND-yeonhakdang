@@ -35,7 +35,7 @@ export function RefundRequestDialog({ onClose }: { onClose: () => void }) {
   const copyRequest = async () => {
     try {
       await navigator.clipboard.writeText(summary);
-      setMessage("요청 내용을 복사했어요. emilygylee@yonsei.ac.kr로 보내 주세요. 아직 환불이 접수된 것은 아니에요.");
+      setMessage("요청 내용을 복사했어요. 고객센터 연락처가 등록되면 전달해 주세요. 아직 환불이 접수된 것은 아니에요.");
     } catch {
       requestText.current?.focus();
       requestText.current?.select();
@@ -55,7 +55,7 @@ export function RefundRequestDialog({ onClose }: { onClose: () => void }) {
         <BottomSheetHeader title="환불 신청 안내" onClose={onClose} />
         <div className="flex flex-col gap-[16px] px-[24px] pt-[12px]">
           <h2 id="refund-request-title" className="font-bold text-body-l-16">귀인 + 부적 · 1,891원 부분 환불</h2>
-          <InfoBox>아래 내용을 작성해 고객센터 <a href="mailto:emilygylee@yonsei.ac.kr" className="underline">emilygylee@yonsei.ac.kr</a>로 보내 주세요. 이메일을 보내야 환불 신청이 접수됩니다.</InfoBox>
+          <InfoBox>고객센터 연락처가 아직 등록되지 않았어요. 아래 내용을 작성해 보관해 주세요. 이 화면에서는 환불이 접수되지 않습니다.</InfoBox>
           <label className="flex flex-col gap-[8px] font-bold text-body-m-14">
             카카오 계정 이름
             <input value={name} onChange={(event) => setName(event.target.value)} autoComplete="name" placeholder="이름을 입력해 주세요" className="w-full rounded-[12px] border border-line-default bg-bg-base p-[12px] font-normal outline-brand-secondary" />
@@ -69,9 +69,6 @@ export function RefundRequestDialog({ onClose }: { onClose: () => void }) {
             <textarea ref={requestText} readOnly value={summary} rows={8} className="w-full resize-y rounded-[12px] border border-line-default p-[12px] text-text-primary outline-brand-secondary [user-select:text] [-webkit-user-select:text]" />
           </label>
           <Button label="환불 요청 내용 복사" size="M" type="outline" onPress={copyRequest} />
-          <a href={`mailto:emilygylee@yonsei.ac.kr?subject=${encodeURIComponent("연학당 환불 요청")}&body=${encodeURIComponent(summary)}`} className="rounded-[12px] bg-brand-secondary px-4 py-3 text-center font-bold text-body-m-14 text-text-inverse">
-            이메일로 환불 신청하기
-          </a>
           {message && <p role="status" className="text-caption-12 text-brand-secondary">{message}</p>}
         </div>
       </div>

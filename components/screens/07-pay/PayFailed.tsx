@@ -44,7 +44,7 @@ export function PayFailed() {
       <Bottom from={700}>
         <Button
           label="다시 결제하기"
-          onPress={() => proto.backTo(proto.state.plan === "package" ? "7-3b" : "7-3")}
+          onPress={() => proto.backTo("7-3")}
           className="absolute left-[24px] top-[700px] w-[345px]"
         />
         <Button

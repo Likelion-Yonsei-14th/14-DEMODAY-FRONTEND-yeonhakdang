@@ -2,9 +2,10 @@
 
 import Image from "next/image";
 
-import { RankLabel, type RankKind } from "@/components/roster/RankLabel";
+import { RankLabel } from "@/components/roster/RankLabel";
 import { cn } from "@/lib/cn";
 import { displayName, useProto } from "@/lib/proto";
+import { useRoster } from "@/lib/useRoster";
 
 /**
  * Figma: Share Card / 합격자 명단 · 1:1 (27:1117).
@@ -15,11 +16,8 @@ import { displayName, useProto } from "@/lib/proto";
  */
 export const SHARE_CARD_1_1 = { width: 360, height: 360 };
 
-const ROWS: Array<{ name: string; rank: RankKind; score: string }> = [
-  { name: "민지", rank: "수석 동기", score: "92" },
-  { name: "서준", rank: "차석", score: "88" },
-  { name: "하린", rank: "합격", score: "81" },
-];
+/** The card fits the top 3; the rest are counted below. */
+const ROW_COUNT = 3;
 
 export function ShareCardRoster({
   scale = 1,
@@ -29,6 +27,9 @@ export function ShareCardRoster({
   className?: string;
 }) {
   const owner = displayName(useProto().state);
+  const { entries } = useRoster();
+  const rows = entries.slice(0, ROW_COUNT);
+  const rest = entries.length - rows.length;
   return (
     <div
       className={cn("relative shrink-0", className)}
@@ -67,9 +68,9 @@ export function ShareCardRoster({
 
         {/* 석차 표 (27:1125) */}
         <div className="absolute left-[24px] top-[96px] flex flex-col items-start overflow-clip rounded-[16.279px] border-[1.5px] border-brand-accent bg-surface-default">
-          {ROWS.map(({ name, rank, score }) => (
+          {rows.map(({ key, name, rank, score }) => (
             <div
-              key={name}
+              key={key}
               className="relative flex h-[40px] w-[312px] shrink-0 items-center gap-[10px] overflow-clip px-[14px] py-[9px]"
             >
               <p className="relative shrink-0 whitespace-nowrap font-bold text-body-m-14">
@@ -91,7 +92,7 @@ export function ShareCardRoster({
           너도 합격 확인해봐 → 링크
         </p>
         <p className="absolute left-[24px] top-[322px] whitespace-nowrap font-medium text-caption-11 text-text-tertiary">
-          외 2명 · 궁합 점수 기준 석차
+          {rest > 0 ? `외 ${rest}명 · 궁합 점수 기준 석차` : "궁합 점수 기준 석차"}
         </p>
       </div>
     </div>

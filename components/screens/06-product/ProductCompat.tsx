@@ -3,7 +3,6 @@
 import { BottomNav } from "@/components/chrome/BottomNav";
 import { TopBar } from "@/components/chrome/TopBar";
 import { Screen } from "@/components/layout/Screen";
-import { BusinessFooter } from "@/components/policy/BusinessFooter";
 import {
   ExampleScoreRow,
   FeatureList,
@@ -15,11 +14,12 @@ import {
 } from "@/components/product/ProductSections";
 import { MascotTipSmall } from "@/components/result/ResultSections";
 import { SectionTitle } from "@/components/ui/SectionTitle";
+import { PACKAGE_PRICE, SINGLES_TOTAL, won } from "@/lib/catalog";
 
 /** Figma: 6-1 합격 궁합 · 상품 상세 (29:1220). */
 export function ProductCompat() {
   return (
-    <Screen height={2258} bleed contentSized>
+    <Screen height={1796} bleed contentSized>
       <ProductHero
         height={372}
         badge="원서 접수 전 필수"
@@ -40,7 +40,7 @@ export function ProductCompat() {
       />
 
       {/* content (29:1256) */}
-      <div className="flex min-h-[1408px] w-[393px] shrink-0 flex-col items-start gap-[32px] overflow-clip px-[24px] pb-[200px] pt-[28px]">
+      <div className="flex w-[393px] shrink-0 flex-col items-start gap-[32px] overflow-clip px-[24px] pb-[200px] pt-[28px]">
         <MascotTipSmall>
           {"원서 쓰기 전에\n기운 좋은 대학을 골라줄게!"}
         </MascotTipSmall>
@@ -78,7 +78,7 @@ export function ProductCompat() {
         </div>
 
         <PurchaseOptions
-          caption="3종 패키지로 사면 2,000원 아껴요"
+          caption={`3종 패키지로 사면 ${won(SINGLES_TOTAL - PACKAGE_PRICE)} 아껴요`}
           single={{
             title: "합격 궁합 단건",
             description: "대학 최대 6곳 · 타임라인 포함",
@@ -88,13 +88,11 @@ export function ProductCompat() {
         <ProductNoticeBox />
       </div>
 
-      <BusinessFooter />
-      <div className="h-[171px] shrink-0" />
       <PriceBottomCta
         product="compat"
-        className="absolute left-0 top-[2087px]"
+        className="absolute left-0 top-[1625px]"
       />
-      <BottomNav productAssets active="compat" className="absolute left-0 top-[2168px]" />
+      <BottomNav productAssets active="compat" className="absolute left-0 top-[1706px]" />
     </Screen>
   );
 }

@@ -1,5 +1,8 @@
 import { SectionTitle } from "@/components/ui/SectionTitle";
 import { cn } from "@/lib/cn";
+import { ELEMENTS, ELEMENT_HANJA, type Element } from "@/lib/saju";
+
+import { ELEMENT_FILL } from "@/components/result/elementTone";
 
 /** Figma: Pattern/Result/Element Row (74:2453) + Element Track (73:2808). */
 export type ElementBar = {
@@ -12,13 +15,16 @@ export type ElementBar = {
   ratio: number;
 };
 
-export const ELEMENT_BARS: ElementBar[] = [
-  { label: "木 목", count: "3", fillClass: "bg-brand-secondary", ratio: 1 },
-  { label: "火 화", count: "2", fillClass: "bg-brand-primary", ratio: 1 },
-  { label: "土 토", count: "1", fillClass: "bg-brand-accent", ratio: 1 },
-  { label: "金 금", count: "1", fillClass: "bg-line-strong", ratio: 1 },
-  { label: "水 수", count: "1", fillClass: "bg-brand-secondary-light", ratio: 1 },
-];
+/** One bar per element; the most common element fills the track. */
+export function elementBars(counts: Record<Element, number>): ElementBar[] {
+  const max = Math.max(1, ...ELEMENTS.map((e) => counts[e]));
+  return ELEMENTS.map((e) => ({
+    label: `${ELEMENT_HANJA[e]} ${e}`,
+    count: String(counts[e]),
+    fillClass: ELEMENT_FILL[e],
+    ratio: counts[e] / max,
+  }));
+}
 
 function ElementRow({ label, count, fillClass, ratio }: ElementBar) {
   return (
@@ -54,7 +60,7 @@ export function InsightBox({
         className,
       )}
     >
-      <p className="relative shrink-0 text-caption-12 text-brand-secondary">
+      <p className="relative min-w-0 flex-1 text-caption-12 text-brand-secondary">
         {children}
       </p>
     </div>
@@ -63,11 +69,14 @@ export function InsightBox({
 
 /** Figma: Pattern/Result/Element Distribution (74:4027). */
 export function ElementDistribution({
-  bars = ELEMENT_BARS,
+  counts,
+  charCount,
   insight,
   className,
 }: {
-  bars?: ElementBar[];
+  counts: Record<Element, number>;
+  /** 8, or 6 without a birth time. */
+  charCount: number;
   insight: React.ReactNode;
   className?: string;
 }) {
@@ -78,8 +87,11 @@ export function ElementDistribution({
         className,
       )}
     >
-      <SectionTitle title="나의 오행 분포" caption="여덟 글자 속 다섯 기운의 비율" />
-      {bars.map((bar) => (
+      <SectionTitle
+        title="나의 오행 분포"
+        caption={`${charCount === 6 ? "여섯" : "여덟"} 글자 속 다섯 기운의 비율`}
+      />
+      {elementBars(counts).map((bar) => (
         <ElementRow key={bar.label} {...bar} />
       ))}
       <InsightBox>{insight}</InsightBox>

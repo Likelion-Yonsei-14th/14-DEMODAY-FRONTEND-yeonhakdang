@@ -28,7 +28,7 @@
   --color-surface-default: #ffffff;
   --color-text-primary: #161a23;
   --color-text-secondary: #5b606b;
-  --color-text-tertiary: #8c909a;
+  --color-text-tertiary: #686c76;
   --color-text-inverse: #ffffff;
   --color-brand-primary: #c2361f;
   --color-brand-secondary: #0b3a7a;
@@ -42,6 +42,25 @@
   --color-line-strong: #cfc9ba;
   --color-system-kakao: #fee500;
   --color-system-kakao-text: #191919;
+
+  /* 오행 colours (오방색, deepened so white text holds ≥ 4.5:1).
+     -yang: 갑·병·무·경·임 일간 and the 오행 bars; -eum: 을·정·기·신·계 일간;
+     -ring: the mascot badge border on that element's 유형 card. */
+  --color-element-wood-yang: #1f5f4a;
+  --color-element-wood-eum: #2f7a5f;
+  --color-element-wood-ring: #a9d4c3;
+  --color-element-fire-yang: #9e2a17;
+  --color-element-fire-eum: #c0452c;
+  --color-element-fire-ring: #f0b3a5;
+  --color-element-earth-yang: #7a5212;
+  --color-element-earth-eum: #9c6a1c;
+  --color-element-earth-ring: #e6c98f;
+  --color-element-metal-yang: #454b56;
+  --color-element-metal-eum: #6b707b;
+  --color-element-metal-ring: #c9ccd3;
+  --color-element-water-yang: #0b2545;
+  --color-element-water-eum: #1e3f6e;
+  --color-element-water-ring: #9fb6d9;
 
   /* Figma effect styles: Shadow/Card, Shadow/Sheet */
   --shadow-card: 0 4px 16px 0 rgba(22, 26, 35, 0.06);
@@ -133,13 +152,6 @@ body {
   font-family: var(--font-sans);
   color: var(--color-text-primary);
   -webkit-font-smoothing: antialiased;
-}
-
-/* Public documents keep the same 393px design geometry as the app shell. */
-.public-page {
-  width: 393px;
-  margin-inline: auto;
-  zoom: calc(min(100vw, 430px) / 393px);
 }
 
 /* Figma frames are fixed-width device screens; keep their internal

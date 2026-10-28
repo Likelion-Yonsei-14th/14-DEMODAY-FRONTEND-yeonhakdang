@@ -1,12 +1,13 @@
 "use client";
 
 import Image from "next/image";
+import Link from "next/link";
 
 import { TopBar } from "@/components/chrome/TopBar";
-import { BusinessFooter } from "@/components/policy/BusinessFooter";
-import { ProductCatalog } from "@/components/product/ProductCatalog";
 import { Bottom, Screen } from "@/components/layout/Screen";
 import { Mascot } from "@/components/mascot/Mascot";
+import { BusinessFooter } from "@/components/policy/BusinessFooter";
+import { ProductPriceList } from "@/components/public/PriceRows";
 import { SpeechBubble } from "@/components/mascot/SpeechBubble";
 import { FiveElementsChips, type ElementKey } from "@/components/saju/FiveElement";
 import { Button } from "@/components/ui/Button";
@@ -20,13 +21,10 @@ import { useProto } from "@/lib/proto";
  */
 export function LandingContent({
   elementOrder = ["화", "수", "목", "금", "토"],
-  dockCta = true,
 }: {
   elementOrder?: ElementKey[];
-  dockCta?: boolean;
 }) {
   const proto = useProto();
-  const Cta = dockCta ? Bottom : InlineCta;
   return (
     <>
       <TopBar type="logo" right="icon-menu" className="absolute left-0 top-[54px]" />
@@ -70,11 +68,11 @@ export function LandingContent({
         ]}
       />
 
-      <Cta from={718}>
+      <Bottom from={718}>
         <Button
           label="무료로 내 학과 찾기"
           onPress={() => {
-            proto.update({ invited: false, afterInput: null });
+            proto.update({ inviter: null });
             proto.go("2-1");
           }}
           className="absolute left-[24px] top-[718px] w-[345px]"
@@ -82,24 +80,31 @@ export function LandingContent({
         <p className="absolute left-[24px] top-[786px] w-[345px] text-center text-caption-12 text-text-secondary">
           지금까지 12,480명이 내 학과를 찾았어요
         </p>
-      </Cta>
+      </Bottom>
     </>
   );
 }
 
-function InlineCta({ children }: { children: React.ReactNode; from: number }) {
-  return <>{children}</>;
-}
-
-/** Figma: 1-1 랜딩 (19:108) */
+/**
+ * Figma: 1-1 랜딩 (19:108). Below the fold, past the frame, the prices and the
+ * 사업자 정보 footer — the same facts the server-rendered `/` HTML carries.
+ */
 export function Landing() {
+  const { active } = useProto();
   return (
-    <Screen height={1701} bleed contentSized>
-      <LandingContent dockCta={false} />
-      <div className="relative mt-[852px] w-full shrink-0">
-        <ProductCatalog />
-        <BusinessFooter />
-      </div>
+    <Screen contentSized>
+      <LandingContent />
+      {/* The frame's own content, absolutely placed, ends where the pinned CTA
+          starts (718); in a static frame the CTA sits in place, so skip it too. */}
+      <div aria-hidden className={active ? "h-[664px] shrink-0" : "h-[798px] shrink-0"} />
+      <section aria-labelledby="landing-prices" className="flex w-full flex-col items-start gap-[12px] px-[24px] pb-[24px] pt-[8px]">
+        <h2 id="landing-prices" className="text-h3-18">유료 상품 및 가격</h2>
+        <ProductPriceList />
+        <Link href="/products" className="text-caption-12 font-bold text-brand-secondary">
+          상품 자세히 보기 ›
+        </Link>
+      </section>
+      <BusinessFooter />
     </Screen>
   );
 }

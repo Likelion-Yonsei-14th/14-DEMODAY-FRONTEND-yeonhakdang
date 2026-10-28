@@ -4,6 +4,7 @@ import Image from "next/image";
 
 import { cn } from "@/lib/cn";
 import { displayName, useProto } from "@/lib/proto";
+import { useAnalysis } from "@/lib/useAnalysis";
 
 /**
  * Figma: Share Card / 학과 결과 · 9:16 (27:1011).
@@ -16,13 +17,10 @@ import { displayName, useProto } from "@/lib/proto";
  */
 export const SHARE_CARD_9_16 = { width: 360, height: 640 };
 
-export type ShareCardRank = { rank: string; major: string; score: string };
-
-export const SHARE_CARD_TOP3: ShareCardRank[] = [
-  { rank: "1", major: "경영학과", score: "94" },
-  { rank: "2", major: "정치외교학과", score: "89" },
-  { rank: "3", major: "언론홍보영상학부", score: "86" },
-];
+/** Display/32 fits about 9 글자 across the card; longer names step down. */
+export function majorTitleClass(name: string, roomy: number): string {
+  return name.length > roomy ? "text-h1-26" : "text-display-32";
+}
 
 export function ShareCardMajor({
   scale = 1,
@@ -32,6 +30,8 @@ export function ShareCardMajor({
   className?: string;
 }) {
   const owner = displayName(useProto().state);
+  const { top, dayMaster } = useAnalysis();
+  const first = top[0];
   return (
     <div
       className={cn("relative shrink-0", className)}
@@ -66,13 +66,13 @@ export function ShareCardMajor({
         <p className="absolute left-[28px] top-[84px] whitespace-nowrap text-overline-12 text-brand-accent">
           {owner}님의 사주 학과
         </p>
-        <p className="absolute left-[28px] top-[106px] whitespace-nowrap font-serif text-display-32 text-text-inverse">
-          경영학과
+        <p className={cn("absolute left-[28px] top-[106px] whitespace-nowrap font-serif text-text-inverse", majorTitleClass(first.major.대표학과[0], 9))}>
+          {first.major.대표학과[0]}
         </p>
 
         <div className="absolute left-[28px] top-[156px] flex items-baseline gap-[4px] overflow-clip whitespace-nowrap">
           <p className="relative shrink-0 text-caption-12 text-brand-accent-tint">적합도</p>
-          <p className="relative shrink-0 font-serif text-h2-22 font-black text-brand-accent">94</p>
+          <p className="relative shrink-0 font-serif text-h2-22 font-black text-brand-accent">{first.display}</p>
           <p className="relative shrink-0 text-[12px] font-bold leading-[18px] text-brand-accent">
             점
           </p>
@@ -80,7 +80,7 @@ export function ShareCardMajor({
 
         <div className="absolute left-[28px] top-[204px] flex items-center rounded-full border border-brand-accent bg-brand-accent-tint px-[10px] py-[4px]">
           <p className="relative shrink-0 whitespace-nowrap text-[12px] font-bold leading-[18px]">
-            #갑목 · 개척하는 리더형
+            #{dayMaster.name} · {dayMaster.type}
           </p>
         </div>
 
@@ -94,16 +94,16 @@ export function ShareCardMajor({
 
         {/* TOP3 (27:1031) — radius 14 at 0.6× resolves to 23.33 natively. */}
         <div className="absolute left-[28px] top-[484px] flex flex-col items-start gap-[8px] overflow-clip rounded-[23.333px] bg-brand-secondary-dark px-[16px] py-[14px] text-body-m-14 leading-[22px] whitespace-nowrap">
-          {SHARE_CARD_TOP3.map(({ rank, major, score }) => (
+          {top.map((pick, i) => (
             <div
-              key={rank}
+              key={pick.major.id}
               className="relative flex h-[20px] w-[272px] shrink-0 items-center justify-between overflow-clip"
             >
               <div className="relative flex shrink-0 items-start gap-[10px] overflow-clip">
-                <p className="relative shrink-0 font-bold text-brand-accent">{rank}</p>
-                <p className="relative shrink-0 font-medium text-text-inverse">{major}</p>
+                <p className="relative shrink-0 font-bold text-brand-accent">{i + 1}</p>
+                <p className="relative shrink-0 font-medium text-text-inverse">{pick.major.대표학과[0]}</p>
               </div>
-              <p className="relative shrink-0 font-bold text-brand-accent-tint">{score}</p>
+              <p className="relative shrink-0 font-bold text-brand-accent-tint">{pick.display}</p>
             </div>
           ))}
         </div>

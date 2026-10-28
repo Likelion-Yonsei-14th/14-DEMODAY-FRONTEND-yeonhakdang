@@ -1,10 +1,18 @@
 import type { Metadata } from "next";
-import { PublicPage } from "@/components/proto/PublicPage";
-import { PrivacyPage } from "@/components/policy/PolicyPages";
 
-export const metadata: Metadata = { title: "개인정보처리방침 · 연학당" };
+import { PolicyBody } from "@/components/public/PolicyBody";
+import { PublicShell } from "@/components/public/PublicShell";
+import { PRIVACY } from "@/lib/policies";
 
-export default function Page() {
-  return <PublicPage><PrivacyPage /></PublicPage>;
+export const metadata: Metadata = {
+  title: PRIVACY.title,
+  description: PRIVACY.description,
+};
+
+export default function PrivacyPage() {
+  return (
+    <PublicShell>
+      <PolicyBody doc={PRIVACY} />
+    </PublicShell>
+  );
 }
-

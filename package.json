@@ -3,14 +3,20 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
+    "data": "node scripts/build-majors.mjs",
+    "predev": "node scripts/build-majors.mjs",
     "dev": "next dev",
+    "prebuild": "node scripts/build-majors.mjs",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint"
+    "lint": "eslint",
+    "test": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON --test \"lib/**/*.test.mts\""
   },
   "dependencies": {
+    "@fullstackfamily/manseryeok": "^1.0.8",
+    "@vercel/analytics": "^2.0.1",
     "html-to-image": "^1.11.13",
-    "next": "16.4.0",
+    "next": "16.4.3",
     "react": "19.3.0",
     "react-dom": "19.3.0",
     "tailwind-merge": "^3.7.0"
@@ -21,7 +27,7 @@
     "@types/react": "^19",
     "@types/react-dom": "^19",
     "eslint": "^9",
-    "eslint-config-next": "16.4.0",
+    "eslint-config-next": "16.4.3",
     "tailwindcss": "^4",
     "typescript": "^5"
   }

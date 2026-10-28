@@ -5,8 +5,6 @@ import { useEffect, useState } from "react";
 import { TopBar } from "@/components/chrome/TopBar";
 import { Bottom, Overlay, Screen } from "@/components/layout/Screen";
 import { MascotFaceBadge } from "@/components/mascot/MascotFaceBadge";
-import { BusinessFooter } from "@/components/policy/BusinessFooter";
-import { InfoBox } from "@/components/ui/InfoBox";
 import { PriceRow } from "@/components/pay/OrderRows";
 import { BottomCta } from "@/components/ui/BottomCta";
 import { Button } from "@/components/ui/Button";
@@ -14,6 +12,7 @@ import { CheckboxRow } from "@/components/ui/CheckboxRow";
 import { HintText } from "@/components/ui/HintText";
 import { Icon } from "@/components/ui/Icon";
 import { Tap } from "@/components/ui/Tap";
+import { openPolicy } from "@/lib/business";
 import { cn } from "@/lib/cn";
 import {
   PACKAGE_PRICE,
@@ -87,7 +86,7 @@ function orderSummary(s: ProtoState): string {
  * Stand-in for the 카카오페이 / 토스 checkout window. It approves after a
  * moment; 결제 취소 inside it is how the prototype reaches 7-5.
  */
-function PaySheet({ method, order, onCancel }: { method: string; order: ProtoState; onCancel: () => void }) {
+function PaySheet({ method, onCancel }: { method: string; onCancel: () => void }) {
   return (
     <div className="absolute inset-0">
       <div className="proto-fade-in absolute inset-0 bg-[#161a23] opacity-55" />
@@ -96,7 +95,6 @@ function PaySheet({ method, order, onCancel }: { method: string; order: ProtoSta
         <div className="flex flex-col items-center gap-[4px]">
           <p className="font-serif text-h2-22">{method} 결제 진행 중</p>
           <p className="text-body-m-14 text-text-secondary">앱에서 결제를 승인하고 있어요…</p>
-          <p className="font-bold text-body-l-16">{orderTitle(order)} · {won(orderPrice(order))}</p>
         </div>
         <div className="proto-spinner size-[28px] rounded-full border-[3px] border-brand-secondary-tint border-t-brand-secondary" />
         <Button label="결제 취소" type="ghost" size="M" onPress={onCancel} className="w-[200px]" />
@@ -110,60 +108,58 @@ export function OrderPayment() {
   const proto = useProto();
   const { state, update } = proto;
   const [agreed, setAgreed] = useState(!proto.active);
-  const [refundAgreed, setRefundAgreed] = useState(!proto.active);
-  const [payment, setPayment] = useState<ProtoState | null>(null);
-  const paying = payment !== null;
+  const [paying, setPaying] = useState(false);
 
   const price = won(orderPrice(state));
   const isPackage = state.plan === "package";
   const upsell = PACKAGE_PRICE - PRODUCTS[state.product].price;
-  const methodName = state.payMethod === "card" ? "NHN KCP 신용·체크카드" : state.payMethod === "kakao" ? "카카오페이" : "토스페이";
+  const methodName = state.payMethod === "kakao" ? "카카오페이" : "토스페이";
 
   const { replace, go, setDemo } = proto;
   const payFail = proto.demo.payFail;
   useEffect(() => {
-    if (!payment) return;
+    if (!paying) return;
     const approve = setTimeout(() => {
       if (payFail) {
         // Demo "결제 실패": the PG window declines this one payment.
         setDemo({ payFail: false });
-        setPayment(null);
+        setPaying(false);
         return go("7-5");
       }
       const bought =
-        payment.plan === "package"
+        state.plan === "package"
           ? { compat: true, benefactor: true, charm: true }
-          : { ...payment.purchased, [payment.product]: true };
+          : { ...state.purchased, [state.product]: true };
       update({ purchased: bought, charmRerolls: 3 });
       replace("7-4");
     }, 1800);
     return () => clearTimeout(approve);
-  }, [payment, payFail, go, setDemo, replace, update]);
+  }, [paying, payFail, go, setDemo, replace, update, state.plan, state.product, state.purchased]);
 
   return (
-    <Screen height={1372} bleed contentSized>
+    <Screen>
       <TopBar title="주문 / 결제" className="absolute left-0 top-[54px]" />
 
       {/* content (31:1501) */}
-      <div className="relative mt-[106px] flex min-h-[831px] w-[393px] shrink-0 flex-col items-start gap-[16px] overflow-clip px-[24px] pt-[12px]">
+      <div className="absolute left-0 top-[106px] flex w-[393px] flex-col items-start gap-[16px] overflow-clip px-[24px] pt-[12px]">
         <p className="relative shrink-0 whitespace-nowrap text-overline-12 text-brand-secondary">
           {stepLabel(state, "7-3")}
         </p>
 
         {/* 주문 상품 (31:1503) */}
         <div className="relative flex w-[345px] shrink-0 flex-col items-start gap-[12px] overflow-clip rounded-[16px] border border-line-default bg-surface-default px-[18px] py-[16px]">
-          <div className="relative flex w-full shrink-0 items-center gap-[12px]">
+          <div className="relative flex shrink-0 items-center gap-[12px] overflow-clip">
             <div className="relative flex size-[48px] shrink-0 items-center justify-center overflow-clip rounded-[12px] bg-brand-secondary">
               <p className="relative shrink-0 whitespace-nowrap text-h3-18 text-brand-accent">
-                {PRODUCTS[state.product].glyph}
+                {isPackage ? "三" : PRODUCTS[state.product].glyph}
               </p>
             </div>
             {/* Pattern/Order/Product Summary (74:3148) */}
-            <div className="relative flex min-w-0 flex-1 flex-col items-start gap-[2px]">
+            <div className="relative flex shrink-0 flex-col items-start gap-[2px] overflow-clip whitespace-nowrap">
               <p className="relative shrink-0 font-bold text-body-l-16">
                 {orderTitle(state)}
               </p>
-              <p className="relative w-full break-keep text-caption-12 text-text-secondary">
+              <p className="relative shrink-0 text-caption-12 text-text-secondary">
                 {orderSummary(state)}
               </p>
             </div>
@@ -174,39 +170,25 @@ export function OrderPayment() {
 
         {/* 패키지 업셀 (31:1514) */}
         <Tap
-          onPress={() => {
-            update({ plan: isPackage ? "single" : "package" });
-            setAgreed(false);
-            setRefundAgreed(false);
-            proto.replace(isPackage ? "7-3" : "7-3b");
-          }}
+          onPress={() => update({ plan: isPackage ? "single" : "package" })}
           className="relative flex w-[345px] shrink-0 items-center gap-[10px] overflow-clip whitespace-nowrap rounded-[12px] bg-brand-accent-tint py-[12px] pl-[16px] pr-[12px]"
         >
           <p className="relative shrink-0 text-body-l-input-16 text-brand-accent">✦</p>
           <div className="relative flex min-w-px flex-1 flex-col items-start overflow-clip">
             <p className="relative shrink-0 font-bold text-body-m-14">
-              {isPackage ? "3종 패키지 적용됨 · 2,000원 할인" : `${won(upsell)}만 더 내면 3종 패키지`}
+              {isPackage ? "3종 패키지로 변경했어요" : `${won(upsell)}만 더 내면 3종 패키지`}
             </p>
             <p className="relative shrink-0 text-caption-12 text-text-secondary">
-              {isPackage ? "단건 합계 5,790원 → 3,790원" : `${Object.entries(PRODUCTS).filter(([kind]) => kind !== state.product).map(([, product]) => product.name).join(" · ")}까지 함께 받아요`}
+              {isPackage ? "단건으로 되돌릴 수 있어요" : "귀인 · 부적까지 함께 받아요"}
             </p>
           </div>
           <p className="relative shrink-0 text-[12px] font-bold leading-[18px] text-brand-secondary">
-            {isPackage ? "해제" : "변경"}
+            {isPackage ? "되돌리기" : "변경"}
           </p>
         </Tap>
 
         <p className="relative shrink-0 whitespace-nowrap text-h3-18">결제 수단</p>
 
-        <PayMethod
-          brand="CARD"
-          brandClass="bg-black"
-          brandTextClass="text-text-inverse"
-          title="신용·체크카드"
-          caption="모든 카드사 · NHN KCP 결제창"
-          selected={state.payMethod === "card"}
-          onPress={() => update({ payMethod: "card" })}
-        />
         <PayMethod
           brand="pay"
           brandClass="bg-system-kakao"
@@ -227,23 +209,12 @@ export function OrderPayment() {
         />
 
         <CheckboxRow
-          label="[필수] 주문 내용 확인 및 결제 동의"
+          label="[필수] 주문 내용을 확인했고 결제에 동의해요"
           checked={agreed}
           showMore
           onToggle={() => setAgreed(!agreed)}
-          moreHref="/terms"
+          onMore={() => openPolicy("/refund")}
         />
-
-        <CheckboxRow
-          label="[필수] 열람 후 환불 제한 안내 확인 · 동의"
-          checked={refundAgreed}
-          showMore
-          onToggle={() => setRefundAgreed(!refundAgreed)}
-          moreHref="/refund"
-        />
-        <InfoBox tone="warning" className="w-full">
-          결과를 열람하면 디지털 콘텐츠 특성상 단순 변심 환불이 제한돼요. 만 19세 미만은 법정대리인(부모님) 동의 후 결제해 주세요. 동의 없는 결제는 본인 또는 법정대리인이 취소할 수 있어요.
-        </InfoBox>
 
         <div className="relative flex w-[345px] shrink-0 items-center justify-between overflow-clip whitespace-nowrap pt-[4px] font-bold">
           <p className="relative shrink-0 text-body-l-16">최종 결제 금액</p>
@@ -253,32 +224,22 @@ export function OrderPayment() {
         </div>
       </div>
 
-      <BusinessFooter className="mt-4" />
-      <div className="h-[112px] shrink-0" />
-      <Bottom from={1260} to={1338}>
-        <BottomCta className="absolute left-0 top-[1260px]">
+      <Bottom from={740}>
+        <BottomCta className="absolute left-0 top-[740px]">
           <Button
             label={`${price} 결제하기`}
-            disabled={!agreed || !refundAgreed || paying}
-            onPress={() => {
-              if (!state.loggedIn) return proto.requireLogin(isPackage ? "7-3b" : "7-3");
-              if ((isPackage || state.product === "compat") && state.universities.length === 0) {
-                proto.toast("합격 궁합을 볼 대학을 먼저 골라 주세요");
-                return proto.go("7-1");
-              }
-              setPayment({ ...state });
-            }}
+            disabled={!agreed}
+            onPress={() => setPaying(true)}
           />
         </BottomCta>
       </Bottom>
 
-      {payment && (
+      {paying && (
         <Overlay>
           <PaySheet
             method={methodName}
-            order={payment}
             onCancel={() => {
-              setPayment(null);
+              setPaying(false);
               proto.go("7-5");
             }}
           />

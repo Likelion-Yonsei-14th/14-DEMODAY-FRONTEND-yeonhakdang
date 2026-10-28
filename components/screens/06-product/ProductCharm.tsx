@@ -5,7 +5,6 @@ import Image from "next/image";
 import { BottomNav } from "@/components/chrome/BottomNav";
 import { TopBar } from "@/components/chrome/TopBar";
 import { Screen } from "@/components/layout/Screen";
-import { BusinessFooter } from "@/components/policy/BusinessFooter";
 import {
   FeatureList,
   PriceBottomCta,
@@ -15,11 +14,12 @@ import {
 } from "@/components/product/ProductSections";
 import { MascotTipSmall } from "@/components/result/ResultSections";
 import { SectionTitle } from "@/components/ui/SectionTitle";
+import { PACKAGE_PRICE, SINGLES_TOTAL, won } from "@/lib/catalog";
 
 /** Figma: 6-3 부적 · 상품 상세 (29:1541). */
 export function ProductCharm() {
   return (
-    <Screen height={2281} bleed contentSized>
+    <Screen height={1774} bleed contentSized>
       <ProductHero
         height={372}
         badge="D-30 합격 기운 충전"
@@ -41,7 +41,7 @@ export function ProductCharm() {
       />
 
       {/* content (29:1577) */}
-      <div className="flex min-h-[1431px] w-[393px] shrink-0 flex-col items-start gap-[32px] overflow-clip px-[24px] pb-[200px] pt-[28px]">
+      <div className="flex w-[393px] shrink-0 flex-col items-start gap-[32px] overflow-clip px-[24px] pb-[200px] pt-[28px]">
         <MascotTipSmall>{"매일 보는 잠금화면에\n합격 기운을 붙여 줄게"}</MascotTipSmall>
 
         <FeatureList
@@ -83,7 +83,7 @@ export function ProductCharm() {
 
         {/* 구매 옵션 (P-02) (74:3594) */}
         <PurchaseOptions
-          caption="3종 패키지로 사면 2,000원 아껴요"
+          caption={`3종 패키지로 사면 ${won(SINGLES_TOTAL - PACKAGE_PRICE)} 아껴요`}
           single={{
             title: "부적 단건",
             description: "고화질 저장 + 다시 뽑기 3회",
@@ -94,13 +94,11 @@ export function ProductCharm() {
         <ProductNoticeBox />
       </div>
 
-      <BusinessFooter />
-      <div className="h-[171px] shrink-0" />
       <PriceBottomCta
         product="charm"
-        className="absolute left-0 top-[2110px]"
+        className="absolute left-0 top-[1603px]"
       />
-      <BottomNav productAssets active="charm" className="absolute left-0 top-[2191px]" />
+      <BottomNav productAssets active="charm" className="absolute left-0 top-[1684px]" />
     </Screen>
   );
 }

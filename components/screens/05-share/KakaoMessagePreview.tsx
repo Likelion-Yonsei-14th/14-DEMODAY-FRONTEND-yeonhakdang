@@ -5,7 +5,7 @@ import { MascotFaceBadge } from "@/components/mascot/MascotFaceBadge";
 import { ShareCardMajorSquare } from "@/components/share/ShareCardMajorSquare";
 import { InfoBox } from "@/components/ui/InfoBox";
 import { Tap } from "@/components/ui/Tap";
-import { INITIAL_STATE, displayName, useProto } from "@/lib/proto";
+import { INITIAL_STATE, displayName, selfAsFriend, useProto } from "@/lib/proto";
 
 /** Figma: 5-4 카카오톡 공유 메시지 미리보기 (S-04 · S-07) (28:1272) */
 export function KakaoMessagePreview() {
@@ -20,7 +20,8 @@ export function KakaoMessagePreview() {
 
       {/* kakao feed message (28:1285) */}
       <Tap
-        onPress={() => proto.reset("1-2", { ...INITIAL_STATE, invited: true })}
+        // What my friend sees: the invite landing with me as the inviter.
+        onPress={() => proto.reset("1-2", { ...INITIAL_STATE, inviter: selfAsFriend(proto.state) })}
         className="absolute left-[24px] top-[110px] flex flex-col items-start overflow-clip rounded-[14px] bg-surface-default shadow-card"
       >
         <ShareCardMajorSquare scale={260 / 360} />

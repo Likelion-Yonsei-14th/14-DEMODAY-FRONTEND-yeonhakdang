@@ -2,8 +2,10 @@
 
 import Image from "next/image";
 
+import { majorTitleClass } from "@/components/share/ShareCardMajor";
 import { cn } from "@/lib/cn";
 import { displayName, useProto } from "@/lib/proto";
+import { useAnalysis } from "@/lib/useAnalysis";
 
 /**
  * Figma: Share Card / 학과 결과 · 1:1 (27:1100) — the square crop used for the
@@ -20,6 +22,8 @@ export function ShareCardMajorSquare({
   className?: string;
 }) {
   const owner = displayName(useProto().state);
+  const { top, dayMaster } = useAnalysis();
+  const [first, ...rest] = top;
   return (
     <div
       className={cn("relative shrink-0 overflow-clip", className)}
@@ -54,13 +58,14 @@ export function ShareCardMajorSquare({
         <p className="absolute left-[24px] top-[64px] whitespace-nowrap text-overline-12 text-brand-accent">
           {owner}님의 사주 학과
         </p>
-        <p className="absolute left-[24px] top-[86px] whitespace-nowrap font-serif text-display-32 text-text-inverse">
-          경영학과
+        {/* Beside the mascot stage there is room for about 5 글자 at Display/32. */}
+        <p className={cn("absolute left-[24px] top-[86px] whitespace-nowrap font-serif text-text-inverse", majorTitleClass(first.major.대표학과[0], 5))}>
+          {first.major.대표학과[0]}
         </p>
 
         <div className="absolute left-[24px] top-[134px] flex items-baseline gap-[4px] overflow-clip whitespace-nowrap">
           <p className="relative shrink-0 text-caption-12 text-brand-accent-tint">적합도</p>
-          <p className="relative shrink-0 font-serif text-score-28 text-brand-accent">94</p>
+          <p className="relative shrink-0 font-serif text-score-28 text-brand-accent">{first.display}</p>
           <p className="relative shrink-0 text-[12px] font-bold leading-[18px] text-brand-accent">
             점
           </p>
@@ -68,7 +73,7 @@ export function ShareCardMajorSquare({
 
         <div className="absolute left-[24px] top-[182px] flex items-center rounded-full border border-brand-accent bg-brand-accent-tint px-[10px] py-[4px]">
           <p className="relative shrink-0 whitespace-nowrap text-[12px] font-bold leading-[18px]">
-            #개척하는 리더형
+            #{dayMaster.type}
           </p>
         </div>
 
@@ -84,7 +89,7 @@ export function ShareCardMajorSquare({
         </div>
 
         <div className="absolute left-[24px] top-[232px] whitespace-pre-line text-caption-12 text-brand-accent-tint">
-          {"2위 정치외교학과 89\n3위 언론홍보영상학부 86"}
+          {rest.map((pick, i) => `${i + 2}위 ${pick.major.대표학과[0]} ${pick.display}`).join("\n")}
         </div>
         <p className="absolute left-[24px] top-[322px] whitespace-nowrap font-medium text-caption-11 text-brand-accent-tint">
           너도 내 학과 찾아봐 → 프로필 링크

@@ -20,9 +20,7 @@ import { ShareCardRoster } from "@/components/share/ShareCardRoster";
 import { ShareCardRosterTall } from "@/components/share/ShareCardRosterTall";
 import { SegmentedControl } from "@/components/ui/SegmentedControl";
 import { Toast } from "@/components/ui/Toast";
-import { displayName, inviteUrl, isInAppBrowser, useProto } from "@/lib/proto";
-
-import { copyText, downloadImage, prepareKakao, sendKakaoInvite } from "@/lib/sharing";
+import { inviteUrl, isInAppBrowser, useProto } from "@/lib/proto";
 
 type CardKind = "major" | "roster";
 
@@ -55,25 +53,27 @@ function CardExporter({
 }: {
   card: CardKind;
   ratio: ShareRatio;
-  onDone: (url: string | null, filename: string) => void;
+  onDone: (ok: boolean) => void;
 }) {
   const ref = useRef<HTMLDivElement>(null);
   useEffect(() => {
     let cancelled = false;
-    const filename = `yeonhakdang-${card}-${ratio === "카톡 1:1" ? "1x1" : "9x16"}.png`;
     (async () => {
       try {
         const node = ref.current;
         if (!node) return;
         await Promise.all(
-          Array.from(node.querySelectorAll("img")).map((img) => img.decode()),
+          Array.from(node.querySelectorAll("img")).map((img) => img.decode().catch(() => {})),
         );
-        await document.fonts.ready;
-        const url = await toPng(node, { pixelRatio: 3, backgroundColor: "#ffffff" });
+        const url = await toPng(node, { pixelRatio: 3 });
         if (cancelled) return;
-        onDone(url, filename);
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = `yeonhakdang-${card}-${ratio === "카톡 1:1" ? "1x1" : "9x16"}.png`;
+        a.click();
+        onDone(true);
       } catch {
-        if (!cancelled) onDone(null, filename);
+        if (!cancelled) onDone(false);
       }
     })();
     return () => {
@@ -138,78 +138,29 @@ export function ShareScreen({
   const [exporting, setExporting] = useState(false);
 
   const { toast } = proto;
-  const [image, setImage] = useState<{ url: string; filename: string } | null>(null);
-  const [manualLink, setManualLink] = useState("");
-  const [kakaoReady, setKakaoReady] = useState(false);
-  const [kakaoError, setKakaoError] = useState("");
-  const actionLock = useRef(false);
-  const exportMode = useRef<"save" | "story">("save");
+  const onExported = useCallback(
+    (ok: boolean) => {
+      setExporting(false);
+      toast(ok ? "이미지를 저장했어요" : "이미지를 만들지 못했어요");
+    },
+    [toast],
+  );
 
-  useEffect(() => {
-    let active = true;
-    prepareKakao().then(() => { if (active) setKakaoReady(true); })
-      .catch((error: Error) => { if (active) setKakaoError(error.message); });
-    return () => { active = false; };
-  }, []);
-
-  const onExported = useCallback((url: string | null, filename: string) => {
-    actionLock.current = false;
-    setExporting(false);
-    if (!url) { toast("이미지를 만들지 못했어요. 네트워크를 확인하고 다시 시도해 주세요."); return; }
-    setImage({ url, filename });
-    if (!isInAppBrowser() && exportMode.current === "save") {
-      downloadImage(url, filename);
-      toast("이미지 다운로드를 요청했어요");
+  const onAction = (kind: ShareActionKind) => {
+    if (kind === "이미지 저장") {
+      // In-app browsers block downloads: 5-3 explains the long-press save.
+      if (isInAppBrowser()) return proto.go("5-3");
+      return setExporting(true);
     }
-  }, [toast]);
-
-  const onAction = async (kind: ShareActionKind) => {
-    if (actionLock.current) return;
-    if (kind === "이미지 저장" || kind === "인스타 스토리") {
-      actionLock.current = true;
-      exportMode.current = kind === "인스타 스토리" ? "story" : "save";
-      if (exportMode.current === "story") setRatio("스토리 9:16");
-      setExporting(true);
-      return;
+    if (kind === "카카오톡") return proto.go("5-4");
+    if (kind === "인스타 스토리") {
+      setRatio("스토리 9:16");
+      return proto.toast("인스타그램 스토리로 보냈어요");
     }
-    actionLock.current = true;
-    try {
-      const url = inviteUrl(displayName(proto.state));
-      if (kind === "카카오톡 공유") {
-        if (!kakaoReady) {
-          toast(kakaoError || "카카오톡 공유를 준비 중이에요. 잠시 후 다시 눌러 주세요.");
-          await prepareKakao();
-          setKakaoReady(true);
-          setKakaoError("");
-          toast("준비됐어요. 카카오톡 공유를 다시 눌러 주세요.");
-          return;
-        }
-        // No await before this call: preserve the click's popup permission.
-        await sendKakaoInvite(displayName(proto.state), url);
-      } else {
-        try { await copyText(url); toast("초대 링크를 복사했어요"); }
-        catch { setManualLink(url); }
-      }
-    } catch (error) {
-      toast(error instanceof Error ? error.message : "공유를 열지 못했어요. 팝업 허용 후 다시 시도해 주세요.");
-    } finally { actionLock.current = false; }
-  };
-
-  const shareImage = async () => {
-    if (!image || actionLock.current) return;
-    actionLock.current = true;
-    try {
-      // Decode locally without fetching so share() remains in the click gesture.
-      const bytes = Uint8Array.from(atob(image.url.split(",")[1]), (c) => c.charCodeAt(0));
-      const file = new File([bytes], image.filename, { type: "image/png" });
-      if (!navigator.canShare?.({ files: [file] })) {
-        toast("이미지를 저장한 뒤 인스타그램에서 스토리로 올려 주세요.");
-        return;
-      }
-      await navigator.share({ files: [file] });
-    } catch (error) {
-      if (!(error instanceof DOMException && error.name === "AbortError")) toast("이미지 공유를 열지 못했어요. 다운로드를 이용해 주세요.");
-    } finally { actionLock.current = false; }
+    navigator.clipboard
+      ?.writeText(inviteUrl(proto.state))
+      .then(() => proto.toast("초대 링크를 복사했어요"))
+      .catch(() => proto.toast("링크를 복사하지 못했어요"));
   };
 
   return (
@@ -243,41 +194,13 @@ export function ShareScreen({
           className="absolute left-[24px] top-[640px] w-[345px]"
           message="내 동기 수석 합격자는 누구? 너도 합격 확인해봐"
         />
-        <ShareActions disabled={exporting} onAction={onAction} className="absolute left-[24px] top-[712px] w-[345px]" />
+        <ShareActions onAction={onAction} className="absolute left-[24px] top-[712px] w-[345px]" />
       </Bottom>
 
       {staticToast && !proto.active && (
         <Toast className="absolute left-[97px] top-[580px]" text={staticToast} />
       )}
 
-      {exporting && <p role="status" className="absolute left-[24px] top-[610px]">이미지를 만드는 중이에요…</p>}
-      {(image || manualLink) && (
-        <div role="dialog" aria-modal="true" aria-label={image ? "이미지 저장 및 공유" : "초대 링크 복사"}
-          onKeyDown={(event) => {
-            if (event.key === "Escape") { setImage(null); setManualLink(""); }
-            if (event.key === "Tab") {
-              const controls = Array.from(event.currentTarget.querySelectorAll<HTMLElement>("button, input"));
-              const first = controls[0], last = controls[controls.length - 1];
-              if (event.shiftKey && document.activeElement === first) { event.preventDefault(); last?.focus(); }
-              else if (!event.shiftKey && document.activeElement === last) { event.preventDefault(); first?.focus(); }
-            }
-          }}
-          className="absolute inset-0 z-50 flex flex-col items-center justify-center gap-4 bg-white p-6">
-          <button autoFocus type="button" onClick={() => { setImage(null); setManualLink(""); }} className="self-end rounded border px-4 py-2">닫기</button>
-          {image ? <>
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src={image.url} alt="저장할 연학당 결과 카드" className="max-h-[65%] max-w-full object-contain" />
-            <p className="text-center text-sm">이미지를 길게 눌러 저장할 수 있어요.<br />스토리는 이미지 저장 후 인스타그램에서 올려 주세요.</p>
-            <div className="flex gap-3">
-              <button type="button" className="rounded border px-4 py-2" onClick={() => downloadImage(image.url, image.filename)}>PNG 다운로드</button>
-              <button type="button" className="rounded border px-4 py-2" onClick={shareImage}>이미지 공유</button>
-            </div>
-          </> : <>
-            <p>링크를 선택해 직접 복사해 주세요.</p>
-            <input aria-label="초대 링크" readOnly value={manualLink} onFocus={(event) => event.target.select()} className="w-full rounded border p-3" />
-          </>}
-        </div>
-      )}
       {exporting && <CardExporter card={card} ratio={ratio} onDone={onExported} />}
     </Screen>
   );

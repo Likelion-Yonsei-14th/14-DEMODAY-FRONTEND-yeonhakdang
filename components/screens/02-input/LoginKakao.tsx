@@ -19,7 +19,6 @@ import { useProto } from "@/lib/proto";
 export function LoginKakaoContent() {
   const proto = useProto();
   const { state } = proto;
-  const purchasing = Boolean(state.afterInput) || state.afterLogin.startsWith("7-");
   return (
     <>
       <TopBar title="" className="absolute left-0 top-[54px]" />
@@ -30,7 +29,7 @@ export function LoginKakaoContent() {
         overlineTone="primary"
         size="h1"
         title={"결과를 저장하고\n동기 명단을 만들어요"}
-        body={purchasing ? "카카오로 로그인하고 구매를 계속해요.\n선택한 상품과 가격은 그대로 유지돼요." : "카카오로 3초 만에 시작해요.\n입력한 정보는 그대로 이어서 분석해요."}
+        body={"카카오로 3초 만에 시작해요.\n입력한 정보는 그대로 이어서 분석해요."}
       />
 
       <div className="absolute left-[89.5px] top-[266px] size-[214px] opacity-45">
@@ -63,10 +62,10 @@ export function LoginKakaoContent() {
         ]}
       />
 
-      {state.invited && (
+      {state.inviter && (
         <Chip
-          className="absolute left-[56px] top-[638px]"
-          label={`${state.inviterName}님의 초대가 이어져요 · 로그인 후 명단 자동 등록`}
+          className="absolute left-1/2 top-[638px] max-w-[345px] -translate-x-1/2"
+          label={`${state.inviter.name}님의 초대가 이어져요 · 로그인 후 명단 자동 등록`}
         />
       )}
 
@@ -84,7 +83,7 @@ export function LoginKakaoContent() {
           className="absolute left-[24px] top-[718px] w-[345px]"
         />
         <p className="absolute left-[24px] top-[786px] w-[345px] text-center text-caption-12 text-text-tertiary">
-          {purchasing ? "처음이라면 약관 동의 후 구매를 계속할 수 있어요" : "처음이라면 약관 동의 후 계속할 수 있어요"}
+          처음이라면 약관 동의 후 바로 분석이 시작돼요
         </p>
       </Bottom>
     </>

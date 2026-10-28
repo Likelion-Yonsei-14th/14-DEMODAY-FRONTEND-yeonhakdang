@@ -58,7 +58,7 @@ export function PaySuccess() {
         <ListItem label="상품" value={orderTitle(state)} onPress={orderDetail} />
         <ListItem
           label="결제 수단"
-          value={state.payMethod === "card" ? "신용·체크카드" : state.payMethod === "kakao" ? "카카오페이" : "토스페이"}
+          value={state.payMethod === "kakao" ? "카카오페이" : "토스페이"}
           onPress={orderDetail}
         />
         <ListItem label="결제 금액" value={won(orderPrice(state))} onPress={orderDetail} />
