@@ -148,6 +148,14 @@ html {
   background: #efece3;
 }
 
+/* On phones the app fills the screen; iOS Safari tints its bars from the
+   page background (it ignores theme-color), so match bg/base there. */
+@media (max-width: 480px) {
+  html {
+    background: var(--color-bg-base);
+  }
+}
+
 body {
   font-family: var(--font-sans);
   color: var(--color-text-primary);
