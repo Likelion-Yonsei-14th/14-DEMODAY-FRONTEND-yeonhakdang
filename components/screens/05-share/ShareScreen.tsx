@@ -22,6 +22,7 @@ import { Button } from "@/components/ui/Button";
 import { HintText } from "@/components/ui/HintText";
 import { SegmentedControl } from "@/components/ui/SegmentedControl";
 import { Toast } from "@/components/ui/Toast";
+import { trackShareClick, type ShareMethod } from "@/lib/analytics";
 import { renderCard } from "@/lib/cardImage";
 import { displayName, inviteUrl, isInAppBrowser, useProto } from "@/lib/proto";
 import {
@@ -41,6 +42,13 @@ type Png = { url: string; filename: string };
 
 const SHARE_MESSAGE = "내 동기 수석 합격자는 누구? 너도 합격 확인해봐";
 const cardKey = (card: CardKind, ratio: ShareRatio) => `${card}|${ratio}`;
+/** The share_click `method` sent to GA. */
+const SHARE_METHODS: Record<ShareActionKind, ShareMethod> = {
+  "카카오톡 공유": "kakao",
+  "이미지 저장": "image",
+  "링크 복사": "link",
+  "인스타 스토리": "instagram_story",
+};
 
 /**
  * The card exactly as it is saved: native 360-wide size, 학과 컨셉 image laid
@@ -313,8 +321,10 @@ export function ShareScreen({
     }
   };
 
-  const onAction = (kind: ShareActionKind) =>
-    kind === "이미지 저장" || kind === "인스타 스토리" ? imageAction(kind) : void linkAction(kind);
+  const onAction = (kind: ShareActionKind) => {
+    trackShareClick(SHARE_METHODS[kind]);
+    return kind === "이미지 저장" || kind === "인스타 스토리" ? imageAction(kind) : void linkAction(kind);
+  };
 
   return (
     <Screen>

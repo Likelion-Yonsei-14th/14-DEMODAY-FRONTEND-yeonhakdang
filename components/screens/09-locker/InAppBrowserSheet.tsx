@@ -8,6 +8,7 @@ import { MascotFaceBadge } from "@/components/mascot/MascotFaceBadge";
 import { SpeechBubble } from "@/components/mascot/SpeechBubble";
 import { LandingContent } from "@/components/screens/01-landing/Landing";
 import { Button } from "@/components/ui/Button";
+import { trackInappExternalOpen } from "@/lib/analytics";
 import { cn } from "@/lib/cn";
 import { entryUrl, externalBrowserPlan, openExternalBrowser } from "@/lib/externalBrowser";
 import { useProto } from "@/lib/proto";
@@ -27,6 +28,7 @@ export function InAppBrowserSheet() {
   const cancel = useRef<() => void>(undefined);
   useEffect(() => () => cancel.current?.(), []);
   const openExternal = () => {
+    trackInappExternalOpen();
     cancel.current?.();
     cancel.current = openExternalBrowser(plan, {
       onLeft: proto.back,

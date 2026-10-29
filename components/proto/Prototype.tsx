@@ -6,6 +6,7 @@ import { Dim } from "@/components/layout/BottomSheet";
 import { SCREEN_WIDTH, ViewportContext } from "@/components/layout/Screen";
 import { DrawerPanel } from "@/components/screens/09-locker/MenuDrawer";
 import { Toast } from "@/components/ui/Toast";
+import { trackInviteOpen, trackPurchaseClick, trackResultView, trackScreen } from "@/lib/analytics";
 import { cn } from "@/lib/cn";
 import {
   ApiError,
@@ -44,6 +45,8 @@ import { ALL_SCREENS as SCREENS } from "@/lib/screens";
 const SCREEN_IDS = new Set(SCREENS.map((s) => s.id));
 /** Screens that are a bottom sheet over another screen: they animate themselves. */
 const SHEETS = new Set(["2-5", "4-3", "9-4", "9-5"]);
+/** The free 학과 결과 screens. */
+const RESULTS = new Set(["3-3", "3-4"]);
 
 type Op = "push" | "pop" | "replace" | "reset";
 type Nav = { stack: string[]; op: Op; from?: string };
@@ -65,7 +68,16 @@ function readHash(): string | undefined {
 }
 
 type Saved = { stack?: string[]; state?: ProtoState; demo?: DemoFlags };
-type Start = { nav: Nav; state: ProtoState; demo: DemoFlags; /** A toast to raise on load. */ notice?: string };
+/** How the visit began, for GA: an invite link, or 구매하기 on a public page. */
+type Entry = { kind: "invite" } | { kind: "purchase"; product: string; plan: string };
+type Start = {
+  nav: Nav;
+  state: ProtoState;
+  demo: DemoFlags;
+  /** A toast to raise on load. */
+  notice?: string;
+  entry?: Entry;
+};
 
 /** Opened inside 카카오톡 / 인스타그램: the 9-4 notice, once per tab. */
 function firstInAppVisit(): boolean {
@@ -121,7 +133,12 @@ function restore(): Start {
     if (product === "compat" || product === "benefactor" || product === "charm") {
       const plan = params.get("plan") === "package" ? "package" : "single";
       const entry = preparePurchase(state, product, plan);
-      return { nav: { stack: [PRODUCTS[product].detail, entry.screen], op: "reset" }, state: entry.state, demo };
+      return {
+        nav: { stack: [PRODUCTS[product].detail, entry.screen], op: "reset" },
+        state: entry.state,
+        demo,
+        entry: { kind: "purchase", product, plan },
+      };
     }
   }
   if (params.has("invite")) {
@@ -137,10 +154,11 @@ function restore(): Start {
           state: { ...state, friends: addFriend(state.friends, inviter, Date.now()) },
           demo,
           notice: `${inviter.name}님이 합격자 명단에 등록됐어요`,
+          entry: { kind: "invite" },
         };
       }
       // Otherwise a fresh session on the invite landing.
-      return { nav: { stack: ["1-2"], op: "reset" }, state: { ...INITIAL_STATE, inviter }, demo };
+      return { nav: { stack: ["1-2"], op: "reset" }, state: { ...INITIAL_STATE, inviter }, demo, entry: { kind: "invite" } };
     }
   }
   if (hash && hash !== stack.at(-1)) {
@@ -199,6 +217,27 @@ export function Prototype() {
   });
 
   const top = nav.stack[nav.stack.length - 1];
+
+  // GA: how the visit began, once (the ref survives Strict Mode's re-run).
+  const entrySent = useRef(false);
+  useEffect(() => {
+    const entry = initial.entry;
+    if (entrySent.current) return;
+    entrySent.current = true;
+    if (entry?.kind === "invite") trackInviteOpen();
+    if (entry?.kind === "purchase") trackPurchaseClick(entry.product, entry.plan);
+  }, [initial.entry]);
+
+  // GA: a page_view per screen (lib/analytics drops repeats) and result_view
+  // on stepping into the free result.
+  const lastTop = useRef<string | undefined>(undefined);
+  useEffect(() => {
+    if (lastTop.current === top) return;
+    const from = lastTop.current;
+    lastTop.current = top;
+    trackScreen(top, SCREENS.find((s) => s.id === top)?.name ?? top);
+    if (RESULTS.has(top) && !(from && RESULTS.has(from))) trackResultView(top);
+  }, [top]);
 
   const update = useCallback((patch: Partial<ProtoState>) => {
     setState((s) => ({ ...s, ...patch }));
@@ -366,6 +405,7 @@ export function Prototype() {
   const beginPurchase = useCallback<Proto["beginPurchase"]>(
     (kind) => {
       const entry = preparePurchase(stateRef.current, kind);
+      trackPurchaseClick(kind, entry.state.plan);
       update(entry.state);
       go(entry.screen);
     },

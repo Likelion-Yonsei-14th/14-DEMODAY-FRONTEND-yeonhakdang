@@ -12,6 +12,7 @@ import { InfoBox } from "@/components/ui/InfoBox";
 import { SegmentedField } from "@/components/ui/SegmentedControl";
 import { StepProgress } from "@/components/ui/StepProgress";
 import { TextField } from "@/components/ui/TextField";
+import { trackAnalysisStart } from "@/lib/analytics";
 import { cn } from "@/lib/cn";
 import { useProto, type ProtoState } from "@/lib/proto";
 import { birthError } from "@/lib/saju";
@@ -143,6 +144,7 @@ export function InputForm({ initial }: { initial: InputValues }) {
             disabled={!complete}
             onPress={() => {
               const next = proto.state.afterInput ?? "3-1";
+              if (!proto.state.afterInput) trackAnalysisStart();
               proto.update({ afterInput: null });
               proto.go(next);
             }}
