@@ -4,6 +4,7 @@ import { createContext, useContext } from "react";
 
 import type { SavedResult } from "@/lib/backend";
 import { PACKAGE_PRICE, PRODUCTS, type ProductKind } from "@/lib/catalog";
+import { detectApp } from "@/lib/externalBrowser";
 import { encodeInvite, friendKey, type Friend, type FriendInput } from "@/lib/friends";
 import { birthError } from "@/lib/saju";
 
@@ -217,7 +218,7 @@ export function inviteUrl(s: ProtoState): string {
 
 /** 카카오톡 / 인스타그램 / 페이스북 in-app browsers. */
 export function isInAppBrowser(): boolean {
-  return /KAKAOTALK|Instagram|FBAN|FBAV/i.test(navigator.userAgent);
+  return detectApp(navigator.userAgent) !== "none";
 }
 
 export function displayName(s: Pick<ProtoState, "name">): string {

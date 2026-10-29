@@ -4,18 +4,16 @@ import { useState } from "react";
 
 import { TopBar } from "@/components/chrome/TopBar";
 import { Bottom, Screen } from "@/components/layout/Screen";
-import {
-  ChipUniversity,
-  UniversityRow,
-  UniversitySearchField,
-  searchUniversities,
-} from "@/components/pay/UniversityPicker";
+import { ChipUniversity, UniversityRow, UniversitySearchField } from "@/components/pay/UniversityPicker";
 import { MascotTipSmall } from "@/components/result/ResultSections";
 import { BottomCta } from "@/components/ui/BottomCta";
 import { Button } from "@/components/ui/Button";
 import { purchaseSteps, stepLabel, useProto } from "@/lib/proto";
+import { searchUniversities } from "@/lib/universities";
 
 const MAX = 6;
+/** Search rows shown at once: five still clear the CTA with two chip rows above. */
+const RESULTS = 5;
 
 /** Figma: 7-1 합격 궁합 · 지원 대학 선택 (PAY-05·06) (30:1421) */
 export function PickUniversities() {
@@ -23,7 +21,7 @@ export function PickUniversities() {
   const { state, update } = proto;
   const [query, setQuery] = useState(proto.active ? "" : "성균");
   const picked = state.universities;
-  const results = searchUniversities(query);
+  const results = searchUniversities(query, proto.active ? RESULTS : 3);
 
   const toggle = (name: string) => {
     if (picked.includes(name)) {
@@ -83,6 +81,7 @@ export function PickUniversities() {
           {results.map((u, i) => (
             <UniversityRow
               key={`${u.name}-${u.campus}`}
+              before={u.before}
               match={u.match}
               rest={u.rest}
               campus={u.campus}

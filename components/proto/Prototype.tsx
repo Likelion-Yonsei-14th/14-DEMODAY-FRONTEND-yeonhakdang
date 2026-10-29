@@ -23,6 +23,7 @@ import {
 } from "@/lib/backend";
 import { PACKAGE_PRICE } from "@/lib/catalog";
 import { confirmOrder, syncLocker } from "@/lib/checkout";
+import { captureEntryUrl } from "@/lib/externalBrowser";
 import { addFriend, decodeInvite, friendKey } from "@/lib/friends";
 import {
   INITIAL_DEMO,
@@ -78,6 +79,12 @@ function firstInAppVisit(): boolean {
 
 /** The restored session, with the in-app notice laid over it when due. */
 function start(): Start {
+  // Before restore() clears ?invite= / ?checkout=: 9-4 hands this address on.
+  let tab: Storage | undefined;
+  try {
+    tab = sessionStorage;
+  } catch {}
+  captureEntryUrl(window.location.href, tab);
   const restored = restore();
   if (!firstInAppVisit()) return restored;
   return { ...restored, nav: { stack: [...restored.nav.stack, "9-4"], op: "reset" } };

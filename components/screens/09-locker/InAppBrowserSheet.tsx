@@ -1,5 +1,7 @@
 "use client";
 
+import { useEffect, useRef } from "react";
+
 import { BottomSheet, BottomSheetHeader, Dim } from "@/components/layout/BottomSheet";
 import { Anchored, Overlay, Screen } from "@/components/layout/Screen";
 import { MascotFaceBadge } from "@/components/mascot/MascotFaceBadge";
@@ -7,19 +9,30 @@ import { SpeechBubble } from "@/components/mascot/SpeechBubble";
 import { LandingContent } from "@/components/screens/01-landing/Landing";
 import { Button } from "@/components/ui/Button";
 import { cn } from "@/lib/cn";
+import { entryUrl, externalBrowserPlan, openExternalBrowser } from "@/lib/externalBrowser";
 import { useProto } from "@/lib/proto";
 
 /**
  * Figma: 9-4 인앱 브라우저 안내 · 바텀시트 (C-07) (34:1907)
  * Opens over the current screen when the prototype detects a 카카오톡 /
  * 인스타그램 in-app browser (or from the demo panel); every exit closes it.
+ * The button opens the tab's first address in the phone's browser (see
+ * lib/externalBrowser); the copy follows the OS and app. Prototype never
+ * renders on the server, so navigator is there on the first render.
  */
 export function InAppBrowserSheet() {
   const proto = useProto();
   const continueAsFriend = proto.back;
-  const openSafari = () => {
-    proto.toast("Safari에서 열었어요");
-    proto.back();
+  const plan = externalBrowserPlan(navigator.userAgent, entryUrl(window.location.href));
+  const cancel = useRef<() => void>(undefined);
+  useEffect(() => () => cancel.current?.(), []);
+  const openExternal = () => {
+    cancel.current?.();
+    cancel.current = openExternalBrowser(plan, {
+      onLeft: proto.back,
+      // Nothing opened: the sheet stays, pointing at the manual steps.
+      onStayed: () => proto.toast(plan.guide.text),
+    });
   };
   return (
     <Screen>
@@ -40,17 +53,17 @@ export function InAppBrowserSheet() {
               <div className="relative flex w-[345px] shrink-0 items-center gap-[10px] overflow-clip rounded-[14px] bg-bg-subtle px-[16px] py-[14px]">
                 <div className="relative flex size-[32px] shrink-0 items-center justify-center overflow-clip rounded-[8px] bg-surface-default">
                   <p className="relative shrink-0 whitespace-nowrap font-bold text-body-l-16">
-                    ⋯
+                    {plan.guide.icon}
                   </p>
                 </div>
                 <p className="relative shrink-0 whitespace-nowrap font-medium text-body-m-14">
-                  오른쪽 위 ⋯ 메뉴 → ‘다른 브라우저로 열기’
+                  {plan.guide.text}
                 </p>
               </div>
             </div>
 
             <div className="relative flex w-full shrink-0 flex-col items-center gap-[6px] overflow-clip px-[24px] pb-[40px] pt-[12px]">
-              <Button label="Safari로 열기" onPress={openSafari} className="w-[345px]" />
+              <Button label={plan.label} onPress={openExternal} className="w-[345px]" />
               <Button
                 label="이대로 계속하기"
                 type="ghost"
