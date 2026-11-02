@@ -5,13 +5,19 @@
 import dayMasters from "@/data/day-masters.json";
 import insights from "@/data/insights.json";
 import majors from "@/data/majors.json";
+import paid from "@/data/paid.json";
 import scoring from "@/data/scoring.json";
+import founded from "@/data/universities-founded.json";
 
 import { analyze, type AnalysisResult } from "./analyze.ts";
 import type { BirthInput } from "./birth.ts";
 import type { Content } from "./content.ts";
+import type { PaidContent } from "./paid.ts";
 
 export const CONTENT = { majors, dayMasters, insights, scoring } as Content;
+
+/** The 유료 결과 tables: lib/saju/paid.ts takes them as an argument too. */
+export const PAID_CONTENT = { ...paid, founded: founded.years } as unknown as PaidContent;
 
 export function analyzeBirth(input: BirthInput): AnalysisResult {
   return analyze(input, CONTENT);
@@ -23,3 +29,12 @@ export type { MajorScore } from "./score.ts";
 export { ELEMENTS, ELEMENT_HANJA, elementLabel, type Element } from "./elements.ts";
 export { PILLAR_LABELS } from "./pillars.ts";
 export { compatibility, rankFriends, type Compat, type Rank } from "./compat.ts";
+export {
+  benefactorResult,
+  charmResult,
+  compatResult,
+  type BenefactorRelation,
+  type BenefactorResult,
+  type CharmResult,
+  type CompatResult,
+} from "./paid.ts";
