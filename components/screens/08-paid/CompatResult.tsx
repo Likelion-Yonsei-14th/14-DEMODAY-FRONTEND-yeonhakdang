@@ -18,10 +18,13 @@ import { displayName, unlocked, useProto } from "@/lib/proto";
 import { useOpenRecord } from "@/lib/useOpenRecord";
 import { useCompatResult } from "@/lib/usePaid";
 
-/** The frame holds 3 대학; each one more (or fewer) adds a card and its gap. */
-const FRAME_HEIGHT = 1658;
+/**
+ * The frame holds 3 대학; each one more (or fewer) adds a card and its gap.
+ * 1658 less the share button (and its gap) the frame had under the tip.
+ */
+const FRAME_HEIGHT = 1578;
 const CARD_STEP = 114;
-/** 이용권: "다른 대학으로 다시 보기" under the share button. */
+/** 이용권: "다른 대학으로 다시 보기" under the tip. */
 const RETRY_STEP = 80;
 const BAR_TONES = ["bg-brand-secondary", "bg-brand-secondary-light"];
 
@@ -58,7 +61,7 @@ export function CompatResult() {
         <div className="relative flex w-full shrink-0 flex-col items-start gap-[10px] overflow-clip">
           <SectionTitle
             title="대학별 합격 궁합"
-            caption="내 사주와 학교의 기운(개교 연도의 천간)을 비교했어요"
+            caption="학교 기운(개교 연도의 간지)과 내 사주를 비교했어요. 카드를 누르면 근거가 보여요"
             className="w-auto"
           />
           {result.universities.map((u, i) => (
@@ -70,6 +73,7 @@ export function CompatResult() {
               badge={i === 0 ? "최고 궁합" : undefined}
               barClass={BAR_TONES[i] ?? "bg-brand-accent"}
               note={u.note}
+              reasons={u.reasons}
             />
           ))}
         </div>
@@ -103,15 +107,10 @@ export function CompatResult() {
           </SpeechBubble>
         </div>
 
-        <Button
-          label="합격 궁합 카드 공유하기"
-          type="outline"
-          onPress={() => proto.go("5-1")}
-        />
         {retry && (
           <Button
             label="다른 대학으로 다시 보기"
-            type="ghost"
+            type="outline"
             onPress={() => {
               proto.update({ product: "compat", plan: "single" });
               proto.go("7-1");

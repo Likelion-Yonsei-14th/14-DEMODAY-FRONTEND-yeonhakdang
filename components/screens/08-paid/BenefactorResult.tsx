@@ -11,7 +11,6 @@ import { Chip } from "@/components/ui/Chip";
 import { InfoBox } from "@/components/ui/InfoBox";
 import { SectionTitle } from "@/components/ui/SectionTitle";
 import { useProto } from "@/lib/proto";
-import { ELEMENT_HANJA } from "@/lib/saju";
 import { useOpenRecord } from "@/lib/useOpenRecord";
 import { useBenefactorResult } from "@/lib/usePaid";
 
@@ -47,7 +46,7 @@ export function BenefactorResult() {
           <div className="relative flex shrink-0 items-center gap-[14px] overflow-clip">
             <div className="relative flex size-[56px] shrink-0 items-center justify-center overflow-clip rounded-full bg-brand-primary-tint">
               <p className="relative shrink-0 whitespace-nowrap font-serif text-h2-22 text-brand-primary">
-                {ELEMENT_HANJA[result.element]}
+                {result.glyph}
               </p>
             </div>
             <div className="relative flex shrink-0 flex-col items-start gap-[2px] overflow-clip whitespace-nowrap">

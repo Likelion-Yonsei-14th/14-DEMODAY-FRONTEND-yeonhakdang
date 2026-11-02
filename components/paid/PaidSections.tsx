@@ -1,6 +1,7 @@
 "use client";
 
 import Image from "next/image";
+import { useState } from "react";
 
 import { Mascot, type MascotPose } from "@/components/mascot/Mascot";
 import { MascotFaceBadge } from "@/components/mascot/MascotFaceBadge";
@@ -127,6 +128,7 @@ export function UniversityScore({ score }: { score: string }) {
 /**
  * Figma: Pattern/University/Rank Card (75:3197) + Rank Row (75:3176) +
  * Score Bar (73:2799). Rank 1 carries the 2px navy border and gold numeral.
+ * With `reasons`, tapping the card unfolds "왜 ○점일까?".
  */
 export function UniversityRankCard({
   rank,
@@ -135,6 +137,7 @@ export function UniversityRankCard({
   barClass,
   note,
   badge,
+  reasons,
 }: {
   rank: number;
   name: string;
@@ -142,12 +145,15 @@ export function UniversityRankCard({
   barClass: string;
   note: string;
   badge?: string;
+  reasons?: string[];
 }) {
+  const [open, setOpen] = useState(false);
   const isFirst = rank === 1;
   return (
-    <div
+    <Tap
+      onPress={reasons ? () => setOpen(!open) : undefined}
       className={cn(
-        "relative flex w-[345px] shrink-0 flex-col items-start gap-[10px] overflow-clip rounded-[16px] bg-surface-default p-[16px]",
+        "relative flex w-[345px] shrink-0 flex-col items-start gap-[10px] overflow-clip rounded-[16px] bg-surface-default p-[16px] text-left",
         isFirst
           ? "border-2 border-brand-secondary"
           : "border border-line-default",
@@ -176,10 +182,23 @@ export function UniversityRankCard({
           style={{ width: (313 * Number(score)) / 100 }}
         />
       </div>
-      <p className="relative shrink-0 whitespace-nowrap text-caption-12 text-text-secondary">
-        {note}
-      </p>
-    </div>
+      <div className="relative flex w-[313px] shrink-0 items-center gap-[6px]">
+        <p className="relative min-w-px flex-1 text-caption-12 text-text-secondary">{note}</p>
+        {reasons && (
+          <Icon name="icon-chevron-down" size={18} className={cn("transition-transform", open && "rotate-180")} />
+        )}
+      </div>
+      {open && reasons && (
+        <div className="flex w-[313px] flex-col gap-[6px] border-t border-line-default pt-[10px]">
+          <p className="font-bold text-body-m-14 text-brand-secondary">왜 {score}점일까?</p>
+          {reasons.map((line) => (
+            <p key={line} className="text-caption-12 text-text-secondary">
+              {line}
+            </p>
+          ))}
+        </div>
+      )}
+    </Tap>
   );
 }
 

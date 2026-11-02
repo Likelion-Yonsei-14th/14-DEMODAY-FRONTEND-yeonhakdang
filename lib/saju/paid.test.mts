@@ -3,10 +3,12 @@ import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import { test } from "node:test";
 
+import { calculateSaju } from "@fullstackfamily/manseryeok";
+
 import { UNIVERSITIES } from "../universities.ts";
 import { analyze, type Analysis } from "./analyze.ts";
+import { branchRelation, cheoneul, yearBranch, type Branch } from "./branches.ts";
 import type { Content } from "./content.ts";
-import { ELEMENTS } from "./elements.ts";
 import {
   benefactorResult,
   charmResult,
@@ -77,25 +79,39 @@ test("합격 궁합: 점수는 60~98, 내림차순, 같은 입력이면 같은 �
 
 test("합격 궁합: 같은 대학 두 캠퍼스는 한 번만, 동점이면 고른 순서", () => {
   const me = PEOPLE[0];
-  const r = compatResult(me, ["연세대학교", "연세대학교", "고려대학교"], PAID);
-  assert.deepEqual(r.universities.map((u) => u.name).sort(), ["고려대학교", "연세대학교"]);
-  // 연세대·고려대는 둘 다 을년(목) 개교: 같은 점수, 고른 순서 그대로.
+  const r = compatResult(me, ["건국대학교", "건국대학교", "강남대학교"], PAID);
+  // 둘 다 1946 병술년 개교: 같은 간지라 같은 점수, 고른 순서 그대로.
+  assert.deepEqual(r.universities.map((u) => u.name), ["건국대학교", "강남대학교"]);
   assert.equal(r.universities[0].score, r.universities[1].score);
-  assert.deepEqual(r.universities.map((u) => u.name), ["연세대학교", "고려대학교"]);
 });
 
-test("합격 궁합: 학교가 내 일간을 생해 주면 극하는 학교보다 점수가 높다", () => {
-  // 보완 점수가 끼지 않도록 목·수가 가장 약한 기운도, 두 번째로 약한 기운도 아닌 화 일간.
-  const me = PEOPLE.find((p) => {
-    const [w1, w2] = [p.weakest, ELEMENTS.filter((e) => e !== p.weakest).sort((a, b) => p.counts[a] - p.counts[b])[0]];
-    return p.saju.dayMaster.element === "화" && ![w1, w2].includes("목") && ![w1, w2].includes("수");
-  });
-  assert.ok(me, "조건에 맞는 화 일간이 있다");
-  const fed = universityCompat(me, "연세대학교", PAID); // 1885 을유: 목이 화를 생
-  const controlled = universityCompat(me, "한국방송통신대학교", PAID); // 1972 임자: 수가 화를 극
-  assert.equal(fed.relation, "fed");
-  assert.equal(controlled.relation, "controlled");
-  assert.ok(fed.score > controlled.score);
+test("합격 궁합: 학교 기운은 개교 연도 간지 전체 — 연세(을유)와 고려(을사)가 갈린다", () => {
+  const yonsei = universityCompat(PEOPLE[0], "연세대학교", PAID);
+  const korea = universityCompat(PEOPLE[0], "고려대학교", PAID);
+  assert.equal(yonsei.ganzhi, "을유(乙酉)");
+  assert.equal(korea.ganzhi, "을사(乙巳)");
+  const differs = PEOPLE.some((me) => universityCompat(me, "연세대학교", PAID).score !== universityCompat(me, "고려대학교", PAID).score);
+  assert.ok(differs, "같은 천간이어도 지지가 다르면 점수가 갈리는 사람이 있다");
+});
+
+test("합격 궁합: 일지와 육합인 학교가 충인 학교보다 지지 점수가 높고, 근거 다섯 줄이 붙는다", () => {
+  const me = PEOPLE.find((p) => p.saju.pillars[2].branch.hangul === "자")!;
+  assert.ok(me, "일지가 자인 사람이 있다");
+  // 축년(1997 정축: 경운대) = 자축 육합, 오년(1918 무오: 중앙대) = 자오 충.
+  const harmony = universityCompat(me, "경운대학교", PAID);
+  const clash = universityCompat(me, "중앙대학교", PAID);
+  assert.equal(harmony.branchRelation, "육합");
+  assert.equal(clash.branchRelation, "충");
+  assert.match(harmony.note, /육합/);
+  assert.match(clash.note, /충/);
+  assert.equal(harmony.reasons.length, 5);
+  assert.match(harmony.reasons[4], new RegExp(`궁합 ${harmony.score}점`));
+});
+
+test("합격 궁합: 같은 대학 목록이어도 사람마다 순위가 다양하다", () => {
+  const list = ["서울대학교", "연세대학교", "고려대학교", "성균관대학교", "한양대학교", "중앙대학교"];
+  const rankings = new Set(PEOPLE.map((me) => compatResult(me, list, PAID).universities.map((u) => u.name).join(",")));
+  assert.ok(rankings.size >= 10, `순위 종류 ${rankings.size}`);
 });
 
 test("합격 궁합: 월별 막대(표의 달 수) 중 최고가 하나, 주간 기운에 최고·주의가 하나씩", () => {
@@ -113,21 +129,63 @@ test("합격 궁합: 월별 막대(표의 달 수) 중 최고가 하나, 주간 
   }
 });
 
-test("귀인: 내 일간을 생해 주는 오행, 관계별 프로필, 시기 3개는 시간순·최고 하나", () => {
+test("천을귀인 표와 합·충", () => {
+  assert.deepEqual(cheoneul("갑"), ["축", "미"]);
+  assert.deepEqual(cheoneul("신"), ["인", "오"]);
+  assert.deepEqual(cheoneul("계"), ["사", "묘"]);
+  assert.equal(branchRelation("자", "축"), "육합");
+  assert.equal(branchRelation("인", "해"), "육합");
+  assert.equal(branchRelation("신", "진"), "삼합");
+  assert.equal(branchRelation("자", "오"), "충");
+  assert.equal(branchRelation("묘", "묘"), "같은 지지");
+  assert.equal(branchRelation("자", "인"), "없음");
+  assert.equal(yearBranch(2026), "오");
+  assert.equal(yearBranch(1885), "유");
+});
+
+test("귀인: 천을귀인 지지, 관계별 프로필, 날짜 3개는 시간순·최고 하나·모두 귀인 지지의 날", () => {
   for (const me of PEOPLE) {
+    const pair = cheoneul(me.saju.dayMaster.hangul);
     for (const relation of RELATIONS) {
       const r = benefactorResult(me, relation, PAID);
-      const dm = me.saju.dayMaster.element;
-      assert.equal(ELEMENTS[(ELEMENTS.indexOf(r.element) + 1) % 5], dm);
-      assert.equal(r.type, PAID.benefactor.profiles[r.element][relation].type);
+      assert.ok(pair.includes(r.branch) && pair.includes(r.other) && r.branch !== r.other);
+      assert.equal(r.type, PAID.benefactor.profiles[r.branch]![relation].type);
       assert.equal(r.timeline.length, 3);
       assert.equal(r.timeline.filter((t) => t.peak).length, 1);
       const dates = r.timeline.map((t) => t.date);
+      assert.equal(new Set(dates).size, 3);
       assert.deepEqual(dates, [...dates].sort());
+      for (const date of dates) {
+        const [y, m, d] = date.split(".").map(Number);
+        const dayBranch = calculateSaju(y, m, d).dayPillar[1];
+        assert.ok(pair.includes(dayBranch as never), `${date} ${dayBranch}`);
+      }
       assert.ok(r.subtitle.includes(relation));
       assert.ok(r.caution.includes(relation));
     }
   }
+});
+
+test("귀인: 일지와 합이 되는 귀인이 대표, 주의할 사람은 일지와 충하는 띠", () => {
+  // 갑 일간 → 축·미. 일지 자면 자축 육합이라 축(소)이 대표, 충은 오(말).
+  const me = PEOPLE.find((p) => p.saju.dayMaster.hangul === "갑" && p.saju.pillars[2].branch.hangul === "자");
+  if (me) {
+    const r = benefactorResult(me, "선배", PAID);
+    assert.equal(r.branch, "축");
+    assert.match(r.caution, /말띠/);
+  }
+  for (const p of PEOPLE) {
+    const r = benefactorResult(p, "동기", PAID);
+    const mine = p.saju.pillars[2].branch.hangul as Branch;
+    const harmonious = cheoneul(p.saju.dayMaster.hangul).filter((g) => ["육합", "삼합"].includes(branchRelation(g, mine)));
+    if (harmonious.length) assert.equal(r.branch, harmonious[0]);
+  }
+});
+
+test("귀인 프로필 표: 천을귀인이 될 수 있는 지지 10개 × 관계 4개", () => {
+  const branches = [...new Set(["갑", "을", "병", "정", "무", "기", "경", "신", "임", "계"].flatMap((s) => cheoneul(s)))];
+  assert.equal(branches.length, 10);
+  for (const b of branches) for (const relation of RELATIONS) assert.ok(PAID.benefactor.profiles[b]?.[relation], `${b} ${relation}`);
 });
 
 test("귀인: 관계 조사 — 선배가 · 교수님이 · 선배와는 · 교수님과는", () => {
@@ -146,5 +204,13 @@ test("부적: 가장 약한 오행을 채우고, 다시 뽑기마다 글자가 �
     assert.deepEqual(charmResult(me, 4, PAID), draws[0]);
     assert.equal(draws[0].art.formula.length, 3);
     assert.equal(draws[0].art.pillar, me.saju.pillars[2].hanja);
+  }
+});
+
+test("합격 궁합 근거: 보완 줄은 채워 주는 기운과 이미 많은 기운을 함께 말한다", () => {
+  for (const me of PEOPLE.slice(0, 30)) {
+    const line = universityCompat(me, "연세대학교", PAID).reasons[3];
+    assert.match(line, /^보완 25%: .+ → \d+점$/);
+    assert.ok(!line.includes(": ,") && !line.includes(",  →"));
   }
 });
