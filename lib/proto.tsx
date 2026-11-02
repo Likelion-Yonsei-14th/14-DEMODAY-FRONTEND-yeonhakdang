@@ -212,6 +212,15 @@ export const INITIAL_DEMO: DemoFlags = {
   emptyRoster: false,
 };
 
+/**
+ * Where the 연학당 logo (top left) leads: home is my 학과 결과 once I have
+ * one, otherwise the landing — the invite landing when a friend sent me.
+ */
+export function homeScreen(s: Pick<ProtoState, "analyzed" | "inviter">): string {
+  if (s.analyzed) return "3-4";
+  return s.inviter ? "1-2" : "1-1";
+}
+
 /** 4-1 once the 명단 has anyone on it, otherwise the empty roster. */
 export function rosterScreen(proto: Pick<Proto, "state" | "demo">): string {
   return proto.state.friends.length > 0 && !proto.demo.emptyRoster ? "4-1" : "4-2";

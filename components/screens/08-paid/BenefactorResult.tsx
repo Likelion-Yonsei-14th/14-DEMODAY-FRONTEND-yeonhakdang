@@ -69,7 +69,7 @@ export function BenefactorResult() {
 
         {/* 만나는 시기 (33:1674) */}
         <div className="relative flex w-full shrink-0 flex-col items-start gap-[12px] overflow-clip rounded-[16px] border border-line-default bg-surface-default p-[18px]">
-          <SectionTitle title="만나는 시기" caption="귀인 운이 열리는 달" className="w-auto" />
+          <SectionTitle title="만나는 시기" caption="귀인의 기운이 닿는 날" className="w-auto" />
           {result.timeline.map((row, i) => (
             <TimelineRow
               key={row.date}

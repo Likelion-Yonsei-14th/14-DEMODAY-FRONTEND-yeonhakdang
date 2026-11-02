@@ -4,7 +4,35 @@ import { MascotFaceBadge } from "@/components/mascot/MascotFaceBadge";
 import { Icon } from "@/components/ui/Icon";
 import { Tap } from "@/components/ui/Tap";
 import { cn } from "@/lib/cn";
-import { useProto } from "@/lib/proto";
+import { homeScreen, useProto } from "@/lib/proto";
+
+/**
+ * The 연학당 wordmark + 연학이 badge, top left: a way home from anywhere
+ * (see homeScreen). `inverse` draws it white on the navy paid heroes.
+ */
+export function LogoHome({ inverse = false }: { inverse?: boolean }) {
+  const proto = useProto();
+  return (
+    <Tap
+      label="연학당 홈으로"
+      onPress={() => {
+        proto.closeMenu();
+        proto.reset(homeScreen(proto.state));
+      }}
+      className="relative flex min-w-px items-center gap-[8px] overflow-clip rounded-full py-[4px] pl-[8px] pr-[10px]"
+    >
+      <MascotFaceBadge size={32} className="border-2" />
+      <span
+        className={cn(
+          "whitespace-nowrap font-serif text-[18px] font-black leading-[26px] tracking-[-0.108px]",
+          inverse && "text-text-inverse",
+        )}
+      >
+        연학당
+      </span>
+    </Tap>
+  );
+}
 
 /**
  * Figma: TopBar — type=Logo (16:36) | Back (16:44) | Close (16:52).
@@ -44,11 +72,8 @@ export function TopBar({
       )}
     >
       {type === "logo" ? (
-        <div className="relative flex min-w-px flex-1 items-center gap-[8px] overflow-clip pl-[8px]">
-          <MascotFaceBadge size={32} className="border-2" />
-          <p className="whitespace-nowrap font-serif text-[18px] font-black leading-[26px] tracking-[-0.108px]">
-            연학당
-          </p>
+        <div className="relative flex min-w-px flex-1 items-center">
+          <LogoHome />
         </div>
       ) : (
         <>

@@ -3,8 +3,8 @@
 import Image from "next/image";
 import { useState } from "react";
 
+import { LogoHome } from "@/components/chrome/TopBar";
 import { Mascot, type MascotPose } from "@/components/mascot/Mascot";
-import { MascotFaceBadge } from "@/components/mascot/MascotFaceBadge";
 import { Chip } from "@/components/ui/Chip";
 import { Icon } from "@/components/ui/Icon";
 import { Tap } from "@/components/ui/Tap";
@@ -98,11 +98,8 @@ export function PaidTopBar({ className }: { className?: string }) {
         className,
       )}
     >
-      <div className="relative flex min-w-px flex-1 items-center gap-[8px] overflow-clip pl-[8px]">
-        <MascotFaceBadge size={32} className="border-2" />
-        <p className="whitespace-nowrap font-serif text-[18px] font-black leading-[26px] tracking-[-0.108px] text-text-inverse">
-          연학당
-        </p>
+      <div className="relative flex min-w-px flex-1 items-center">
+        <LogoHome inverse />
       </div>
       <Tap
         label="메뉴"
@@ -138,6 +135,7 @@ export function UniversityRankCard({
   note,
   badge,
   reasons,
+  defaultOpen = false,
 }: {
   rank: number;
   name: string;
@@ -146,8 +144,9 @@ export function UniversityRankCard({
   note: string;
   badge?: string;
   reasons?: string[];
+  defaultOpen?: boolean;
 }) {
-  const [open, setOpen] = useState(false);
+  const [open, setOpen] = useState(defaultOpen);
   const isFirst = rank === 1;
   return (
     <Tap
@@ -182,21 +181,32 @@ export function UniversityRankCard({
           style={{ width: (313 * Number(score)) / 100 }}
         />
       </div>
-      <div className="relative flex w-[313px] shrink-0 items-center gap-[6px]">
-        <p className="relative min-w-px flex-1 text-caption-12 text-text-secondary">{note}</p>
-        {reasons && (
-          <Icon name="icon-chevron-down" size={18} className={cn("transition-transform", open && "rotate-180")} />
-        )}
-      </div>
-      {open && reasons && (
-        <div className="flex w-[313px] flex-col gap-[6px] border-t border-line-default pt-[10px]">
-          <p className="font-bold text-body-m-14 text-brand-secondary">왜 {score}점일까?</p>
-          {reasons.map((line) => (
-            <p key={line} className="text-caption-12 text-text-secondary">
-              {line}
-            </p>
-          ))}
-        </div>
+      <p className="relative w-[313px] shrink-0 text-caption-12 text-text-secondary">{note}</p>
+      {reasons && (
+        <>
+          {/* Unfolds by its own height: grid rows 0fr → 1fr. */}
+          <div
+            className="grid w-[313px] transition-[grid-template-rows,opacity] duration-300 ease-[cubic-bezier(0.16,1,0.3,1)] motion-reduce:transition-none"
+            style={{ gridTemplateRows: open ? "1fr" : "0fr", opacity: open ? 1 : 0 }}
+            aria-hidden={!open}
+          >
+            <div className="overflow-hidden">
+              <div className="flex flex-col gap-[6px] border-t border-line-default pt-[10px]">
+                {reasons.map((line) => (
+                  <p key={line} className="text-caption-12 text-text-secondary">
+                    {line}
+                  </p>
+                ))}
+              </div>
+            </div>
+          </div>
+          <span className="flex w-[313px] items-center justify-between rounded-[10px] bg-bg-subtle py-[8px] pl-[12px] pr-[8px]">
+            <span className="text-[12px] font-bold leading-[18px] text-brand-secondary">
+              {open ? "근거 접기" : `왜 ${score}점인지 보기`}
+            </span>
+            <Icon name="icon-chevron-down" size={18} className={cn("transition-transform duration-300", open && "rotate-180")} />
+          </span>
+        </>
       )}
     </Tap>
   );

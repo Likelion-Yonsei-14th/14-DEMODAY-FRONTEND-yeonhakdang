@@ -13,6 +13,7 @@ import { Chip } from "@/components/ui/Chip";
 import { HintText } from "@/components/ui/HintText";
 import { Icon } from "@/components/ui/Icon";
 import { renderCard } from "@/lib/cardImage";
+import { cn } from "@/lib/cn";
 import { displayName, isInAppBrowser, useProto } from "@/lib/proto";
 import { downloadImage } from "@/lib/sharing";
 import { useOpenRecord } from "@/lib/useOpenRecord";
@@ -20,6 +21,21 @@ import { useCharmResult } from "@/lib/usePaid";
 
 /** The 155×336 preview of the 393×852 art. */
 const PREVIEW_SCALE = 155 / CHARM_WIDTH;
+
+/** 뽑기: the old one turns away, then the new one inks in (globals.css .charm-*). */
+type Draw = "idle" | "away" | "in";
+const TURN_AWAY_MS = 240;
+const INK_IN_MS = 820;
+/** Where the seal sits in the preview: the ink spreads and the ✦ scatter from here. */
+const SEAL = { left: "50%", top: "73%" };
+/** The ✦ burst: eight directions, alternating reach. */
+const SPARKS = Array.from({ length: 8 }, (_, i) => {
+  const angle = (i / 8) * Math.PI * 2 - Math.PI / 2;
+  const reach = i % 2 ? 46 : 70;
+  return { dx: Math.round(Math.cos(angle) * reach), dy: Math.round(Math.sin(angle) * reach), size: i % 2 ? 10 : 14 };
+});
+/** Per tab: the first look at a drawn talisman plays the ink-in once. */
+const SEEN_KEY = "yeonhak-charm-seen";
 
 /** In-app browsers block downloads: the PNG to long-press instead. */
 function SaveSheet({ url, onClose }: { url: string; onClose: () => void }) {
@@ -56,8 +72,42 @@ export function CharmResult() {
   const [sheetUrl, setSheetUrl] = useState<string | null>(null);
   const artKey = JSON.stringify(charm.art);
   const ready = png?.key === artKey ? png.url : null;
+  // The talisman's first look in this tab inks in, like a fresh draw.
+  const [draw, setDraw] = useState<Draw>(() => {
+    if (!proto.active) return "idle";
+    try {
+      return sessionStorage.getItem(SEEN_KEY) ? "idle" : "in";
+    } catch {
+      return "idle";
+    }
+  });
+  const timers = useRef<ReturnType<typeof setTimeout>[]>([]);
+  useEffect(() => () => timers.current.forEach(clearTimeout), []);
+  const after = (ms: number, run: () => void) => timers.current.push(setTimeout(run, ms));
 
   const { active } = proto;
+
+  // The arrival ink-in (see `draw`) settles on its own.
+  const arriving = useRef(draw === "in");
+  useEffect(() => {
+    if (!arriving.current) return;
+    try {
+      sessionStorage.setItem(SEEN_KEY, "1");
+    } catch {}
+    const done = setTimeout(() => setDraw("idle"), INK_IN_MS);
+    return () => clearTimeout(done);
+  }, []);
+
+  const redraw = () => {
+    setDraw("away");
+    after(TURN_AWAY_MS, () => {
+      proto.update({ charmRerolls: charmRerolls - 1 });
+      setDraw("in");
+      proto.toast("연학이가 새 부적을 그렸어요");
+      after(INK_IN_MS, () => setDraw("idle"));
+    });
+  };
+
   useEffect(() => {
     if (!active) return;
     let cancelled = false;
@@ -91,13 +141,39 @@ export function CharmResult() {
           <p className="relative shrink-0 font-serif text-h2-22">{charm.title}</p>
         </div>
 
-        <div className="relative h-[336px] w-[155px] shrink-0 overflow-hidden rounded-[10px] border border-[#5b606b]">
-          <CharmArt
+        <div className="relative h-[336px] w-[155px] shrink-0 rounded-[10px] border border-[#5b606b] bg-[#161a23]">
+          <div
             key={artKey}
-            art={charm.art}
-            className="proto-fade-in pointer-events-none absolute left-0 top-0 origin-top-left"
-            style={{ transform: `scale(${PREVIEW_SCALE})` }}
-          />
+            className={cn(
+              "absolute inset-0 overflow-hidden rounded-[10px]",
+              draw === "away" && "charm-turn-away",
+              draw === "in" && "charm-ink-in",
+            )}
+          >
+            <CharmArt
+              art={charm.art}
+              className="pointer-events-none absolute left-0 top-0 origin-top-left"
+              style={{ transform: `scale(${PREVIEW_SCALE})` }}
+            />
+          </div>
+          {draw === "in" &&
+            SPARKS.map(({ dx, dy, size }, i) => (
+              <span
+                key={i}
+                aria-hidden
+                className="charm-spark pointer-events-none absolute leading-none"
+                style={{
+                  ...SEAL,
+                  fontSize: size,
+                  color: charm.art.accent,
+                  animationDelay: `${120 + i * 18}ms`,
+                  ["--dx" as string]: `${dx}px`,
+                  ["--dy" as string]: `${dy}px`,
+                }}
+              >
+                ✦
+              </span>
+            ))}
         </div>
 
         {/* 의미 (73:2486) */}
@@ -120,13 +196,10 @@ export function CharmResult() {
             className="w-[345px]"
           />
           <Button
-            label="다시 뽑기"
             type="outline"
-            disabled={charmRerolls === 0}
-            onPress={() => {
-              proto.update({ charmRerolls: charmRerolls - 1 });
-              proto.toast("연학이가 새 부적을 그렸어요");
-            }}
+            label={draw === "idle" ? "다시 뽑기" : "연학이가 그리는 중…"}
+            disabled={charmRerolls === 0 || draw !== "idle"}
+            onPress={redraw}
             className="w-[345px]"
           />
           <div className="relative flex w-[345px] shrink-0 items-center justify-center gap-[6px] overflow-clip">

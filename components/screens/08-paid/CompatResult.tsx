@@ -61,7 +61,7 @@ export function CompatResult() {
         <div className="relative flex w-full shrink-0 flex-col items-start gap-[10px] overflow-clip">
           <SectionTitle
             title="대학별 합격 궁합"
-            caption="학교 기운(개교 연도의 간지)과 내 사주를 비교했어요. 카드를 누르면 근거가 보여요"
+            caption="학교 기운(개교 연도의 간지)과 내 사주를 비교했어요"
             className="w-auto"
           />
           {result.universities.map((u, i) => (
@@ -74,6 +74,7 @@ export function CompatResult() {
               barClass={BAR_TONES[i] ?? "bg-brand-accent"}
               note={u.note}
               reasons={u.reasons}
+              defaultOpen={i === 0}
             />
           ))}
         </div>
