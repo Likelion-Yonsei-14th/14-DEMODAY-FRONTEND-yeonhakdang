@@ -184,12 +184,12 @@ export function UniversityRankCard({
 }
 
 /**
- * Figma: chart (32:1655) — a 309×170 bar chart. Bars sit 61px apart from
- * x=14, 34 wide, standing on y=136. 1점 is 1.2px of bar, so even 100점
- * leaves its value label inside the chart (the frame drew 92점 at 120px).
+ * Figma: chart (32:1655) — a 309×170 bar chart. Bars are 34 wide, standing
+ * on y=136 and spread evenly between 14px margins (61px apart for the
+ * frame's 5 months). 1점 is 1.2px of bar, so even 100점 leaves its value
+ * label inside the chart (the frame drew 92점 at 120px).
  */
 const BAR_X = 14;
-const BAR_STEP = 61;
 const BAR_WIDTH = 34;
 const BAR_BASE = 136;
 const PX_PER_POINT = 1.2;
@@ -205,8 +205,9 @@ export function MonthlyEnergyChart({ months }: { months: Array<{ label: string; 
         />
       ))}
       {months.map((bar, i) => {
+        const step = months.length > 1 ? (309 - 2 * BAR_X - BAR_WIDTH) / (months.length - 1) : 0;
         const height = Math.round(bar.value * PX_PER_POINT);
-        const left = BAR_X + i * BAR_STEP;
+        const left = BAR_X + i * step;
         const tone = bar.peak ? "text-brand-primary" : "text-text-secondary";
         return (
           <div key={bar.label}>

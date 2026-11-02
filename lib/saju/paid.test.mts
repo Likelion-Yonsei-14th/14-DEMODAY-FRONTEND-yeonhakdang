@@ -98,10 +98,10 @@ test("합격 궁합: 학교가 내 일간을 생해 주면 극하는 학교보�
   assert.ok(fed.score > controlled.score);
 });
 
-test("합격 궁합: 월별 막대 5개 중 최고가 하나, 주간 기운에 최고·주의가 하나씩", () => {
+test("합격 궁합: 월별 막대(표의 달 수) 중 최고가 하나, 주간 기운에 최고·주의가 하나씩", () => {
   for (const me of PEOPLE) {
     const r = compatResult(me, ["연세대학교"], PAID);
-    assert.equal(r.months.length, 5);
+    assert.equal(r.months.length, PAID.season.months.length);
     assert.equal(r.months.filter((m) => m.peak).length, 1);
     for (const m of r.months) assert.ok(m.value >= 50 && m.value <= 98);
     assert.equal(r.weeks.length, 4);

@@ -78,7 +78,7 @@ export function CompatResult() {
         <div className="relative flex w-full shrink-0 flex-col items-start gap-[14px] overflow-clip rounded-[16px] border border-line-default bg-surface-default p-[18px]">
           <SectionTitle
             title="월별 합격 기운"
-            caption="원서 접수부터 최종 발표까지"
+            caption="수능부터 최종 발표까지"
             className="w-auto"
           />
           <MonthlyEnergyChart months={result.months} />
