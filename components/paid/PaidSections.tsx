@@ -9,6 +9,7 @@ import { Icon } from "@/components/ui/Icon";
 import { Tap } from "@/components/ui/Tap";
 import { cn } from "@/lib/cn";
 import { useProto } from "@/lib/proto";
+import type { WeekLevel } from "@/lib/saju/paid";
 
 /**
  * Figma: hero (32:1591 · 33:1638) — the navy masthead on the paid results,
@@ -169,10 +170,10 @@ export function UniversityRankCard({
         <UniversityScore score={score} />
       </div>
       <div className="relative h-[8px] w-[313px] shrink-0 overflow-clip rounded-[4px] bg-bg-subtle">
-        {/* The frame draws every bar at 284.83 of 313. */}
+        {/* The frame's 284.83 of 313 is its 91점: the bar is the score's share of 313. */}
         <div
           className={cn("absolute left-0 top-0 h-[8px] rounded-[4px]", barClass)}
-          style={{ width: 284.83 }}
+          style={{ width: (313 * Number(score)) / 100 }}
         />
       </div>
       <p className="relative shrink-0 whitespace-nowrap text-caption-12 text-text-secondary">
@@ -183,32 +184,17 @@ export function UniversityRankCard({
 }
 
 /**
- * Figma: chart (32:1655) — a 309×170 bar chart whose bars, labels and values
- * are absolutely placed, so their coordinates are carried over verbatim.
+ * Figma: chart (32:1655) — a 309×170 bar chart. Bars sit 61px apart from
+ * x=14, 34 wide, standing on y=136. 1점 is 1.2px of bar, so even 100점
+ * leaves its value label inside the chart (the frame drew 92점 at 120px).
  */
-export type MonthBar = {
-  month: string;
-  value: string;
-  /** Bar box */
-  left: number;
-  top: number;
-  height: number;
-  /** Label and value x positions, and the value's y */
-  labelLeft: number;
-  valueLeft: number;
-  valueTop: number;
-  peak?: boolean;
-};
+const BAR_X = 14;
+const BAR_STEP = 61;
+const BAR_WIDTH = 34;
+const BAR_BASE = 136;
+const PX_PER_POINT = 1.2;
 
-export const MONTH_BARS: MonthBar[] = [
-  { month: "10월", value: "62", left: 14, top: 55, height: 81, labelLeft: 18.5, valueLeft: 23.5, valueTop: 37 },
-  { month: "11월", value: "78", left: 75, top: 35, height: 101, labelLeft: 79.5, valueLeft: 84.5, valueTop: 17 },
-  { month: "12월", value: "92", left: 136, top: 16, height: 120, labelLeft: 140.5, valueLeft: 145.5, valueTop: -2, peak: true },
-  { month: "1월", value: "70", left: 197, top: 45, height: 91, labelLeft: 205, valueLeft: 206.5, valueTop: 27 },
-  { month: "2월", value: "84", left: 258, top: 27, height: 109, labelLeft: 266, valueLeft: 267.5, valueTop: 9 },
-];
-
-export function MonthlyEnergyChart() {
+export function MonthlyEnergyChart({ months }: { months: Array<{ label: string; value: number; peak: boolean }> }) {
   return (
     <div className="relative h-[170px] w-[309px] shrink-0 overflow-clip">
       {[10, 46, 82, 118].map((top) => (
@@ -218,70 +204,59 @@ export function MonthlyEnergyChart() {
           style={{ top }}
         />
       ))}
-      {MONTH_BARS.map((bar) => (
-        <div key={bar.month}>
-          <div
-            className={cn(
-              "absolute w-[34px] rounded-t-[8px]",
-              bar.peak ? "bg-brand-primary" : "bg-brand-secondary-light opacity-85",
-            )}
-            style={{ left: bar.left, top: bar.top, height: bar.height }}
-          />
-          <p
-            className={cn(
-              "absolute top-[144px] whitespace-nowrap text-caption-12",
-              bar.peak ? "text-brand-primary" : "text-text-secondary",
-            )}
-            style={{ left: bar.labelLeft }}
-          >
-            {bar.month}
-          </p>
-          <p
-            className={cn(
-              "absolute whitespace-nowrap text-[12px] font-bold leading-[18px]",
-              bar.peak ? "text-brand-primary" : "text-text-secondary",
-            )}
-            style={{ left: bar.valueLeft, top: bar.valueTop }}
-          >
-            {bar.value}
-          </p>
-        </div>
-      ))}
+      {months.map((bar, i) => {
+        const height = Math.round(bar.value * PX_PER_POINT);
+        const left = BAR_X + i * BAR_STEP;
+        const tone = bar.peak ? "text-brand-primary" : "text-text-secondary";
+        return (
+          <div key={bar.label}>
+            <div
+              className={cn(
+                "absolute rounded-t-[8px]",
+                bar.peak ? "bg-brand-primary" : "bg-brand-secondary-light opacity-85",
+              )}
+              style={{ left, top: BAR_BASE - height, width: BAR_WIDTH, height }}
+            />
+            <p
+              className={cn("absolute top-[144px] w-[54px] text-center text-caption-12", tone)}
+              style={{ left: left - 10 }}
+            >
+              {bar.label}
+            </p>
+            <p
+              className={cn("absolute w-[54px] text-center text-[12px] font-bold leading-[18px]", tone)}
+              style={{ left: left - 10, top: BAR_BASE - height - 18 }}
+            >
+              {bar.value}
+            </p>
+          </div>
+        );
+      })}
     </div>
   );
 }
 
-/** Figma: 11월 주간 기운 tiles (32:1687…). */
-export const WEEK_TILES = [
-  { week: "1주", level: "보통", tile: "bg-bg-subtle", text: "text-text-secondary" },
-  {
-    week: "2주",
-    level: "좋음",
-    tile: "bg-brand-secondary-tint",
-    text: "text-brand-secondary",
-  },
-  { week: "3주", level: "최고", tile: "bg-brand-primary", text: "text-text-inverse" },
-  {
-    week: "4주",
-    level: "주의",
-    tile: "bg-brand-accent-tint",
-    text: "text-text-primary",
-  },
-];
+/** Figma: 11월 주간 기운 tiles (32:1687…) — one look per level. */
+const WEEK_LOOK: Record<WeekLevel, { tile: string; text: string }> = {
+  보통: { tile: "bg-bg-subtle", text: "text-text-secondary" },
+  좋음: { tile: "bg-brand-secondary-tint", text: "text-brand-secondary" },
+  최고: { tile: "bg-brand-primary", text: "text-text-inverse" },
+  주의: { tile: "bg-brand-accent-tint", text: "text-text-primary" },
+};
 
-export function WeeklyEnergy() {
+export function WeeklyEnergy({ weeks }: { weeks: Array<{ label: string; level: WeekLevel }> }) {
   return (
     <div className="relative flex w-[309px] shrink-0 items-start gap-[8px] overflow-clip">
-      {WEEK_TILES.map(({ week, level, tile, text }) => (
+      {weeks.map(({ label, level }) => (
         <div
-          key={week}
+          key={label}
           className={cn(
             "relative flex min-w-px flex-1 flex-col items-center gap-[2px] overflow-clip rounded-[12px] py-[12px]",
-            tile,
-            text,
+            WEEK_LOOK[level].tile,
+            WEEK_LOOK[level].text,
           )}
         >
-          <p className="relative shrink-0 text-caption-12">{week}</p>
+          <p className="relative shrink-0 text-caption-12">{label}</p>
           <p className="relative shrink-0 font-bold text-body-m-14">{level}</p>
         </div>
       ))}

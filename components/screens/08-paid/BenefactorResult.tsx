@@ -11,20 +11,24 @@ import { Chip } from "@/components/ui/Chip";
 import { InfoBox } from "@/components/ui/InfoBox";
 import { SectionTitle } from "@/components/ui/SectionTitle";
 import { useProto } from "@/lib/proto";
+import { ELEMENT_HANJA } from "@/lib/saju";
 import { useOpenRecord } from "@/lib/useOpenRecord";
+import { useBenefactorResult } from "@/lib/usePaid";
 
 /** Figma: 8-2 귀인 · 결과 (PR-04) (33:1626) — a 1458px-tall frame. */
 export function BenefactorResult() {
   const proto = useProto();
   useOpenRecord("benefactor");
   const { relation } = proto.state;
+  const result = useBenefactorResult();
+  const last = result.timeline.length - 1;
   return (
-    <Screen height={1458} bleed>
+    <Screen height={1458} bleed contentSized>
       <PaidHero
         height={300}
         badge={`관계 유형 · ${relation}`}
         title={`대학에서 만날\n나의 ${relation} 귀인`}
-        subtitle="화(火) 기운이 강한 선배가 내 목(木)을 키워 줘요"
+        subtitle={result.subtitle}
         pose="greet"
         poseInner={{ left: -15, top: 4.18, width: 170, height: 144.221 }}
         stageSize={{ left: 229, top: 86, size: 140 }}
@@ -43,70 +47,58 @@ export function BenefactorResult() {
           <div className="relative flex shrink-0 items-center gap-[14px] overflow-clip">
             <div className="relative flex size-[56px] shrink-0 items-center justify-center overflow-clip rounded-full bg-brand-primary-tint">
               <p className="relative shrink-0 whitespace-nowrap font-serif text-h2-22 text-brand-primary">
-                火
+                {ELEMENT_HANJA[result.element]}
               </p>
             </div>
             <div className="relative flex shrink-0 flex-col items-start gap-[2px] overflow-clip whitespace-nowrap">
               <p className="relative shrink-0 text-caption-12 text-text-tertiary">
                 귀인 유형
               </p>
-              <p className="relative shrink-0 text-h3-18">발표왕 리더 선배</p>
+              <p className="relative shrink-0 text-h3-18">{result.type}</p>
             </div>
           </div>
           <p className="relative w-[309px] shrink-0 text-body-m-14 text-text-secondary">
-            말이 빠르고 웃음소리가 큰 사람. 조별 과제에서 먼저 손을 들고, 처음 보는
-            후배에게도 밥을 사 주는 선배예요.
+            {result.description}
           </p>
           {/* Pattern/Result/Tag Row (73:2475) */}
           <div className="relative flex w-[309px] shrink-0 flex-wrap content-start items-start gap-[6px] overflow-clip">
-            <Chip label="#빨간색 소품" />
-            <Chip label="#발표 동아리" />
-            <Chip label="#학생회" />
+            {result.tags.map((tag) => (
+              <Chip key={tag} label={tag} />
+            ))}
           </div>
         </div>
 
         {/* 만나는 시기 (33:1674) */}
         <div className="relative flex w-full shrink-0 flex-col items-start gap-[12px] overflow-clip rounded-[16px] border border-line-default bg-surface-default p-[18px]">
           <SectionTitle title="만나는 시기" caption="귀인 운이 열리는 달" className="w-auto" />
-          <TimelineRow
-            rail="default"
-            date="2027.03"
-            title="새내기 OT"
-            caption="인사만 나눠도 기억에 남아요"
-          />
-          <TimelineRow
-            rail="active"
-            date="2027.04"
-            badge="최고 시기"
-            highlight
-            title="첫 조별 과제"
-            caption="가장 강하게 연결되는 시기"
-          />
-          <TimelineRow
-            rail="end"
-            date="2027.09"
-            title="2학기 학회 모집"
-            caption="함께하면 진로가 선명해져요"
-          />
+          {result.timeline.map((row, i) => (
+            <TimelineRow
+              key={row.date}
+              rail={i === last ? "end" : row.peak ? "active" : "default"}
+              date={row.date}
+              badge={row.peak ? "최고 시기" : undefined}
+              highlight={row.peak}
+              title={row.title}
+              caption={row.caption}
+            />
+          ))}
         </div>
 
         {/* 알아보는 법 (33:1706) */}
         <div className="relative flex w-full shrink-0 flex-col items-start gap-[12px] overflow-clip rounded-[16px] border border-line-default bg-surface-default p-[18px]">
           <SectionTitle title="이렇게 알아봐요" className="w-auto" />
-          <HintCheckRow>첫 만남에 먼저 이름을 불러 주는 사람</HintCheckRow>
-          <HintCheckRow>남쪽 강의실·빨간 간판 근처에서 자주 마주쳐요</HintCheckRow>
-          <HintCheckRow>“같이 해 볼래?”라는 말을 먼저 꺼내요</HintCheckRow>
+          {result.hints.map((hint) => (
+            <HintCheckRow key={hint}>{hint}</HintCheckRow>
+          ))}
         </div>
 
-        <InfoBox tone="warning">
-          토(土) 기운이 강한 선배와는 의견이 자주 부딪혀요. 역할을 나누면 괜찮아요.
-        </InfoBox>
+        <InfoBox tone="warning">{result.caution}</InfoBox>
 
         {/* 연학이 (73:2593) — size M badge */}
         <div className="relative flex shrink-0 items-center gap-[6px] overflow-clip">
           <MascotFaceBadge size={64} className="border-[3px]" />
           <SpeechBubble tail="left" className="shrink-0">
-            {"4월 조별 과제 때\n먼저 손 들어 봐!"}
+            {result.tip}
           </SpeechBubble>
         </div>
 

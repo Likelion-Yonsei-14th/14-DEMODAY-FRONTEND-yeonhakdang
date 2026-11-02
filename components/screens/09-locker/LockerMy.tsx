@@ -11,10 +11,13 @@ import { cn } from "@/lib/cn";
 import {
   PRODUCTS,
   displayName,
+  owns,
   rosterScreen,
   useProto,
   type ProductKind,
 } from "@/lib/proto";
+import { elementLabel } from "@/lib/saju";
+import { useCharmResult, useCompatResult } from "@/lib/usePaid";
 import { useRoster } from "@/lib/useRoster";
 
 /**
@@ -69,10 +72,10 @@ function LockerRow({
   );
 }
 
-const PAID_ROWS: Array<{ kind: ProductKind; icon: string; bought: (relation: string) => string }> = [
-  { kind: "compat", icon: "icon-crown-18", bought: () => "연세대 91점 · 구매 완료" },
-  { kind: "benefactor", icon: "icon-user-18", bought: (relation) => `${relation} 귀인 · 구매 완료` },
-  { kind: "charm", icon: "icon-image-18", bought: () => "금(金) 부적 · 구매 완료" },
+const PAID_ROWS: Array<{ kind: ProductKind; icon: string }> = [
+  { kind: "compat", icon: "icon-crown-18" },
+  { kind: "benefactor", icon: "icon-user-18" },
+  { kind: "charm", icon: "icon-image-18" },
 ];
 
 /** Figma: 9-1 보관함 · 마이 (B-01~04) (34:1733) — a 914px-tall frame. */
@@ -82,6 +85,15 @@ export function LockerMy() {
   const roster = useRoster();
   const name = displayName(state);
   const boughtCount = Object.values(state.purchased).filter(Boolean).length;
+  const compat = useCompatResult().universities[0];
+  const charm = useCharmResult();
+  // What each owned result holds, and how it was opened (구매 or 이용권 code).
+  const how = (kind: ProductKind) => (state.purchased[kind] ? "구매 완료" : "이용권");
+  const summary: Record<ProductKind, string> = {
+    compat: `${compat.name.replace(/학교$/, "")} ${compat.score}점`,
+    benefactor: `${state.relation} 귀인`,
+    charm: `${elementLabel(charm.element)} 부적`,
+  };
 
   const logout = () => void signOut(proto);
   const withdraw = () => void deleteAccount(proto);
@@ -133,15 +145,15 @@ export function LockerMy() {
             }
             onPress={() => proto.go(rosterScreen(proto))}
           />
-          {PAID_ROWS.map(({ kind, icon, bought }) => {
-            const owned = state.purchased[kind];
+          {PAID_ROWS.map(({ kind, icon }) => {
+            const owned = owns(state, kind);
             return (
               <LockerRow
                 key={kind}
                 icon={icon}
                 iconTone={owned ? "tint" : "subtle"}
                 title={PRODUCTS[kind].name}
-                caption={owned ? bought(state.relation) : "아직 받지 않았어요"}
+                caption={owned ? `${summary[kind]} · ${how(kind)}` : "아직 받지 않았어요"}
                 cta={owned ? undefined : "구매하기"}
                 onPress={() =>
                   owned ? proto.go(PRODUCTS[kind].result) : proto.openProduct(kind)

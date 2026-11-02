@@ -14,20 +14,33 @@ import {
 import { Button } from "@/components/ui/Button";
 import { Chip } from "@/components/ui/Chip";
 import { SectionTitle } from "@/components/ui/SectionTitle";
-import { displayName, useProto } from "@/lib/proto";
+import { displayName, unlocked, useProto } from "@/lib/proto";
 import { useOpenRecord } from "@/lib/useOpenRecord";
+import { useCompatResult } from "@/lib/usePaid";
+
+/** The frame holds 3 대학; each one more (or fewer) adds a card and its gap. */
+const FRAME_HEIGHT = 1658;
+const CARD_STEP = 114;
+/** 이용권: "다른 대학으로 다시 보기" under the share button. */
+const RETRY_STEP = 80;
+const BAR_TONES = ["bg-brand-secondary", "bg-brand-secondary-light"];
 
 /** Figma: 8-1 합격 궁합 · 결과 (PR-03) (32:1579) — a 1658px-tall frame. */
 export function CompatResult() {
   const proto = useProto();
   useOpenRecord("compat");
+  const result = useCompatResult();
+  const [first] = result.universities;
+  const retry = proto.active && unlocked(proto.state);
+  const height = FRAME_HEIGHT + (result.universities.length - 3) * CARD_STEP + (retry ? RETRY_STEP : 0);
+
   return (
-    <Screen height={1658} bleed>
+    <Screen height={height} bleed contentSized>
       <PaidHero
         height={300}
-        badge="지원 대학 3곳 분석"
+        badge={`지원 대학 ${result.universities.length}곳 분석`}
         title={`${displayName(proto.state)}님의\n합격 궁합`}
-        subtitle="가장 기운이 맞는 곳은 연세대학교(91점)예요"
+        subtitle={`가장 기운이 맞는 곳은 ${first.name}(${first.score}점)예요`}
         pose="celebrate"
         poseInner={{ left: -5, top: 24.22, width: 150, height: 124.18 }}
         stageSize={{ left: 229, top: 86, size: 140 }}
@@ -45,31 +58,20 @@ export function CompatResult() {
         <div className="relative flex w-full shrink-0 flex-col items-start gap-[10px] overflow-clip">
           <SectionTitle
             title="대학별 합격 궁합"
-            caption="내 사주와 학교의 기운(설립 연도·상징)을 비교했어요"
+            caption="내 사주와 학교의 기운(개교 연도의 천간)을 비교했어요"
             className="w-auto"
           />
-          <UniversityRankCard
-            rank={1}
-            name="연세대학교"
-            score="91"
-            badge="최고 궁합"
-            barClass="bg-brand-secondary"
-            note="목(木) 생 화(火) · 서로 키워 주는 상생"
-          />
-          <UniversityRankCard
-            rank={2}
-            name="고려대학교"
-            score="84"
-            barClass="bg-brand-secondary-light"
-            note="목(木)·목(木) · 같은 기운이 힘을 모아요"
-          />
-          <UniversityRankCard
-            rank={3}
-            name="한양대학교"
-            score="75"
-            barClass="bg-brand-accent"
-            note="목(木) 극 토(土) · 노력으로 넘는 궁합"
-          />
+          {result.universities.map((u, i) => (
+            <UniversityRankCard
+              key={u.name}
+              rank={i + 1}
+              name={u.name}
+              score={String(u.score)}
+              badge={i === 0 ? "최고 궁합" : undefined}
+              barClass={BAR_TONES[i] ?? "bg-brand-accent"}
+              note={u.note}
+            />
+          ))}
         </div>
 
         {/* 월별 합격 기운 타임라인 (32:1651) */}
@@ -79,29 +81,25 @@ export function CompatResult() {
             caption="원서 접수부터 최종 발표까지"
             className="w-auto"
           />
-          <MonthlyEnergyChart />
+          <MonthlyEnergyChart months={result.months} />
           <div className="relative flex w-[309px] shrink-0 flex-wrap content-start items-start gap-[8px] overflow-clip">
-            <Chip label="11/14 면접 길일" />
-            <Chip type="primary" label="12/12 발표 기운 최고" />
-            <Chip label="2/3 추가 합격 기운" />
+            {result.chips.map((chip) => (
+              <Chip key={chip.label} type={chip.primary ? "primary" : undefined} label={chip.label} />
+            ))}
           </div>
         </div>
 
         {/* 11월 주간 기운 (32:1682) */}
         <div className="relative flex w-full shrink-0 flex-col items-start gap-[12px] overflow-clip whitespace-nowrap rounded-[16px] border border-line-default bg-surface-default p-[18px]">
-          <SectionTitle
-            title="11월 주간 기운"
-            caption="수능·면접이 몰린 달은 주 단위로 봐요"
-            className="w-auto"
-          />
-          <WeeklyEnergy />
+          <SectionTitle title={result.focusTitle} caption={result.focusCaption} className="w-auto" />
+          <WeeklyEnergy weeks={result.weeks} />
         </div>
 
         {/* 연학이 (73:2586) — size M badge */}
         <div className="relative flex shrink-0 items-center gap-[6px] overflow-clip">
           <MascotFaceBadge size={64} className="border-[3px]" />
           <SpeechBubble tail="left" className="shrink-0">
-            {"12월 둘째 주가 제일 좋아!\n그날 발표 확인하자"}
+            {result.tip}
           </SpeechBubble>
         </div>
 
@@ -110,12 +108,22 @@ export function CompatResult() {
           type="outline"
           onPress={() => proto.go("5-1")}
         />
+        {retry && (
+          <Button
+            label="다른 대학으로 다시 보기"
+            type="ghost"
+            onPress={() => {
+              proto.update({ product: "compat", plan: "single" });
+              proto.go("7-1");
+            }}
+          />
+        )}
         <p className="relative shrink-0 whitespace-nowrap text-caption-12 text-text-tertiary">
           * 결과는 보관함에 저장돼 언제든 다시 볼 수 있어요
         </p>
       </div>
 
-      <BottomNav active="compat" className="absolute left-0 top-[1568px]" />
+      <BottomNav active="compat" className="absolute left-0" style={{ top: height - 90 }} />
     </Screen>
   );
 }
