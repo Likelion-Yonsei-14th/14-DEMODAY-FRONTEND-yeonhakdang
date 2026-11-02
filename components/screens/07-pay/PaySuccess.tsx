@@ -5,7 +5,7 @@ import { Mascot } from "@/components/mascot/Mascot";
 import { SpeechBubble } from "@/components/mascot/SpeechBubble";
 import { ListItem } from "@/components/pay/OrderRows";
 import { Button } from "@/components/ui/Button";
-import { PRODUCTS, orderPrice, orderTitle, useProto, won } from "@/lib/proto";
+import { PRODUCTS, orderPrice, orderTitle, unlocked, useProto, won } from "@/lib/proto";
 
 /** Figma: 7-4 결제 완료 (PAY-03) (31:1557) */
 const SPARKLES = [
@@ -22,6 +22,8 @@ export function PaySuccess() {
   const orderDetail = () => proto.toast("주문 상세는 준비 중이에요");
   const product = PRODUCTS[state.product];
   const subject = state.plan === "package" ? "3종 패키지를" : `${product.name}을`;
+  // Opened with a 이용권 code (7-3): the same screen, without a payment.
+  const byCode = unlocked(state);
   return (
     <Screen>
 
@@ -42,26 +44,49 @@ export function PaySuccess() {
         height={153.984}
       />
       <SpeechBubble tail="bottom-left" className="absolute left-[232px] top-[84px]">
-        {"결제 완료!\n바로 풀어 줄게"}
+        {byCode ? "이용권 확인!\n바로 풀어 줄게" : "결제 완료!\n바로 풀어 줄게"}
       </SpeechBubble>
 
-      <p className="absolute left-[93.5px] top-[328px] whitespace-nowrap font-serif text-h1-26">
-        결제가 완료됐어요
-      </p>
-      <p className="absolute left-[46.5px] top-[368px] w-[300px] text-center text-body-m-14 text-text-secondary">
-        연학이가 {subject} 풀고 있어요. 결과는 보관함에도 저장돼요.
-      </p>
+      {byCode ? (
+        <>
+          <p className="absolute left-0 top-[328px] w-[393px] whitespace-nowrap text-center font-serif text-h1-26">
+            이용권으로 열었어요
+          </p>
+          <p className="absolute left-[46.5px] top-[368px] w-[300px] text-center text-body-m-14 text-text-secondary">
+            합격 궁합 · 귀인 · 부적을 모두 볼 수 있어요.
+          </p>
+        </>
+      ) : (
+        <>
+          <p className="absolute left-[93.5px] top-[328px] whitespace-nowrap font-serif text-h1-26">
+            결제가 완료됐어요
+          </p>
+          <p className="absolute left-[46.5px] top-[368px] w-[300px] text-center text-body-m-14 text-text-secondary">
+            연학이가 {subject} 풀고 있어요. 결과는 보관함에도 저장돼요.
+          </p>
+        </>
+      )}
 
       {/* 주문 정보 (31:1585) */}
       <div className="absolute left-[24px] top-[426px] flex w-[345px] flex-col items-start overflow-clip rounded-[16px] border border-line-default bg-surface-default px-[18px] py-[4px]">
-        <ListItem label="주문 번호" value="HS-20261014-0732" onPress={orderDetail} />
-        <ListItem label="상품" value={orderTitle(state)} onPress={orderDetail} />
-        <ListItem
-          label="결제 수단"
-          value={state.payMethod === "card" ? "신용·체크카드" : state.payMethod === "kakao" ? "카카오페이" : "토스페이"}
-          onPress={orderDetail}
-        />
-        <ListItem label="결제 금액" value={won(orderPrice(state))} onPress={orderDetail} />
+        {byCode ? (
+          <>
+            <ListItem label="열린 상품" value="합격 궁합 · 귀인 · 부적" />
+            <ListItem label="이용 방법" value="이용권 코드" />
+            <ListItem label="결제 금액" value={won(0)} />
+          </>
+        ) : (
+          <>
+            <ListItem label="주문 번호" value="HS-20261014-0732" onPress={orderDetail} />
+            <ListItem label="상품" value={orderTitle(state)} onPress={orderDetail} />
+            <ListItem
+              label="결제 수단"
+              value={state.payMethod === "card" ? "신용·체크카드" : state.payMethod === "kakao" ? "카카오페이" : "토스페이"}
+              onPress={orderDetail}
+            />
+            <ListItem label="결제 금액" value={won(orderPrice(state))} onPress={orderDetail} />
+          </>
+        )}
       </div>
 
       <Bottom from={700}>

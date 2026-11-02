@@ -66,6 +66,8 @@ export type ProtoState = {
   pendingOrder: { id: string; message: string | null } | null;
   /** The order that holds each owned product, for /open and refunds. */
   orders: Partial<Record<ProductKind, string>>;
+  /** The 이용권 code that opened every paid result on this device; null when none. */
+  unlockCode: string | null;
 };
 
 const example = (name: string, birth: string): FriendInput => ({
@@ -117,6 +119,7 @@ export const FIGMA_STATE: ProtoState = {
   checkout: null,
   pendingOrder: null,
   orders: {},
+  unlockCode: null,
 };
 
 /** A first-time visitor. */
@@ -135,6 +138,21 @@ export const INITIAL_STATE: ProtoState = {
   purchased: { compat: false, benefactor: false, charm: false },
   charmRerolls: 3,
 };
+
+/** Opened with a 이용권 code: every paid result, with no 결제 step. */
+export function unlocked(s: Pick<ProtoState, "unlockCode">): boolean {
+  return s.unlockCode !== null;
+}
+
+/** Bought (server or demo) or opened with a 이용권 code. */
+export function owns(s: Pick<ProtoState, "purchased" | "unlockCode">, kind: ProductKind): boolean {
+  return s.purchased[kind] || unlocked(s);
+}
+
+/** A purchase step — or, once unlocked, the result that step would have paid for. */
+export function stepOrResult(s: Pick<ProtoState, "product" | "unlockCode">, id: string): string {
+  return unlocked(s) && id.startsWith("7-3") ? PRODUCTS[s.product].result : id;
+}
 
 export function orderPrice(s: Pick<ProtoState, "product" | "plan">): number {
   return s.plan === "package" ? PACKAGE_PRICE : PRODUCTS[s.product].price;
@@ -163,17 +181,17 @@ export function stepLabel(s: Pick<ProtoState, "product" | "plan">, screen: strin
 }
 
 /**
- * Where 구매하기 leads, from the app or a public product page: through 카카오
- * login and, when birth info is missing, 정보 입력 — then on into the steps.
+ * Where 구매하기 leads, from the app or a public product page: through 정보
+ * 입력 when birth info is missing, then on into the steps. 카카오 login waits
+ * for 결제하기 (7-3), so a 이용권 code works without an account.
  */
 export function preparePurchase(state: ProtoState, product: ProductKind, plan = state.plan) {
-  const next = purchaseSteps({ product, plan })[0];
+  const next = stepOrResult({ ...state, product }, purchaseSteps({ product, plan })[0]);
   const hasProfile = state.name.trim() !== "" && !birthError(selfAsFriend(state));
   const target = hasProfile ? next : "2-1";
   return {
     state: { ...state, product, plan, afterInput: hasProfile ? null : next, afterLogin: target },
-    // Logged in without 약관 (backend on): straight to the sheet, not 카카오 again.
-    screen: !state.loggedIn ? "2-4" : state.agreedTerms ? target : "2-5",
+    screen: target,
   };
 }
 

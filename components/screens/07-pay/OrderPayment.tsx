@@ -8,6 +8,7 @@ import { MascotFaceBadge } from "@/components/mascot/MascotFaceBadge";
 import { BusinessFooter } from "@/components/policy/BusinessFooter";
 import { InfoBox } from "@/components/ui/InfoBox";
 import { PriceRow } from "@/components/pay/OrderRows";
+import { UnlockSheet } from "@/components/pay/UnlockSheet";
 import { BottomCta } from "@/components/ui/BottomCta";
 import { Button } from "@/components/ui/Button";
 import { CheckboxRow } from "@/components/ui/CheckboxRow";
@@ -119,6 +120,7 @@ export function OrderPayment() {
   const [payment, setPayment] = useState<ProtoState | null>(null);
   /** The real checkout is running (backend on); a mobile PG return is confirmed too. */
   const [checkingOut, setCheckingOut] = useState(false);
+  const [unlockOpen, setUnlockOpen] = useState(false);
   const serverBusy = checkingOut || state.pendingOrder !== null;
   const paying = payment !== null || serverBusy;
 
@@ -286,6 +288,16 @@ export function OrderPayment() {
             {price}
           </p>
         </div>
+
+        <Tap
+          onPress={() => setUnlockOpen(true)}
+          className="relative flex w-[345px] shrink-0 items-center justify-center gap-[4px] py-[8px]"
+        >
+          <p className="relative shrink-0 whitespace-nowrap text-body-m-14 font-bold text-brand-secondary">
+            이용권 코드가 있어요
+          </p>
+          <Icon name="icon-chevron-right-16" size={16} />
+        </Tap>
       </div>
 
       <BusinessFooter className="mt-4" />
@@ -320,6 +332,7 @@ export function OrderPayment() {
           />
         </Overlay>
       )}
+      {unlockOpen && <UnlockSheet onClose={() => setUnlockOpen(false)} />}
       {serverBusy && (
         <Overlay>
           <PaySheet method={methodName} order={state} />

@@ -4,7 +4,7 @@ import { DOCKED, Docked } from "@/components/layout/Screen";
 import { Icon } from "@/components/ui/Icon";
 import { Tap } from "@/components/ui/Tap";
 import { cn } from "@/lib/cn";
-import { rosterScreen, useProto, type Proto } from "@/lib/proto";
+import { owns, rosterScreen, useProto, type Proto } from "@/lib/proto";
 
 /**
  * Figma: Bottom Nav (16:68).
@@ -29,7 +29,7 @@ function openTab(proto: Proto, tab: NavTabId) {
   if (tab === "list") return proto.reset(rosterScreen(proto));
   // Paid tabs: product detail until bought, the result afterwards.
   const result = { compat: "8-1", benefactor: "8-2", charm: "8-3" }[tab];
-  if (state.purchased[tab]) return proto.reset(result);
+  if (owns(state, tab)) return proto.reset(result);
   proto.openProduct(tab);
 }
 

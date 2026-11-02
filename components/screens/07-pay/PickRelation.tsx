@@ -10,7 +10,7 @@ import { Button } from "@/components/ui/Button";
 import { Icon } from "@/components/ui/Icon";
 import { Tap } from "@/components/ui/Tap";
 import { cn } from "@/lib/cn";
-import { purchaseSteps, stepLabel, useProto, type Relation } from "@/lib/proto";
+import { purchaseSteps, stepLabel, stepOrResult, useProto, type Relation } from "@/lib/proto";
 
 /**
  * Figma: 관계 유형 tiles (30:1538…) — 166px cards, the selected one is tinted.
@@ -87,7 +87,8 @@ export function PickRelation() {
   const { state, update } = proto;
   const steps = purchaseSteps({ product: state.product, plan: state.plan });
   // Reached from 8-2 "다른 관계 귀인도 보기" outside a checkout: 7-2 → 7-3.
-  const next = steps[steps.indexOf("7-2") + 1] ?? "7-3";
+  // Unlocked with a 이용권 code: straight to the result instead.
+  const next = stepOrResult(state, steps[steps.indexOf("7-2") + 1] ?? "7-3");
 
   return (
     <Screen>
@@ -130,7 +131,7 @@ export function PickRelation() {
         <BottomCta className="absolute left-0 top-[740px]">
           <Button
             label={`${state.relation} 귀인으로 다음 단계`}
-            onPress={() => proto.go(next)}
+            onPress={() => (next.startsWith("8-") ? proto.reset(next) : proto.go(next))}
           />
         </BottomCta>
       </Bottom>

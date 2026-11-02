@@ -104,3 +104,5 @@ export const trackInviteOpen = () => track("invite_open");
 export const trackPurchaseClick = (product: string, plan: string) => track("purchase_click", { product, plan });
 export const trackLoginClick = () => track("login_click");
 export const trackInappExternalOpen = () => track("inapp_external_open");
+/** A 이용권 code was tried; never the code itself. Kept apart from purchase events. */
+export const trackUnlock = (ok: boolean) => track(ok ? "unlock_success" : "unlock_fail");

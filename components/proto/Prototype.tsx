@@ -2,6 +2,8 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
+import { verifyUnlockCode } from "@/app/actions/unlock";
+
 import { Dim } from "@/components/layout/BottomSheet";
 import { SCREEN_WIDTH, ViewportContext } from "@/components/layout/Screen";
 import { DrawerPanel } from "@/components/screens/09-locker/MenuDrawer";
@@ -315,6 +317,24 @@ export function Prototype() {
     saveNow({ loginPending: true });
     window.location.assign(LOGIN_PATH);
   }, [saveNow]);
+
+  // A 이용권 code is checked again on every start: one taken out of UNLOCK_CODES
+  // locks this device again. A failed check (offline, server down) keeps it open.
+  useEffect(() => {
+    const code = stateRef.current.unlockCode;
+    if (!code) return;
+    let cancelled = false;
+    verifyUnlockCode(code)
+      .then((ok) => {
+        if (cancelled || ok) return;
+        update({ unlockCode: null });
+        toast("이용권 기간이 끝나 유료 결과가 다시 잠겼어요");
+      })
+      .catch(() => {});
+    return () => {
+      cancelled = true;
+    };
+  }, [update, toast]);
 
   // Any call that finds the session gone (expired, logged out elsewhere) logs this tab out.
   useEffect(() => {

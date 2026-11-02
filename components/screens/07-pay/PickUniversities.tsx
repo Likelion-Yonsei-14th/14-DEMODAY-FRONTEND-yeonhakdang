@@ -8,7 +8,7 @@ import { ChipUniversity, UniversityRow, UniversitySearchField } from "@/componen
 import { MascotTipSmall } from "@/components/result/ResultSections";
 import { BottomCta } from "@/components/ui/BottomCta";
 import { Button } from "@/components/ui/Button";
-import { purchaseSteps, stepLabel, useProto } from "@/lib/proto";
+import { purchaseSteps, stepLabel, stepOrResult, useProto } from "@/lib/proto";
 import { searchUniversities } from "@/lib/universities";
 
 const MAX = 6;
@@ -33,7 +33,8 @@ export function PickUniversities() {
   };
 
   const steps = purchaseSteps(state);
-  const next = steps[steps.indexOf("7-1") + 1] ?? "7-3";
+  // Unlocked with a 이용권 code: straight to the result instead of 결제.
+  const next = stepOrResult(state, steps[steps.indexOf("7-1") + 1] ?? "7-3");
 
   return (
     <Screen>
@@ -106,7 +107,7 @@ export function PickUniversities() {
           <Button
             label={picked.length ? `${picked.length}곳으로 다음 단계` : "대학을 1곳 이상 골라 주세요"}
             disabled={picked.length === 0}
-            onPress={() => proto.go(next)}
+            onPress={() => (next.startsWith("8-") ? proto.reset(next) : proto.go(next))}
           />
         </BottomCta>
       </Bottom>
