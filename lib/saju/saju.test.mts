@@ -20,6 +20,7 @@ const CONTENT: Content = {
   dayMasters: readJson("day-masters.json"),
   insights: readJson("insights.json"),
   scoring: readJson("scoring.json"),
+  sipsin: { aptitude: readJson("sipsin-aptitude.json"), majors: readJson("sipsin-majors.json") },
 };
 
 const input = (patch: Partial<BirthInput> = {}): BirthInput => ({
@@ -87,7 +88,7 @@ test("TOP 3는 서로 다른 중계열, 점수는 60~99", () => {
   assert.equal(new Set(top.map((t) => t.major.중계열)).size, 3);
   for (const t of top) assert.ok(t.display >= 60 && t.display <= 99, `${t.display}`);
   assert.ok(top[0].total >= top[1].total && top[1].total >= top[2].total);
-  assert.equal(r.analysis.reasons.length, 4);
+  assert.equal(r.analysis.reasons.length, 5);
 });
 
 test("점수 규칙: 일간과 같은 오행, 가장 약한 오행을 채우면 가산", () => {

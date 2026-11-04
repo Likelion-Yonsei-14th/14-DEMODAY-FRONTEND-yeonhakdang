@@ -50,7 +50,7 @@ export function ProductCharm() {
             {
               icon: "product-icon-image",
               title: "내 오행으로 그린 부적",
-              caption: "내 사주에 부족한 기운을 채우는 색과 문양 \n규칙으로 맞춤 생성",
+              caption: "내 사주에 부족한 기운을 채우는 색과 문양,\n이름에 없는 기운까지 함께 봐요",
             },
             {
               icon: "product-icon-gift",

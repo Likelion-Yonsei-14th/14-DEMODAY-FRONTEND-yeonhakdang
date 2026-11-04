@@ -13,6 +13,7 @@ import {
 } from "@/components/paid/PaidSections";
 import { Button } from "@/components/ui/Button";
 import { Chip } from "@/components/ui/Chip";
+import { InfoBox } from "@/components/ui/InfoBox";
 import { SectionTitle } from "@/components/ui/SectionTitle";
 import { displayName, unlocked, useProto } from "@/lib/proto";
 import { useOpenRecord } from "@/lib/useOpenRecord";
@@ -78,6 +79,8 @@ export function CompatResult() {
             />
           ))}
         </div>
+
+        {result.daewoon && <InfoBox>{result.daewoon}</InfoBox>}
 
         {/* 월별 합격 기운 타임라인 (32:1651) */}
         <div className="relative flex w-full shrink-0 flex-col items-start gap-[14px] overflow-clip rounded-[16px] border border-line-default bg-surface-default p-[18px]">

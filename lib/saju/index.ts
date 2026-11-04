@@ -8,13 +8,21 @@ import majors from "@/data/majors.json";
 import paid from "@/data/paid.json";
 import scoring from "@/data/scoring.json";
 import founded from "@/data/universities-founded.json";
+import sipsinAptitude from "@/data/sipsin-aptitude.json";
+import sipsinMajors from "@/data/sipsin-majors.json";
 
 import { analyze, type AnalysisResult } from "./analyze.ts";
 import type { BirthInput } from "./birth.ts";
 import type { Content } from "./content.ts";
 import type { PaidContent } from "./paid.ts";
 
-export const CONTENT = { majors, dayMasters, insights, scoring } as Content;
+export const CONTENT = {
+  majors,
+  dayMasters,
+  insights,
+  scoring,
+  sipsin: { aptitude: sipsinAptitude, majors: sipsinMajors },
+} as Content;
 
 /** The 유료 결과 tables: lib/saju/paid.ts takes them as an argument too. */
 export const PAID_CONTENT = { ...paid, founded: founded.years } as unknown as PaidContent;
@@ -24,6 +32,10 @@ export function analyzeBirth(input: BirthInput): AnalysisResult {
 }
 
 export { birthError, type BirthInput } from "./birth.ts";
+export { personalOf, type Personal } from "./personal.ts";
+export { periodLabel, supportLine, daewoonBasisLine, type Daewoon, type DaewoonPeriod } from "./daewoon.ts";
+export { nameFlowLine, nameSupportLine, type NameElement } from "./nameElement.ts";
+export { FOCUS, SUPPORT_BASIS } from "./rules.ts";
 export type { Analysis, ReasonStep } from "./analyze.ts";
 export type { MajorScore } from "./score.ts";
 export { ELEMENTS, ELEMENT_HANJA, elementLabel, type Element } from "./elements.ts";

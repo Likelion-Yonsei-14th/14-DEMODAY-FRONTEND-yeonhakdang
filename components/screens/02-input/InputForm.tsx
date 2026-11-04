@@ -78,10 +78,10 @@ export function InputForm({ initial }: { initial: InputValues }) {
         <StepProgress label="STEP 1 / 2 · 사주 정보" value={235 / 345} />
         <MascotTip>{tip}</MascotTip>
         <TextField
-          label="이름 (닉네임)"
+          label="이름"
           value={v.name}
           placeholder="2~10자로 입력해 주세요"
-          helper={v.name ? undefined : "합격자 명단과 공유 카드에 표시돼요"}
+          helper={v.name ? undefined : "이름 첫소리로 발음오행을 봐요 · 명단과 공유 카드에도 표시돼요"}
           maxLength={10}
           onChange={(name) => set({ name })}
         />

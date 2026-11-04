@@ -19,7 +19,10 @@ import {
   type BranchRelation,
 } from "./branches.ts";
 import { relationOf, type Relation } from "./compat.ts";
+import { periodLabel, supportLine } from "./daewoon.ts";
 import { ELEMENTS, ELEMENT_HANJA, byStrength, elementLabel, generates, type Element } from "./elements.ts";
+import type { Personal } from "./personal.ts";
+import { FOCUS } from "./rules.ts";
 
 export type BenefactorRelation = "선배" | "동기" | "교수님" | "연인";
 
@@ -172,6 +175,8 @@ export type CompatResult = {
   chips: Array<{ label: string; primary: boolean }>;
   /** 연학이 말풍선. */
   tip: string;
+  /** 입시 시기 대운 한 줄 (성별을 알 때만). 점수에는 안 들어간다. */
+  daewoon?: string;
 };
 
 const STEM_TEXT: Record<Relation, string> = {
@@ -238,7 +243,22 @@ export function universityCompat(me: Analysis, name: string, content: PaidConten
   return { name, founded, ganzhi: ganzhiText, stemElement, branch, stemRelation, branchRelation: bRelation, score, note, reasons };
 }
 
-export function compatResult(me: Analysis, universities: string[], content: PaidContent): CompatResult {
+/** "2027학년도 입시(만 18세)는 …" — or undefined without 대운. */
+export function examDaewoonLine(personal: Personal | null | undefined): string | undefined {
+  if (!personal) return undefined;
+  const d = personal.daewoon;
+  const head = `${FOCUS.exam.label}(만 ${d.examAge}세)`;
+  if (d.examIndex === null) return `${head}는 첫 대운(만 ${d.number}세) 전이라, 타고난 월주의 기운으로 맞이해요`;
+  const p = d.periods[d.examIndex];
+  return `${head}는 ${periodLabel(p)} 안에 있어요. ${supportLine(p, personal.target)}`;
+}
+
+export function compatResult(
+  me: Analysis,
+  universities: string[],
+  content: PaidContent,
+  personal?: Personal | null,
+): CompatResult {
   const names = [...new Set(universities)];
   const ranked = names
     .map((name, i) => ({ c: universityCompat(me, name, content), i }))
@@ -290,6 +310,7 @@ export function compatResult(me: Analysis, universities: string[], content: Paid
     focusCaption: focus.caption,
     chips,
     tip: `${peak.month}월 ${ORDINAL[peakWeek]} 주가 제일 좋아!\n${peak.line}`,
+    ...(personal && { daewoon: examDaewoonLine(personal) }),
   };
 }
 
@@ -313,7 +334,28 @@ export type BenefactorResult = {
 
 const fmt = (d: Day) => `${d.year}.${String(d.month).padStart(2, "0")}.${String(d.day).padStart(2, "0")}`;
 
-export function benefactorResult(me: Analysis, relation: BenefactorRelation, content: PaidContent): BenefactorResult {
+/** 대학 시절 대운 한 줄 for the 귀인 설명, or undefined without 대운. */
+export function collegeDaewoonLine(personal: Personal | null | undefined): string | undefined {
+  if (!personal) return undefined;
+  const periods = personal.daewoon.collegeIndexes.map((i) => personal.daewoon.periods[i]);
+  if (periods.length === 0) return undefined;
+  const t = elementLabel(personal.target);
+  const names = periods.map((p) => `${p.hangul}(${p.hanja})`).join("·");
+  const elements = [...new Set(periods.flatMap((p) => [p.stemElement, p.branchElement]))].map(elementLabel).join("·");
+  const support = periods.some((p) => p.support === "fills")
+    ? `부족한 ${t} 기운이 채워지는 때라 귀인의 도움이 더 크게 와닿아요.`
+    : periods.some((p) => p.support === "helps")
+      ? `부족한 ${t} 기운을 거드는 때라 귀인과 손발이 잘 맞아요.`
+      : `대운이 ${t} 기운을 직접 채우지 않아, 귀인이 그 빈자리를 메워 줘요.`;
+  return `${FOCUS.college.label}(만 ${FOCUS.college.from}~${FOCUS.college.to}세)은 ${names} 대운의 ${elements} 기운 속이에요. ${support}`;
+}
+
+export function benefactorResult(
+  me: Analysis,
+  relation: BenefactorRelation,
+  content: PaidContent,
+  personal?: Personal | null,
+): BenefactorResult {
   const b = content.benefactor;
   const myBranch = me.saju.pillars[2].branch.hangul as Branch;
   const pair = cheoneul(me.saju.dayMaster.hangul);
@@ -364,7 +406,7 @@ export function benefactorResult(me: Analysis, relation: BenefactorRelation, con
     other,
     glyph: branchHanja(main),
     type: profile.type,
-    description: profile.description,
+    description: [profile.description, collegeDaewoonLine(personal)].filter(Boolean).join(" "),
     tags: [`#${animal(main)}띠`, ...profile.tags, `#${animal(other)}띠도 귀인`],
     hints: profile.hints,
     subtitle: `천을귀인 ${branchLabel(pair[0])}·${branchLabel(pair[1])} — ${animal(main)}띠 ${josa(relation, "이/가")} 길을 열어 줘요`,
@@ -402,17 +444,28 @@ function feeder(e: Element): Element {
 }
 
 /** `variant` counts 다시 뽑기 used (0 = the first draw). */
-export function charmResult(me: Analysis, variant: number, content: PaidContent): CharmResult {
+/**
+ * 부적의 기운은 사주에서 가장 약한 오행(용신 대신) 그대로 — 이미 받은 부적이
+ * 바뀌지 않게. 이름의 발음오행은 설명과 태그에만 더한다.
+ */
+export function charmResult(me: Analysis, variant: number, content: PaidContent, personal?: Personal | null): CharmResult {
   const element = me.weakest;
   const e = content.charm.elements[element];
   const { words } = content.charm;
   const v = ((variant % words.length) + words.length) % words.length;
   const strong = me.strongest;
+  const nameNote = charmNameNote(element, personal);
   return {
     element,
     title: e.title,
-    tags: e.tags,
-    description: `${withJosa(strong, "이/가")} 강한 사주에 부족한 ${elementLabel(element)}의 ${josa(e.colors, "과/와")} ${e.pattern} 문양을 담았어요. 시험 전날 잠금화면으로 설정해 두세요.`,
+    tags: nameNote ? [...e.tags, nameNote.tag] : e.tags,
+    description: [
+      `${withJosa(strong, "이/가")} 강한 사주에 부족한 ${elementLabel(element)}의 ${josa(e.colors, "과/와")} ${e.pattern} 문양을 담았어요.`,
+      nameNote?.line,
+      "시험 전날 잠금화면으로 설정해 두세요.",
+    ]
+      .filter(Boolean)
+      .join(" "),
     art: {
       word: words[v],
       formula: `${ELEMENT_HANJA[feeder(element)]}生${ELEMENT_HANJA[element]}`,
@@ -426,3 +479,16 @@ export function charmResult(me: Analysis, variant: number, content: PaidContent)
   };
 }
 
+
+/** What the 이름 adds to the 부적: whether it already holds the element. */
+function charmNameNote(element: Element, personal: Personal | null | undefined): { line: string; tag: string } | undefined {
+  const name = personal?.name;
+  if (!name) return undefined;
+  const label = elementLabel(element);
+  if (name.counts[element] === 0) {
+    const others = name.missing.filter((e) => e !== element);
+    const also = others.length ? ` 이름에는 ${others.map(elementLabel).join("·")}도 없어요.` : "";
+    return { line: `이름에도 ${label} 기운이 없어 부적으로 꼭 채워 두면 좋아요.${also}`, tag: `#이름에도 없는 ${element}` };
+  }
+  return { line: `이름에 담긴 ${label} 기운을 부적이 한 번 더 받쳐 줘요.`, tag: `#이름 속 ${element}` };
+}

@@ -3,6 +3,7 @@
  * argument, so changing a table changes the result without touching code.
  */
 import type { Element } from "./elements.ts";
+import type { SipsinContent } from "./sipsin.ts";
 
 /** One row of data/majors.csv (converted to data/majors.json at build). */
 export type MajorRow = {
@@ -67,4 +68,6 @@ export type Content = {
   dayMasters: Record<string, DayMasterType>;
   insights: Insights;
   scoring: Scoring;
+  /** data/sipsin-aptitude.json + data/sipsin-majors.json: 근거 문장만, 점수에는 안 쓴다. */
+  sipsin: SipsinContent;
 };

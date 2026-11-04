@@ -29,7 +29,7 @@ const ORBIT_CHIPS = [
 
 /** Step i is done once progress passes STEP_ENDS[i]. */
 const STEP_ENDS = [22, 48, 86, 100];
-const STAGE_LABELS = ["만세력 변환 중", "오행 분포 계산 중", "학과 매칭 중", "결과 문구 정리 중"];
+const STAGE_LABELS = ["만세력 변환 중", "오행 분포 계산 중", "학과 매칭 중", "대운·이름 기운 정리 중"];
 const DURATION_MS = 4200;
 
 function birthCaption({ birth, calendar }: Pick<ProtoState, "birth" | "calendar">) {
@@ -162,8 +162,8 @@ export function AnalyzingLoading() {
         />
         <LoadingStepRow
           state={stepState(3)}
-          title="결과 문구 정리"
-          caption={caption(3, "연학이가 한 줄씩 다듬는 중")}
+          title="대운 · 이름 기운 정리"
+          caption={caption(3, "10년 운 흐름과 이름 기운을 살피는 중")}
         />
       </div>
 

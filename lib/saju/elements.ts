@@ -45,3 +45,25 @@ export function byStrength(counts: ElementCounts): Element[] {
 export function byWeakness(counts: ElementCounts): Element[] {
   return [...ELEMENTS].sort((a, b) => counts[a] - counts[b]);
 }
+
+/** 상극: 목→토, 화→금, 토→수, 금→목, 수→화 — the element `e` controls. */
+export function controls(e: Element): Element {
+  return ELEMENTS[(ELEMENTS.indexOf(e) + 2) % ELEMENTS.length];
+}
+
+/** The element that 생(生)s `e`. */
+export function feederOf(e: Element): Element {
+  return ELEMENTS[(ELEMENTS.indexOf(e) + ELEMENTS.length - 1) % ELEMENTS.length];
+}
+
+/**
+ * Whether a set of 오행 backs the 보완 기운 (see SUPPORT_BASIS in rules.ts):
+ * "fills" has it, "helps" has what feeds it, "none" neither.
+ */
+export type Support = "fills" | "helps" | "none";
+
+export function supportOf(list: Element[], target: Element): Support {
+  if (list.includes(target)) return "fills";
+  if (list.includes(feederOf(target))) return "helps";
+  return "none";
+}

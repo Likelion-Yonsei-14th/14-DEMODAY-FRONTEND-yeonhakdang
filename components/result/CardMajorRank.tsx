@@ -13,6 +13,7 @@ export function CardMajorRank({
   score,
   barRatio,
   reason,
+  aptitude,
   className,
 }: {
   rank: 1 | 2 | 3;
@@ -21,6 +22,8 @@ export function CardMajorRank({
   score: string;
   barRatio: number;
   reason?: string;
+  /** 십신으로 본 한 줄 (근거만, 점수와 무관). */
+  aptitude?: string;
   className?: string;
 }) {
   const isFirst = rank === 1;
@@ -66,6 +69,11 @@ export function CardMajorRank({
       {reason && (
         <p className="relative w-full shrink-0 text-body-m-14 text-text-secondary">
           {reason}
+        </p>
+      )}
+      {aptitude && (
+        <p className="relative w-full shrink-0 text-caption-12 text-brand-secondary">
+          {aptitude}
         </p>
       )}
     </div>

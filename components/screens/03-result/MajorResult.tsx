@@ -13,6 +13,7 @@ import {
   ResultHero,
   Top3Majors,
 } from "@/components/result/ResultSections";
+import { CalcBasisNote, DaewoonCard, NameElementCard } from "@/components/result/PersonalCards";
 import { WhyThisMajor } from "@/components/result/WhyThisMajor";
 import { Toast } from "@/components/ui/Toast";
 import { useProto } from "@/lib/proto";
@@ -43,9 +44,12 @@ export function MajorResultContent({
         <WhyThisMajor />
       </div>
       <ElementDistribution counts={counts} charCount={charCount} insight={insight} />
+      <DaewoonCard />
+      <NameElementCard />
       <MajorTypeMatch />
       <ResultActions />
       <MoreFromYeonhak />
+      <CalcBasisNote />
       <p className="relative w-[345px] shrink-0 text-caption-12 text-text-tertiary">
         사주 결과는 진로 탐색을 위한 참고용 콘텐츠예요. 실제 입시 결과를 보장하지
         않아요.
@@ -56,15 +60,15 @@ export function MajorResultContent({
 
 /**
  * Figma: 3-3 학과 결과 · 내 학과 (전체 스크롤) (25:457)
- * The same content as 3-4, drawn at its full 2990px height with the nav
+ * The same content as 3-4, drawn at its full height (Figma 2990px, plus the 대운 · 이름 cards) with the nav
  * pinned to the bottom of the artboard.
  */
 export function MajorResultFull() {
   return (
-    <Screen height={2990}>
+    <Screen height={4490}>
       <TopBar type="logo" right="icon-menu" />
       <MajorResultContent />
-      <BottomNav active="major" className="absolute left-0 top-[2900px]" />
+      <BottomNav active="major" className="absolute left-0 top-[4400px]" />
     </Screen>
   );
 }

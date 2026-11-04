@@ -101,7 +101,7 @@ export function TermsSheet() {
 
             <div className="relative flex shrink-0 flex-col items-start overflow-clip px-[24px] pb-[12px]">
               <p className="relative w-[345px] shrink-0 text-caption-12 text-text-tertiary">
-                생년월일·출생시간은 사주 분석에만 쓰이며, 탈퇴 시 즉시 삭제돼요.
+                이름·성별·생년월일·출생시간은 사주 분석에만 쓰이며, 탈퇴 시 즉시 삭제돼요.
               </p>
             </div>
 

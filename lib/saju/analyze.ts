@@ -15,6 +15,7 @@ import {
 } from "./elements.ts";
 import { PILLAR_LABELS, computeSaju, countElements, type Saju } from "./pillars.ts";
 import { pickTop, rankMajors, tiedWith, type MajorScore } from "./score.ts";
+import { majorAptitude, sipsinProfile, sipsinReasonLines, type MajorAptitude, type SipsinProfile } from "./sipsin.ts";
 
 export type ReasonStep = {
   title: string;
@@ -34,6 +35,10 @@ export type Analysis = {
   /** The 오행 분포 해설. */
   insight: string;
   top: MajorScore[];
+  /** 십신 그룹 세기 (근거용; TOP 3 순위에는 쓰지 않는다). */
+  sipsin: SipsinProfile;
+  /** One 십신 근거 per `top` pick, same order. */
+  aptitudes: MajorAptitude[];
   /** "왜 이 학과일까?" for the first pick. */
   reasons: ReasonStep[];
 };
@@ -67,6 +72,8 @@ function reasonsFor(
   pick: MajorScore,
   ties: number,
   content: Content,
+  sipsin: SipsinProfile,
+  aptitude: MajorAptitude,
 ): ReasonStep[] {
   const s = content.scoring;
   const strengthOrder = byStrength(counts);
@@ -128,7 +135,12 @@ function reasonsFor(
     ],
   };
 
-  return [step1, step2, step3, step4];
+  const step5: ReasonStep = {
+    title: "5. 십신으로 본 적성",
+    lines: sipsinReasonLines(sipsin, aptitude, content.sipsin),
+  };
+
+  return [step1, step2, step3, step4, step5];
 }
 
 export function analyze(input: BirthInput, content: Content): AnalysisResult {
@@ -149,6 +161,10 @@ export function analyze(input: BirthInput, content: Content): AnalysisResult {
   const top = pickTop(ranked, content.scoring.topCount);
   if (top.length === 0) return { ok: false, error: "학과 표가 비어 있어요" };
 
+  // 순위가 정해진 뒤에 근거만 붙인다: 십신은 TOP 3 점수에 들어가지 않는다.
+  const sipsin = sipsinProfile(saju);
+  const aptitudes = top.map((pick) => majorAptitude(pick, sipsin, content.sipsin));
+
   return {
     ok: true,
     analysis: {
@@ -161,7 +177,9 @@ export function analyze(input: BirthInput, content: Content): AnalysisResult {
       tags: [...dayMaster.tags, `#${elementLabel(strongest)}기운 ${counts[strongest]}개`],
       insight: insightFor(counts, content),
       top,
-      reasons: reasonsFor(saju, counts, charCount, top[0], tiedWith(ranked, top[0]), content),
+      sipsin,
+      aptitudes,
+      reasons: reasonsFor(saju, counts, charCount, top[0], tiedWith(ranked, top[0]), content, sipsin, aptitudes[0]),
     },
   };
 }

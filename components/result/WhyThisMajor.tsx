@@ -8,8 +8,8 @@ import { cn } from "@/lib/cn";
 import { useAnalysis } from "@/lib/useAnalysis";
 
 /**
- * "왜 이 학과일까?" — the 1위 학과's reasoning in four steps (사주 글자 →
- * 오행 세기 → 점수 계산 → 결론), folded by default under the TOP 3.
+ * "왜 이 학과일까?" — the 1위 학과's reasoning in five steps (사주 글자 →
+ * 오행 세기 → 점수 계산 → 결론 → 십신 적성), folded by default under the TOP 3.
  */
 export function WhyThisMajor({ className }: { className?: string }) {
   const { top, reasons } = useAnalysis();
@@ -28,7 +28,7 @@ export function WhyThisMajor({ className }: { className?: string }) {
       >
         <span className="flex min-w-px flex-col gap-[2px]">
           <span className="font-bold text-body-l-16">왜 {top[0].major.대표학과[0]}일까?</span>
-          <span className="text-caption-12 text-text-secondary">사주 글자부터 점수까지, 4단계로 보여줄게요</span>
+          <span className="text-caption-12 text-text-secondary">사주 글자부터 십신 적성까지, 5단계로 보여줄게요</span>
         </span>
         <Icon name="icon-chevron-down" className={cn("transition-transform", open && "rotate-180")} />
       </Tap>

@@ -7,6 +7,7 @@ import { calculateSaju } from "@fullstackfamily/manseryeok";
 
 import { UNIVERSITIES } from "../universities.ts";
 import { analyze, type Analysis } from "./analyze.ts";
+import { personalOf } from "./personal.ts";
 import { branchRelation, cheoneul, yearBranch, type Branch } from "./branches.ts";
 import type { Content } from "./content.ts";
 import {
@@ -28,6 +29,7 @@ const CONTENT: Content = {
   dayMasters: readJson("day-masters.json"),
   insights: readJson("insights.json"),
   scoring: readJson("scoring.json"),
+  sipsin: { aptitude: readJson("sipsin-aptitude.json"), majors: readJson("sipsin-majors.json") },
 };
 
 const PAID: PaidContent = { ...readJson("paid.json"), founded: readJson("universities-founded.json").years };
@@ -213,4 +215,47 @@ test("합격 궁합 근거: 보완 줄은 채워 주는 기운과 이미 많은 
     assert.match(line, /^보완 25%: .+ → \d+점$/);
     assert.ok(!line.includes(": ,") && !line.includes(",  →"));
   }
+});
+
+/* ── 대운 · 발음오행을 더했을 때 ── */
+
+const withPersonal = (birth: string, gender: 0 | 1, name: string) => {
+  const me = person(birth);
+  const p = personalOf(me, { birth, calendar: 0, leapMonth: false, time: "", unknownTime: true }, gender, name);
+  assert.ok(p);
+  return { me, p };
+};
+
+test("대운 · 이름을 넘겨도 점수 · 부적 기운 · 귀인은 그대로, 문장만 더해진다", () => {
+  for (const birth of ["2008.03.15", "2007.08.07", "2009.11.30"]) {
+    const { me, p } = withPersonal(birth, 0, "김연학");
+    const unis = ["서울대학교", "연세대학교", "고려대학교"].filter((u) => u in PAID.founded);
+    const before = compatResult(me, unis, PAID);
+    const after = compatResult(me, unis, PAID, p);
+    assert.equal(before.daewoon, undefined);
+    assert.match(after.daewoon!, /2027학년도 입시\(만 \d+세\)/);
+    assert.deepEqual({ ...after, daewoon: undefined }, { ...before, daewoon: undefined });
+
+    const b0 = benefactorResult(me, "선배", PAID);
+    const b1 = benefactorResult(me, "선배", PAID, p);
+    assert.equal(b1.branch, b0.branch);
+    assert.ok(b1.description.startsWith(b0.description));
+    assert.match(b1.description, /대학 시절\(만 19~24세\)/);
+
+    const c0 = charmResult(me, 0, PAID);
+    const c1 = charmResult(me, 0, PAID, p);
+    assert.equal(c1.element, c0.element);
+    assert.deepEqual(c1.art, c0.art);
+    assert.equal(c1.tags.length, c0.tags.length + 1);
+    assert.match(c1.description, /이름/);
+  }
+});
+
+test("부적: 이름에 없는 약한 오행이면 '이름에도 없는', 있으면 '이름에 담긴'", () => {
+  const { me, p } = withPersonal("2008.03.15", 0, "김연학"); // 화 0개 → 가장 약함, 이름 목·토·토
+  assert.equal(me.weakest, "화");
+  assert.match(charmResult(me, 0, PAID, p).description, /이름에도 화\(火\) 기운이 없어/);
+  const { p: q } = withPersonal("2008.03.15", 0, "나도");
+  assert.match(charmResult(me, 0, PAID, q).description, /이름에 담긴 화\(火\)/);
+  assert.equal(personalOf(me, { birth: "2008.03.15", calendar: 0, leapMonth: false, time: "", unknownTime: true }, 0, "  ")!.name, null);
 });

@@ -57,7 +57,7 @@ export function ResultHero({
 
 /** Figma: Pattern/Result/Top 3 Majors (74:3698). Scores come from the 학과 표. */
 export function Top3Majors({ className }: { className?: string }) {
-  const { top } = useAnalysis();
+  const { top, aptitudes } = useAnalysis();
   return (
     <div
       className={cn(
@@ -78,6 +78,7 @@ export function Top3Majors({ className }: { className?: string }) {
           score={String(pick.display)}
           barRatio={pick.display / 100}
           reason={pick.major.근거}
+          aptitude={aptitudes[i]?.sentence}
         />
       ))}
     </div>
