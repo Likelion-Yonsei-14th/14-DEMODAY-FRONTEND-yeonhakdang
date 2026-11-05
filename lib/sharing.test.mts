@@ -16,7 +16,7 @@ type Payload = { content: { title: string; imageUrl: string; link: { webUrl: str
 type Api = {
   kakaoConfigured: boolean;
   prepareKakao: () => Promise<void>;
-  sendKakaoInvite: (name: string, url: string) => unknown;
+  sendKakaoInvite: (name: string, url: string, image: string) => unknown;
   copyText: (value: string) => Promise<void>;
 };
 
@@ -62,9 +62,9 @@ test("concurrent loads share one script; initialization runs once; share dispatc
   await a;
   await s.api.prepareKakao();
   assert.equal(initCount, 1);
-  s.api.sendKakaoInvite("민지", "https://example.com/?invite=abc");
+  s.api.sendKakaoInvite("민지", "https://example.com/?invite=abc", "/assets/ilgan/card-gap.jpg");
   assert.equal(payload?.content.link.webUrl, "https://example.com/?invite=abc");
-  assert.equal(payload?.content.imageUrl, "https://example.com/assets/major-wide.png");
+  assert.equal(payload?.content.imageUrl, "https://example.com/assets/ilgan/card-gap.jpg");
   assert.match(payload?.content.title ?? "", /민지/);
 });
 
@@ -82,7 +82,7 @@ test("failed SDK load cleans up and allows a retry", async () => {
 
 test("uninitialized SDK never dispatches", () => {
   const s = setup();
-  assert.throws(() => s.api.sendKakaoInvite("친구", "https://example.com"), /준비/);
+  assert.throws(() => s.api.sendKakaoInvite("친구", "https://example.com", "/assets/ilgan/card-gap.jpg"), /준비/);
 });
 
 test("clipboard denial falls back; total failure is reported", async () => {

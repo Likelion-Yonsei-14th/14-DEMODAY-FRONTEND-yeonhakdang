@@ -16,6 +16,7 @@ import {
 import { CalcBasisNote, DaewoonCard, NameElementCard } from "@/components/result/PersonalCards";
 import { WhyThisMajor } from "@/components/result/WhyThisMajor";
 import { Toast } from "@/components/ui/Toast";
+import { ilganArt } from "@/lib/ilganArt";
 import { useProto } from "@/lib/proto";
 import { useAnalysis } from "@/lib/useAnalysis";
 
@@ -38,6 +39,7 @@ export function MajorResultContent({
         description={dayMaster.description}
         tags={tags}
         tone={typeTone(dayMaster.name)}
+        art={ilganArt(dayMaster.name).round}
       />
       <div className="flex w-full flex-col gap-[12px]">
         <Top3Majors />

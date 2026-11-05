@@ -4,6 +4,7 @@ import Image from "next/image";
 
 import { majorTitleClass } from "@/components/share/ShareCardMajor";
 import { cn } from "@/lib/cn";
+import { ilganArt } from "@/lib/ilganArt";
 import { displayName, useProto } from "@/lib/proto";
 import { useAnalysis } from "@/lib/useAnalysis";
 
@@ -59,7 +60,8 @@ export function ShareCardMajorSquare({
           {owner}님의 사주 학과
         </p>
         {/* Beside the mascot stage there is room for about 5 글자 at Display/32. */}
-        <p className={cn("absolute left-[24px] top-[86px] whitespace-nowrap font-serif text-text-inverse", majorTitleClass(first.major.대표학과[0], 5))}>
+        {/* A long name drops to H1/26; its 36px line box would end at y 122, past the stage's top (120), so it is held to 30px. */}
+        <p className={cn("absolute left-[24px] top-[86px] whitespace-nowrap font-serif text-text-inverse", majorTitleClass(first.major.대표학과[0], 5), first.major.대표학과[0].length > 5 && "leading-[30px]")}>
           {first.major.대표학과[0]}
         </p>
 
@@ -71,8 +73,10 @@ export function ShareCardMajorSquare({
           </p>
         </div>
 
-        <div className="absolute left-[24px] top-[182px] flex items-center rounded-full border border-brand-accent bg-brand-accent-tint px-[10px] py-[4px]">
-          <p className="relative shrink-0 whitespace-nowrap text-[12px] font-bold leading-[18px]">
+        {/* The stage starts at x 173 here: a long 유형 (을·기·경·신·정) wraps to a second
+            line inside 140px instead of running under it. Two lines end at y 228, above the 2·3위 list. */}
+        <div className="absolute left-[24px] top-[182px] flex max-w-[140px] items-center rounded-[13px] border border-brand-accent bg-brand-accent-tint px-[10px] py-[4px]">
+          <p className="relative break-keep text-[12px] font-bold leading-[18px]">
             #{dayMaster.type}
           </p>
         </div>
@@ -80,11 +84,11 @@ export function ShareCardMajorSquare({
         {/* mascot stage (27:1112) — Mascot/학과 컨셉 · 원형 */}
         <div className="absolute left-[170px] top-[120px] size-[170px] overflow-clip rounded-full bg-bg-base">
           <Image
-            src="/assets/major-round.png"
+            src={ilganArt(dayMaster.name).round}
             alt=""
             fill
             sizes="170px"
-            className="pointer-events-none scale-[1.1115] object-cover"
+            className="pointer-events-none scale-[1.04] object-cover"
           />
         </div>
 

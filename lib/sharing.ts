@@ -4,7 +4,7 @@ const javascriptKey = process.env.NEXT_PUBLIC_KAKAO_JAVASCRIPT_KEY?.trim();
 export const kakaoConfigured = Boolean(javascriptKey);
 type SharePayload = {
   objectType: "feed";
-  content: { title: string; description: string; imageUrl: string; link: { mobileWebUrl: string; webUrl: string } };
+  content: { title: string; description: string; imageUrl: string; imageWidth?: number; imageHeight?: number; link: { mobileWebUrl: string; webUrl: string } };
   buttons: { title: string; link: { mobileWebUrl: string; webUrl: string } }[];
 };
 type KakaoSdk = {
@@ -48,7 +48,8 @@ export function prepareKakao(): Promise<void> {
 }
 
 /** Call synchronously from a click: awaiting SDK loading here can block popups. */
-export function sendKakaoInvite(name: string, url: string) {
+/** `image`: a path on this site (the 일간 카드 그림); Kakao fetches it from the public origin. */
+export function sendKakaoInvite(name: string, url: string, image: string) {
   if (!window.Kakao?.isInitialized()) throw new Error("카카오톡 공유를 준비 중이에요. 잠시 후 다시 눌러 주세요.");
   const link = { mobileWebUrl: url, webUrl: url };
   return window.Kakao.Share.sendDefault({
@@ -56,7 +57,10 @@ export function sendKakaoInvite(name: string, url: string) {
     content: {
       title: `${name}님이 연학당에 초대했어요`,
       description: "내 동기 수석 합격자는 누구? 너도 사주로 내 학과를 확인해 봐!",
-      imageUrl: new URL("/assets/major-wide.png", url).href,
+      imageUrl: new URL(image, url).href,
+      // 일간 카드 그림은 1200×857: 크기를 알려 줘야 카카오가 가운데만 잘라 내지 않는다.
+      imageWidth: 1200,
+      imageHeight: 857,
       link,
     },
     buttons: [{ title: "내 학과 확인하기", link }],

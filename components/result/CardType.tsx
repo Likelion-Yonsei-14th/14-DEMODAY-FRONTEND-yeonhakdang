@@ -14,6 +14,7 @@ export function CardType({
   description,
   tags,
   tone = { bg: "bg-brand-secondary", ring: "border-brand-secondary-light" },
+  art = "/assets/ilgan/round-gap.webp",
   className,
 }: {
   overline?: string;
@@ -21,6 +22,8 @@ export function CardType({
   description: string;
   tags: string[];
   tone?: TypeTone;
+  /** 일간 원형 그림 (ilganArt(...).round). */
+  art?: string;
   className?: string;
 }) {
   return (
@@ -34,7 +37,8 @@ export function CardType({
       <p className="relative shrink-0 whitespace-nowrap text-overline-12 text-text-inverse opacity-80">
         {overline}
       </p>
-      <div className="relative w-[220px] shrink-0 whitespace-pre-line font-serif text-h1-26 text-text-inverse">
+      {/* 204, not Figma's 220: the 100px badge reaches x 229, and a 220 title's second line ran 4px into it. */}
+      <div className="relative w-[204px] shrink-0 whitespace-pre-line font-serif text-h1-26 text-text-inverse">
         {title}
       </div>
       <p className="relative w-[220px] shrink-0 text-body-m-14 text-text-inverse opacity-[0.92]">
@@ -53,19 +57,19 @@ export function CardType({
         ))}
       </div>
 
-      {/* mascot badge (17:145) */}
+      {/* mascot badge (17:145) — 92px in Figma, drawn a touch larger (100px) to show the 일간 art. */}
       <div
         className={cn(
-          "absolute right-[16px] top-[16px] size-[92px] overflow-clip rounded-full border-[3px] bg-bg-base",
+          "absolute right-[16px] top-[16px] size-[100px] overflow-clip rounded-full border-[3px] bg-bg-base",
           tone.ring,
         )}
       >
         <Image
-          src="/assets/mascot-default.png"
+          src={art}
           alt=""
-          width={112}
-          height={128}
-          className="pointer-events-none absolute left-[-13px] top-px max-w-none object-cover"
+          fill
+          sizes="100px"
+          className="pointer-events-none scale-[1.04] object-cover"
         />
       </div>
     </div>

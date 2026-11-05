@@ -40,3 +40,6 @@ yarn-error.log*
 *.tsbuildinfo
 next-env.d.ts
 !.env.example
+
+# 원본 디자인 파일 (화면용은 public/assets/ilgan)
+/design-src/

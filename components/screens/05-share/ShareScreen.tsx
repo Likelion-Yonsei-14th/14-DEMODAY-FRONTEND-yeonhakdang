@@ -24,7 +24,9 @@ import { SegmentedControl } from "@/components/ui/SegmentedControl";
 import { Toast } from "@/components/ui/Toast";
 import { trackShareClick, type ShareMethod } from "@/lib/analytics";
 import { renderCard } from "@/lib/cardImage";
+import { ilganArt } from "@/lib/ilganArt";
 import { displayName, inviteUrl, isInAppBrowser, useProto } from "@/lib/proto";
+import { useAnalysis } from "@/lib/useAnalysis";
 import {
   copyText,
   downloadImage,
@@ -55,6 +57,7 @@ const SHARE_METHODS: Record<ShareActionKind, ShareMethod> = {
  * over the 9:16 card where the preview shows it (79:52, 189×135 at 0.6×).
  */
 function ExportCard({ card, ratio }: { card: CardKind; ratio: ShareRatio }) {
+  const art = ilganArt(useAnalysis().dayMaster.name);
   if (ratio === "카톡 1:1") {
     return card === "major" ? <ShareCardMajorSquare /> : <ShareCardRoster />;
   }
@@ -65,7 +68,7 @@ function ExportCard({ card, ratio }: { card: CardKind; ratio: ShareRatio }) {
       <div className="absolute left-[22.5px] top-[248px] h-[225px] w-[315px] overflow-clip rounded-[25px]">
         {/* A plain <img> so the exporter can inline it without a srcset. */}
         {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img src="/assets/major-wide.png" alt="" className="size-full object-cover" />
+        <img src={art.card} alt="" className="size-full object-cover" />
       </div>
     </div>
   );
@@ -111,6 +114,7 @@ function CardExporter({
 
 /** 9:16 cards sit at 0.6× (28:1050), 1:1 cards at 0.86× (28:1148). */
 function Preview({ card, ratio }: { card: CardKind; ratio: ShareRatio }) {
+  const art = ilganArt(useAnalysis().dayMaster.name);
   if (ratio === "카톡 1:1") {
     const Card = card === "major" ? ShareCardMajorSquare : ShareCardRoster;
     return <Card scale={0.86} className="absolute left-[41.7px] top-[266px]" />;
@@ -126,7 +130,7 @@ function Preview({ card, ratio }: { card: CardKind; ratio: ShareRatio }) {
       {/* Mascot/학과 컨셉 · 와이드 overlaid on the preview (79:52) */}
       <div className="absolute left-[102px] top-[375px] h-[135px] w-[189px] overflow-clip rounded-[15px]">
         <Image
-          src="/assets/major-wide.png"
+          src={art.card}
           alt=""
           fill
           sizes="189px"
@@ -206,6 +210,7 @@ export function ShareScreen({
   staticToast?: string;
 }) {
   const proto = useProto();
+  const kakaoImage = ilganArt(useAnalysis().dayMaster.name).card;
   const { toast } = proto;
   const [card, setCard] = useState(initialCard);
   const [ratio, setRatio] = useState(initialRatio);
@@ -300,7 +305,7 @@ export function ShareScreen({
           return;
         }
         // No await before this call: preserve the click's popup permission.
-        await sendKakaoInvite(displayName(proto.state), url);
+        await sendKakaoInvite(displayName(proto.state), url, kakaoImage);
         return;
       }
       if (kind === "카카오톡 공유") {
