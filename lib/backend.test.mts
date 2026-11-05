@@ -6,6 +6,7 @@ import {
   ApiError,
   checkoutReturn,
   confirmation,
+  checkoutAction,
   createOrder,
   errorMessage,
   getMe,
@@ -19,6 +20,8 @@ import {
   orderRequest,
   ownedFromLocker,
   priceMismatches,
+  prepareOrder,
+  payAppPaymentUrl,
   resetCsrf,
   resultSummary,
   reusableResult,
@@ -195,4 +198,26 @@ test("부적 다시 뽑기 restarts with orders that include the charm", () => {
 test("refund-only error codes the spec table leaves out still get a sentence", () => {
   assert.match(errorMessage(new ApiError(409, "ORDER_NOT_PAID")), /결제가 끝난/);
   assert.match(errorMessage(new ApiError(409, "NOTHING_TO_REFUND")), /남아 있지 않아요/);
+});
+
+
+test("PayApp preparation sends a phone and server-selected method, and validates hosted URLs", async () => {
+  const sent = serve({ status: 200, body: { token: "csrf" } },
+    { status: 200, body: { provider: "PAYAPP", payUrl: "https://payapp.kr/fixture" } });
+  const prepared = await prepareOrder("order", "card", "01012345678");
+  assert.deepEqual(JSON.parse(sent[1].init.body as string), { method: "CARD", phone: "01012345678" });
+  assert.equal(payAppPaymentUrl(prepared), "https://payapp.kr/fixture");
+  for (const payUrl of ["http://payapp.kr/", "https://payapp.kr.evil.example/", "https://user@payapp.kr/", "https://evil.example/"]) {
+    assert.throws(() => payAppPaymentUrl({ provider: "PAYAPP", payUrl }));
+  }
+  assert.throws(() => payAppPaymentUrl({ provider: "PORTONE", payUrl: "https://payapp.kr/" }));
+});
+
+test("retrying a pending or reviewed payment never creates a new checkout", () => {
+  assert.equal(checkoutAction({ status: "PENDING" }), "pending");
+  assert.equal(checkoutAction({ status: "REVIEW_REQUIRED" }), "pending");
+  assert.equal(checkoutAction({ status: "PAID" }), "paid");
+  assert.equal(checkoutAction({ status: "PARTIALLY_REFUNDED" }), "paid");
+  assert.equal(checkoutAction({ status: "READY" }), "prepare");
+  assert.equal(checkoutAction({ status: "CANCELLED" }), "new");
 });

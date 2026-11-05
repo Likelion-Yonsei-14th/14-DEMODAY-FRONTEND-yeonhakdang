@@ -1,11 +1,10 @@
 "use client";
 
 /**
- * 결제 with the backend on: result summary → server order → PortOne window →
+ * 결제 with the backend on: result summary → server order → PayApp page →
  * server confirmation. Only `completeOrder` decides 결제 완료; neither the SDK
  * nor the return URL is trusted with that.
  */
-import { requestPayment, type PaymentRequest } from "@portone/browser-sdk/v2";
 
 import {
   completeOrder,
@@ -14,11 +13,12 @@ import {
   getLocker,
   getPolicies,
   includesCharm,
-  isPayable,
+  checkoutAction,
   newIdempotencyKey,
   orderRequest,
   ownedFromLocker,
   prepareOrder,
+  payAppPaymentUrl,
   resultSummary,
   reusableResult,
   saveResult,
@@ -69,7 +69,7 @@ export async function confirmOrder(orderId: string, update: Update): Promise<Ord
   return order;
 }
 
-export async function checkout(proto: Pick<Proto, "state" | "update" | "saveNow">): Promise<CheckoutOutcome> {
+export async function checkout(proto: Pick<Proto, "state" | "update" | "saveNow">, phone: string): Promise<CheckoutOutcome> {
   const { state, update } = proto;
   const { version } = await getPolicies();
   const request = orderRequest({ ...state, resultId: await resultId(state, update), policyVersion: version });
@@ -77,18 +77,21 @@ export async function checkout(proto: Pick<Proto, "state" | "update" | "saveNow"
   // Keep the key while the order is the same, so a retry or refresh reuses it…
   let key = state.checkout?.request === fingerprint ? state.checkout.key : newIdempotencyKey();
   let order = await createOrder(key, request);
-  // …unless that order can no longer be paid (cancelled at the PG): start a new one.
-  if (!isPayable(order)) {
+  const action = checkoutAction(order);
+  if (action === "pending") return { kind: "pending" };
+  if (action === "paid") {
+    await syncLocker(update);
+    return { kind: "paid" };
+  }
+  // A terminal cancelled/refunded order needs a fresh request key.
+  if (action === "new") {
     key = newIdempotencyKey();
     order = await createOrder(key, request);
   }
-  const payload = await prepareOrder(order.id, state.payMethod);
-  // The server asks for forceRedirect, so the PG page replaces this one: save first.
+  // Persist before provider I/O too: an uncertain request must retain the same order on retry.
   proto.saveNow({ checkout: { request: fingerprint, key, orderId: order.id } });
-  const response = await requestPayment(payload as unknown as PaymentRequest);
-  // Left for the PG page; the app resumes from `?checkoutOrder=` instead.
-  if (response === undefined) return { kind: "redirected" };
-  if (response.code !== undefined) return { kind: "failed", message: response.message };
-  const result = confirmation(await confirmOrder(order.id, update));
-  return result === "failed" ? { kind: "failed" } : { kind: result };
+  const payload = await prepareOrder(order.id, state.payMethod, phone);
+  const url = payAppPaymentUrl(payload);
+  window.location.assign(url);
+  return { kind: "redirected" };
 }

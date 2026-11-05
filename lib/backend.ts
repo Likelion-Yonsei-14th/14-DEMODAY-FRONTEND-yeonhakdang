@@ -119,6 +119,13 @@ const MESSAGES: Record<string, string> = {
   INVALID_PROVIDER_PAYMENT_TIME: "결제 시각을 확인하지 못했어요. 결제 결과를 다시 확인할게요.",
   PAID_CONTENT_NOT_READY: "유료 결과를 준비하고 있어요. 곧 결제를 열게요.",
   CHANNEL_NOT_CONFIGURED: "이 결제 수단은 준비 중이에요. 다른 수단을 골라 주세요.",
+  PAYMENT_PHONE_REQUIRED: "결제에 사용할 휴대폰 번호를 확인해 주세요.",
+  PAYAPP_NOT_CONFIGURED: "결제 서비스를 준비 중이에요.",
+  PAYAPP_MINIMUM_AMOUNT: "이 상품은 현재 결제할 수 없어요. 결제 최소 금액을 확인 중이에요.",
+  PAYAPP_UNAVAILABLE: "결제사 응답을 확인하지 못했어요. 같은 주문으로 재시도하거나 고객센터에 문의해 주세요.",
+  PAYAPP_REQUEST_REJECTED: "결제 요청이 거절됐어요. 결제 수단과 번호를 확인하거나 고객센터에 문의해 주세요.",
+  PAYMENT_REQUEST_UNKNOWN: "기존 결제 요청을 확인 중이에요. 새로 결제하지 말고 고객센터에 문의해 주세요.",
+  INVALID_PAYMENT_URL: "결제창 주소를 확인하지 못했어요. 고객센터에 문의해 주세요.",
   PORTONE_NOT_CONFIGURED: "결제 준비 중이에요. 잠시 후 다시 시도해 주세요.",
   INTERNAL_ERROR: "일시적인 오류가 생겼어요. 잠시 후 다시 시도해 주세요.",
 };
@@ -284,11 +291,11 @@ export const createOrder = (key: string, request: OrderRequest) =>
 export const getOrders = () => api<Order[]>("/orders");
 export const getOrder = (id: string) => api<Order>(`/orders/${id}`);
 
-/** The PortOne SDK request object, built and priced by the server. */
-export const prepareOrder = (id: string, method: PayMethod) =>
-  api<Record<string, unknown>>(`/orders/${id}/prepare`, { method: "POST", body: { method: PAY_METHOD[method] } });
+/** The server creates a PayApp request and returns its hosted payment URL. */
+export const prepareOrder = (id: string, method: PayMethod, phone?: string) =>
+  api<Record<string, unknown>>(`/orders/${id}/prepare`, { method: "POST", body: { method: PAY_METHOD[method], phone } });
 
-/** The server re-reads the payment from PortOne; only this decides 결제 완료. */
+/** Only the server state, updated by verified PayApp feedback, decides 결제 완료. */
 export const completeOrder = (id: string) => api<Order>(`/orders/${id}/complete`, { method: "POST" });
 
 export const getLocker = () => api<LockerItem[]>("/locker");
@@ -382,11 +389,30 @@ export function reusableResult(saved: SavedResult | null, summary: string, accou
 
 /**
  * The query a mobile PG page returns with: `?checkoutOrder=` from the server's
- * redirectUrl, plus PortOne's own `code` / `message` when the payment failed.
+ * the provider return route. Legacy `code` / `message` are display-only and never authorize payment.
  */
 export function checkoutReturn(search: string): { id: string; message: string | null } | null {
   const params = new URLSearchParams(search);
   const id = params.get("checkoutOrder");
   if (!id) return null;
   return { id, message: params.get("code") ? params.get("message") || "결제가 완료되지 않았어요." : null };
+}
+
+/** Reject unexpected provider redirects before navigating away from the app. */
+export function payAppPaymentUrl(payload: Record<string, unknown>): string {
+  if (payload.provider !== "PAYAPP" || typeof payload.payUrl !== "string") throw new ApiError(502, "INVALID_PAYMENT_URL");
+  const url = new URL(payload.payUrl);
+  if (url.protocol !== "https:" || url.username || url.password || url.port ||
+      !(url.hostname === "payapp.kr" || url.hostname.endsWith(".payapp.kr"))) {
+    throw new ApiError(502, "INVALID_PAYMENT_URL");
+  }
+  return url.href;
+}
+
+/** Pending payment or operator review must never create a second payable order on retry. */
+export function checkoutAction(order: Pick<Order, "status">): "prepare" | "paid" | "pending" | "new" {
+  if (isPaid(order)) return "paid";
+  if (isPayable(order)) return "prepare";
+  if (order.status === "CANCELLED" || order.status === "REFUNDED") return "new";
+  return "pending";
 }

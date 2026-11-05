@@ -62,7 +62,7 @@ export type ProtoState = {
   savedResult: SavedResult | null;
   /** The checkout in progress: one Idempotency-Key per order request. */
   checkout: { request: string; key: string; orderId: string | null } | null;
-  /** Back from the PG page (`?checkoutOrder=`): confirm this order; `message` is PortOne's failure text. */
+  /** Back from the PG page (`?checkoutOrder=`): confirm this order; `message` is an optional display-only provider failure text. */
   pendingOrder: { id: string; message: string | null } | null;
   /** The order that holds each owned product, for /open and refunds. */
   orders: Partial<Record<ProductKind, string>>;

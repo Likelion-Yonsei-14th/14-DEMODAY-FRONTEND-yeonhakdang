@@ -120,6 +120,7 @@ export function OrderPayment() {
   const [payment, setPayment] = useState<ProtoState | null>(null);
   /** The real checkout is running (backend on); a mobile PG return is confirmed too. */
   const [checkingOut, setCheckingOut] = useState(false);
+  const [phone, setPhone] = useState("");
   const [unlockOpen, setUnlockOpen] = useState(false);
   const serverBusy = checkingOut || state.pendingOrder !== null;
   const paying = payment !== null || serverBusy;
@@ -127,7 +128,7 @@ export function OrderPayment() {
   const price = won(orderPrice(state));
   const isPackage = state.plan === "package";
   const upsell = PACKAGE_PRICE - PRODUCTS[state.product].price;
-  const methodName = state.payMethod === "card" ? "NHN KCP 신용·체크카드" : state.payMethod === "kakao" ? "카카오페이" : "토스페이";
+  const methodName = state.payMethod === "card" ? "신용·체크카드" : state.payMethod === "kakao" ? "카카오페이" : "토스페이";
 
   const { replace, go, setDemo } = proto;
   const payFail = proto.demo.payFail;
@@ -151,9 +152,13 @@ export function OrderPayment() {
   }, [payment, payFail, go, setDemo, replace, update]);
 
   const payOnServer = async () => {
+    if (!/^01[016789][0-9]{7,8}$/.test(phone.replace(/[ -]/g, ""))) {
+      proto.toast("결제에 사용할 휴대폰 번호를 입력해 주세요.");
+      return;
+    }
     setCheckingOut(true);
     try {
-      const outcome = await checkout(proto);
+      const outcome = await checkout(proto, phone);
       if (outcome.kind === "paid") return replace("7-4");
       if (outcome.kind === "pending") {
         // Money may have moved: show the order, never 결제 실패.
@@ -233,6 +238,18 @@ export function OrderPayment() {
           </p>
         </Tap>
 
+        {USE_BACKEND && (
+          <label className="flex w-full flex-col gap-2 text-body-m-14">
+            결제 연락처
+            <input type="tel" autoComplete="tel" inputMode="tel" maxLength={20}
+              value={phone} onChange={(event) => setPhone(event.target.value)}
+              placeholder="01012345678" disabled={paying}
+              className="w-full rounded-xl border border-gray-300 px-4 py-3" />
+            <span className="text-caption-12 text-text-secondary">
+              결제 처리를 위해 페이앱에 전달하며, 연학당 서버에는 저장하지 않아요.
+            </span>
+          </label>
+        )}
         <p className="relative shrink-0 whitespace-nowrap text-h3-18">결제 수단</p>
 
         <PayMethod
@@ -240,7 +257,7 @@ export function OrderPayment() {
           brandClass="bg-black"
           brandTextClass="text-text-inverse"
           title="신용·체크카드"
-          caption="모든 카드사 · NHN KCP 결제창"
+          caption="페이앱 결제창에서 결제"
           selected={state.payMethod === "card"}
           onPress={() => update({ payMethod: "card" })}
         />
