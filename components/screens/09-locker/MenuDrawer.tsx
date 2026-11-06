@@ -129,14 +129,14 @@ export function DrawerPanel({ onClose }: { onClose: () => void }) {
 
       <Tap
         onPress={then(() => {
-          if (!state.loggedIn) return proto.toast("아직 로그인하지 않았어요");
+          if (!state.loggedIn) return proto.requireLogin("9-1");
           void signOut(proto);
         })}
         className="relative flex shrink-0 items-center gap-[8px] overflow-clip py-[12px] pl-[20px]"
       >
-        <Icon name="icon-logout" size={18} />
+        <Icon name={state.loggedIn ? "icon-logout" : "icon-user-20"} size={18} />
         <p className="relative shrink-0 whitespace-nowrap text-body-m-14 text-text-tertiary">
-          로그아웃
+          {state.loggedIn ? "로그아웃" : "카카오 로그인"}
         </p>
       </Tap>
     </div>
