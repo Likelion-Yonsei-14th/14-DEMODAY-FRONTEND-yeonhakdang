@@ -231,12 +231,15 @@ export function ShareScreen({
   const [pngs, setPngs] = useState<Record<string, Png | null>>({});
   const key = cardKey(card, ratio);
   const rendering = proto.active && !(key in pngs);
+  const storyKey = cardKey(card, "스토리 9:16");
+  const preparingStory = proto.active && key !== storyKey && !(storyKey in pngs);
   /** An image action waiting for its card to finish rendering. */
   const [waiting, setWaiting] = useState<{ kind: ImageAction; key: string } | null>(null);
   const [sheet, setSheet] = useState<Sheet | null>(null);
   const [kakaoReady, setKakaoReady] = useState(false);
   const [kakaoError, setKakaoError] = useState("");
   const linkLock = useRef(false);
+  const storyLock = useRef(false);
 
   useEffect(() => {
     if (!kakaoConfigured) return;
@@ -254,13 +257,19 @@ export function ShareScreen({
 
   /** Opens the share sheet with the image; must run inside the tap that asked. */
   const shareStory = useCallback(async (png: Png) => {
+    if (storyLock.current) return;
+    storyLock.current = true;
     try {
       const result = await shareImageFile(imageFile(png.url, png.filename));
       if (result === "shared") return setSheet(null);
       if (result === "cancelled") return;
+      setSheet({ mode: "story", png });
       toast("이 브라우저는 이미지 공유를 지원하지 않아요. 아래 저장 버튼으로 이미지를 저장해 주세요.");
     } catch {
+      setSheet({ mode: "story", png });
       toast("공유 목록을 열지 못했어요. 이미지 저장 후 인스타그램에서 직접 올려 주세요.");
+    } finally {
+      storyLock.current = false;
     }
   }, [toast]);
 
@@ -280,7 +289,7 @@ export function ShareScreen({
     if (!png) return toast("이미지를 만들지 못했어요. 네트워크를 확인하고 다시 시도해 주세요.");
     // The tap is long gone: saving still works, sharing needs a fresh tap.
     if (w.kind === "이미지 저장") saveImage(png);
-    else setSheet({ mode: "story", png });
+    else toast("스토리 이미지가 준비됐어요. 인스타 스토리 버튼을 다시 눌러 공유해 주세요.");
   }, [toast, saveImage]);
 
   const imageAction = (kind: ImageAction) => {
@@ -289,7 +298,7 @@ export function ShareScreen({
     const target = cardKey(card, ratioFor);
     if (ratioFor !== ratio) setRatio(ratioFor);
     const png = pngs[target];
-    if (png) return kind === "이미지 저장" ? saveImage(png) : setSheet({ mode: "story", png });
+    if (png) return kind === "이미지 저장" ? saveImage(png) : void shareStory(png);
     // Not rendered yet, or it failed last time: (re)render and finish when it lands.
     if (png === null) setPngs((all) => Object.fromEntries(Object.entries(all).filter(([k]) => k !== target)));
     wait({ kind, key: target });
@@ -388,6 +397,7 @@ export function ShareScreen({
         toast("이미지 저장을 요청했어요. 저장한 사진을 인스타 스토리에 추가해 주세요.");
       }} onClose={() => setSheet(null)} />}
       {rendering && <CardExporter key={key} card={card} ratio={ratio} onDone={onRendered} />}
+      {preparingStory && <CardExporter key={storyKey} card={card} ratio="스토리 9:16" onDone={onRendered} />}
     </Screen>
   );
 }
