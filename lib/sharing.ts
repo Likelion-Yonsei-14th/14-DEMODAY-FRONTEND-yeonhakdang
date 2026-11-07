@@ -107,8 +107,8 @@ export function imageFile(dataUrl: string, filename: string): File {
 
 /** The OS share sheet with the image (Instagram is one of its targets on phones). */
 export async function shareImageFile(file: File): Promise<"shared" | "cancelled" | "unsupported"> {
-  if (!navigator.canShare?.({ files: [file] })) return "unsupported";
   try {
+    if (typeof navigator.share !== "function" || !navigator.canShare?.({ files: [file] })) return "unsupported";
     await navigator.share({ files: [file] });
     return "shared";
   } catch (error) {

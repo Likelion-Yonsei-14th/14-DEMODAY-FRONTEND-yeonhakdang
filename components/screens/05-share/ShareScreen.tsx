@@ -87,20 +87,29 @@ function CardExporter({
   const ref = useRef<HTMLDivElement>(null);
   useEffect(() => {
     let cancelled = false;
+    let settled = false;
     const key = cardKey(card, ratio);
     const filename = `yeonhakdang-${card}-${ratio === "카톡 1:1" ? "1x1" : "9x16"}.png`;
+    const finish = (png: Png | null) => {
+      if (cancelled || settled) return;
+      settled = true;
+      clearTimeout(timer);
+      onDone(key, png);
+    };
+    const timer = setTimeout(() => finish(null), 20000);
     (async () => {
       try {
         const node = ref.current;
         if (!node) throw new Error("no card");
         const url = await renderCard(node);
-        if (!cancelled) onDone(key, { url, filename });
+        finish({ url, filename });
       } catch {
-        if (!cancelled) onDone(key, null);
+        finish(null);
       }
     })();
     return () => {
       cancelled = true;
+      clearTimeout(timer);
     };
   }, [card, ratio, onDone]);
   return (
@@ -151,7 +160,7 @@ type Sheet =
   | { mode: "link"; url: string };
 
 /** What appears after an action needs the visitor once more. */
-function ShareSheet({ sheet, onShare, onClose }: { sheet: Sheet; onShare: (png: Png) => void; onClose: () => void }) {
+function ShareSheet({ sheet, onShare, onSave, onClose }: { sheet: Sheet; onShare: (png: Png) => void; onSave: (png: Png) => void; onClose: () => void }) {
   const title = sheet.mode === "link" ? "링크 복사" : sheet.mode === "save" ? "이미지 저장" : "인스타 스토리";
   return (
     <Overlay>
@@ -161,7 +170,7 @@ function ShareSheet({ sheet, onShare, onClose }: { sheet: Sheet; onShare: (png: 
         aria-modal="true"
         aria-label={title}
         onKeyDown={(event) => event.key === "Escape" && onClose()}
-        className="proto-sheet-in absolute bottom-0 left-0 flex w-full flex-col items-center rounded-t-[24px] bg-surface-default pb-[34px] shadow-sheet"
+        className="proto-sheet-in screen-scroll absolute bottom-0 left-0 flex max-h-[90%] w-full flex-col items-center rounded-t-[24px] bg-surface-default pb-[34px] shadow-sheet"
       >
         <BottomSheetHeader title={title} onClose={onClose} />
         {sheet.mode === "link" ? (
@@ -179,13 +188,15 @@ function ShareSheet({ sheet, onShare, onClose }: { sheet: Sheet; onShare: (png: 
         ) : (
           <div className="flex w-full flex-col items-center gap-[16px] px-[24px] pt-[4px]">
             {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src={sheet.png.url} alt="연학당 공유 카드" className="max-h-[360px] max-w-full rounded-[12px] object-contain shadow-sheet" />
+            <img src={sheet.png.url} alt="연학당 공유 카드" className="max-h-[240px] max-w-full shrink-0 rounded-[12px] object-contain shadow-sheet" />
             {sheet.mode === "save" ? (
               <HintText title="이미지를 길게 눌러 저장해 주세요" caption="인앱 브라우저에선 다운로드 버튼이 막힐 수 있어요" />
             ) : (
               <>
-                <HintText title="이미지가 준비됐어요" caption="공유 목록에서 인스타그램을 골라 스토리로 올려 주세요" />
-                <Button label="인스타그램으로 공유" size="M" onPress={() => onShare(sheet.png)} className="w-full" />
+                <HintText title="스토리용 이미지가 준비됐어요" caption="공유 목록에 Instagram이 보이면 선택해 주세요. 인스타 앱으로 바로 이동하는 기능은 아니에요." />
+                <Button label="휴대폰 공유 목록 열기" size="M" onPress={() => onShare(sheet.png)} className="w-full" />
+                <Button label="이미지 저장하고 직접 올리기" type="outline" size="M" onPress={() => onSave(sheet.png)} className="w-full" />
+                <p className="text-caption-12 text-text-secondary">공유 목록에 인스타그램이 없으면 이미지를 저장한 뒤, 인스타그램 앱 → 스토리 만들기 → 저장한 사진을 선택해 주세요. 인앱 브라우저에서는 위 이미지를 길게 눌러 저장할 수 있어요.</p>
               </>
             )}
           </div>
@@ -243,13 +254,14 @@ export function ShareScreen({
 
   /** Opens the share sheet with the image; must run inside the tap that asked. */
   const shareStory = useCallback(async (png: Png) => {
-    const result = await shareImageFile(imageFile(png.url, png.filename));
-    if (result !== "unsupported") return setSheet(null);
-    // No share sheet with files here (PC, some in-app browsers): save it instead.
-    setSheet(null);
-    if (isInAppBrowser()) return setSheet({ mode: "save", png });
-    downloadImage(png.url, png.filename);
-    toast("이미지를 저장했어요. 휴대폰 인스타그램에서 스토리로 올려 주세요");
+    try {
+      const result = await shareImageFile(imageFile(png.url, png.filename));
+      if (result === "shared") return setSheet(null);
+      if (result === "cancelled") return;
+      toast("이 브라우저는 이미지 공유를 지원하지 않아요. 아래 저장 버튼으로 이미지를 저장해 주세요.");
+    } catch {
+      toast("공유 목록을 열지 못했어요. 이미지 저장 후 인스타그램에서 직접 올려 주세요.");
+    }
   }, [toast]);
 
   // The ref decides (callbacks read it); the state only drives the spinner.
@@ -277,10 +289,11 @@ export function ShareScreen({
     const target = cardKey(card, ratioFor);
     if (ratioFor !== ratio) setRatio(ratioFor);
     const png = pngs[target];
-    if (png) return kind === "이미지 저장" ? saveImage(png) : void shareStory(png);
+    if (png) return kind === "이미지 저장" ? saveImage(png) : setSheet({ mode: "story", png });
     // Not rendered yet, or it failed last time: (re)render and finish when it lands.
     if (png === null) setPngs((all) => Object.fromEntries(Object.entries(all).filter(([k]) => k !== target)));
     wait({ kind, key: target });
+    toast("공유 이미지를 만들고 있어요. 잠시만 기다려 주세요.");
   };
 
   /** Switching card or ratio abandons an image action still waiting for the old one. */
@@ -369,7 +382,11 @@ export function ShareScreen({
         <Toast className="absolute left-[97px] top-[580px]" text={staticToast} />
       )}
 
-      {sheet && <ShareSheet sheet={sheet} onShare={(png) => void shareStory(png)} onClose={() => setSheet(null)} />}
+      {sheet && <ShareSheet sheet={sheet} onShare={(png) => void shareStory(png)} onSave={(png) => {
+        if (isInAppBrowser()) return toast("위 이미지를 길게 눌러 사진으로 저장해 주세요.");
+        downloadImage(png.url, png.filename);
+        toast("이미지 저장을 요청했어요. 저장한 사진을 인스타 스토리에 추가해 주세요.");
+      }} onClose={() => setSheet(null)} />}
       {rendering && <CardExporter key={key} card={card} ratio={ratio} onDone={onRendered} />}
     </Screen>
   );

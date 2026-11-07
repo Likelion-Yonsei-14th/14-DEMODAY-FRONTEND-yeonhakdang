@@ -18,6 +18,7 @@ type Api = {
   prepareKakao: () => Promise<void>;
   sendKakaoInvite: (name: string, url: string, image: string) => unknown;
   copyText: (value: string) => Promise<void>;
+  shareImageFile: (file: File) => Promise<"shared" | "cancelled" | "unsupported">;
 };
 
 function setup(key = "public-test-key") {
@@ -30,7 +31,7 @@ function setup(key = "public-test-key") {
     body: { appendChild() {} },
     execCommand: (): boolean => true,
   };
-  const context = { exports: {} as Api, process: { env: { NEXT_PUBLIC_KAKAO_JAVASCRIPT_KEY: key } }, window, navigator, document, clearTimeout, URL };
+  const context = { exports: {} as Api, process: { env: { NEXT_PUBLIC_KAKAO_JAVASCRIPT_KEY: key } }, window, navigator, document, clearTimeout, URL, DOMException };
   vm.runInNewContext(compiled, context);
   return { window, navigator, document, api: context.exports, scripts };
 }
@@ -94,4 +95,40 @@ test("clipboard denial falls back; total failure is reported", async () => {
   assert.equal(copies, 1);
   s.document.execCommand = () => false;
   await assert.rejects(s.api.copyText("https://example.com"), /직접 복사/);
+});
+
+
+test("image sharing returns unsupported when file sharing is missing or rejected", async () => {
+  const s = setup(); const file = {} as File;
+  assert.equal(await s.api.shareImageFile(file), "unsupported");
+  s.navigator.canShare = () => true;
+  assert.equal(await s.api.shareImageFile(file), "unsupported");
+  let calls = 0;
+  s.navigator.share = async () => { calls++; };
+  s.navigator.canShare = () => false;
+  assert.equal(await s.api.shareImageFile(file), "unsupported");
+  s.navigator.canShare = () => { throw new Error("blocked capability check"); };
+  assert.equal(await s.api.shareImageFile(file), "unsupported");
+  assert.equal(calls, 0);
+});
+
+test("supported image sharing passes the PNG file to the OS picker", async () => {
+  const s = setup(); const file = {} as File;
+  let sent: { files: File[] } | undefined;
+  s.navigator.canShare = () => true;
+  s.navigator.share = async (payload: { files: File[] }) => { sent = payload; };
+  assert.equal(await s.api.shareImageFile(file), "shared");
+  assert.equal(sent?.files[0], file);
+});
+
+test("cancelling the share picker is distinct from unsupported sharing", async () => {
+  const s = setup(); s.navigator.canShare = () => true;
+  s.navigator.share = async () => { throw new DOMException("cancelled", "AbortError"); };
+  assert.equal(await s.api.shareImageFile({} as File), "cancelled");
+});
+
+test("permission denial falls back instead of leaving an unhandled rejection", async () => {
+  const s = setup(); s.navigator.canShare = () => true;
+  s.navigator.share = async () => { throw new DOMException("blocked", "NotAllowedError"); };
+  assert.equal(await s.api.shareImageFile({} as File), "unsupported");
 });

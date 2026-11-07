@@ -4,6 +4,7 @@ import Image from "next/image";
 
 import { majorTitleClass } from "@/components/share/ShareCardMajor";
 import { cn } from "@/lib/cn";
+import { SERVICE_SITE_LABEL } from "@/lib/business";
 import { ilganArt } from "@/lib/ilganArt";
 import { displayName, useProto } from "@/lib/proto";
 import { useAnalysis } from "@/lib/useAnalysis";
@@ -96,7 +97,7 @@ export function ShareCardMajorSquare({
           {rest.map((pick, i) => `${i + 2}위 ${pick.major.대표학과[0]} ${pick.display}`).join("\n")}
         </div>
         <p className="absolute left-[24px] top-[322px] whitespace-nowrap font-medium text-caption-11 text-brand-accent-tint">
-          너도 내 학과 찾아봐 → 프로필 링크
+          {SERVICE_SITE_LABEL} · 내 학과 찾기
         </p>
       </div>
     </div>

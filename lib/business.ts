@@ -27,6 +27,9 @@ export const BUSINESS = {
 
 export const SERVICE_NAME = "연학당";
 
+/** Printed on exported PNGs as plain text, not an interactive link. */
+export const SERVICE_SITE_LABEL = "yeonhakdang.vercel.app";
+
 /** 약관·정책 시행일 */
 export const POLICY_EFFECTIVE_DATE = "2026년 10월 29일";
 

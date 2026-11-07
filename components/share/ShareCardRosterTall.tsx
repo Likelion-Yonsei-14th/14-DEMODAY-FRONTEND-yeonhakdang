@@ -4,6 +4,7 @@ import Image from "next/image";
 
 import { RankLabel } from "@/components/roster/RankLabel";
 import { cn } from "@/lib/cn";
+import { SERVICE_SITE_LABEL } from "@/lib/business";
 import { displayName, useProto } from "@/lib/proto";
 import { useRoster } from "@/lib/useRoster";
 
@@ -102,7 +103,7 @@ export function ShareCardRosterTall({
         </p>
         <div className="absolute left-[28px] top-[556px] flex items-center overflow-clip rounded-full bg-brand-primary px-[16px] py-[10px]">
           <p className="relative shrink-0 whitespace-nowrap text-[12px] font-bold leading-[18px] text-text-inverse">
-            링크로 내 학과 찾기 →
+            {SERVICE_SITE_LABEL}
           </p>
         </div>
 

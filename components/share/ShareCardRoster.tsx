@@ -4,6 +4,7 @@ import Image from "next/image";
 
 import { RankLabel } from "@/components/roster/RankLabel";
 import { cn } from "@/lib/cn";
+import { SERVICE_SITE_LABEL } from "@/lib/business";
 import { displayName, useProto } from "@/lib/proto";
 import { useRoster } from "@/lib/useRoster";
 
@@ -89,7 +90,7 @@ export function ShareCardRoster({
           내 동기 수석 합격자는 누구?
         </p>
         <p className="absolute left-[24px] top-[290px] whitespace-nowrap text-caption-12 text-brand-primary">
-          너도 합격 확인해봐 → 링크
+          {SERVICE_SITE_LABEL} · 내 학과 찾기
         </p>
         <p className="absolute left-[24px] top-[322px] whitespace-nowrap font-medium text-caption-11 text-text-tertiary">
           {rest > 0 ? `외 ${rest}명 · 궁합 점수 기준 석차` : "궁합 점수 기준 석차"}
