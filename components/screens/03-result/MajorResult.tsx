@@ -34,7 +34,6 @@ export function MajorResultContent({
   const { dayMaster, tags, counts, charCount, insight } = useAnalysis();
   return (
     <div className="flex w-[393px] flex-col items-start gap-[32px] px-[24px] pb-[130px] pt-[8px]">
-      <AnalysisSessionPanel />
       <ResultHero mascot={heroMascot} />
       <CardType
         title={`${dayMaster.name}(${dayMaster.hanja})\n${dayMaster.type}`}
@@ -58,6 +57,7 @@ export function MajorResultContent({
         사주 결과는 진로 탐색을 위한 참고용 콘텐츠예요. 실제 입시 결과를 보장하지
         않아요.
       </p>
+      <AnalysisSessionPanel />
     </div>
   );
 }

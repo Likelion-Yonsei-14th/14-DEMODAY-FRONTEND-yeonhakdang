@@ -316,8 +316,10 @@ export function Prototype() {
 
   const restartAnalysis = useCallback(() => {
     saveNow(freshAnalysis(stateRef.current));
-    reset("2-1");
-  }, [saveNow, reset]);
+    setMenuOpen(false);
+    // Keep the landing behind the fresh input form so back has a real destination.
+    setNav((n) => ({ stack: ["1-1", "2-1"], op: "reset", from: n.stack.at(-1) }));
+  }, [saveNow]);
 
   const login = useCallback(() => {
     saveNow({ loginPending: true });
