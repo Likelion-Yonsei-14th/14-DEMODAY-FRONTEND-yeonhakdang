@@ -1,6 +1,6 @@
 /**
- * 9-4 "Safari로 열기": hands the page that was first opened in this tab over
- * from a 카카오톡 / 인스타그램 in-app browser to the phone's own browser.
+ * 9-4 browser guidance: preserves the page that was first opened in this tab
+ * for an external-browser attempt or manual copy from an in-app browser.
  * Pure apart from `captureEntryUrl` / `entryUrl` / `openExternalBrowser`, so
  * `npm test` can run it under node.
  */
@@ -19,7 +19,7 @@ export type ExternalPlan = {
 };
 
 export function detectOs(ua: string): Os {
-  if (/iPhone|iPad|iPod/i.test(ua)) return "ios";
+  if (/iPhone|iPad|iPod/i.test(ua) || (/Macintosh/i.test(ua) && /Mobile/i.test(ua))) return "ios";
   if (/Android/i.test(ua)) return "android";
   return "other";
 }
@@ -34,7 +34,8 @@ export function detectApp(ua: string): InApp {
 const GUIDE = {
   kakaoAndroid: { icon: "⋮", text: "오른쪽 아래 ⋮ → 다른 브라우저로 열기" },
   kakaoIos: { icon: "⋯", text: "오른쪽 아래 메뉴 → Safari로 열기" },
-  instagram: { icon: "⋯", text: "오른쪽 위 ⋯ → 외부 브라우저에서 열기" },
+  instagram: { icon: "⋯", text: "인스타그램의 ⋯ 또는 공유 메뉴 → 외부 브라우저에서 열기" },
+  instagramIos: { icon: "↗", text: "인스타그램의 ⋯ 또는 공유 메뉴에서 ‘외부 브라우저에서 열기’를 선택해 주세요.\n메뉴가 없다면 아래 링크를 복사해 Safari 주소창에 붙여넣어 주세요." },
   other: { icon: "⋯", text: "오른쪽 위 ⋯ 메뉴 → ‘다른 브라우저로 열기’" },
 };
 
@@ -51,7 +52,7 @@ function chromeIntent(url: string): string {
 export function externalBrowserPlan(ua: string, url: string): ExternalPlan {
   const os = detectOs(ua);
   const app = detectApp(ua);
-  const label = os === "ios" ? "Safari로 열기" : "브라우저로 열기";
+  const label = "브라우저로 열기";
   if (app === "kakao") {
     return {
       os,
@@ -62,14 +63,11 @@ export function externalBrowserPlan(ua: string, url: string): ExternalPlan {
     };
   }
   if (app === "instagram") {
-    // iOS: `x-safari-https://…` is an undocumented Safari scheme. It works in
-    // some 인스타그램 / iOS versions and silently does nothing in others, so
-    // openExternalBrowser watches for the page staying visible and falls back
-    // to the manual guide.
-    const href = os === "android" ? chromeIntent(url) : os === "ios" ? `x-safari-${url}` : null;
-    return { os, app, href, label, guide: GUIDE.instagram };
+    // Do not promise Safari navigation through an undocumented iOS URL scheme.
+    const href = os === "android" ? chromeIntent(url) : null;
+    return { os, app, href, label: href ? label : "링크 복사", guide: os === "ios" ? GUIDE.instagramIos : GUIDE.instagram };
   }
-  return { os, app, href: null, label, guide: GUIDE.other };
+  return { os, app, href: null, label: "링크 복사", guide: GUIDE.other };
 }
 
 /** Per tab: the address this tab was first opened at, before Prototype clears its query. */
@@ -121,7 +119,7 @@ export const LEAVE_TIMEOUT_MS = 1500;
 
 /**
  * Tries `plan.href`. If the page goes hidden within LEAVE_TIMEOUT_MS the other
- * browser opened (`onLeft`); if it is still visible, nothing happened
+ * app may have opened (`onLeft`); if it is still visible, nothing happened
  * (`onStayed`) and the user needs the manual steps. Returns a cancel.
  */
 export function openExternalBrowser(
@@ -147,6 +145,11 @@ export function openExternalBrowser(
     document.removeEventListener("visibilitychange", onVisibility);
   }
   document.addEventListener("visibilitychange", onVisibility);
-  window.location.href = plan.href;
+  try {
+    window.location.href = plan.href;
+  } catch {
+    cancel();
+    on.onStayed();
+  }
   return cancel;
 }

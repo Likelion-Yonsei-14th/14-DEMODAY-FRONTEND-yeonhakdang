@@ -8,6 +8,7 @@ import {
   detectOs,
   entryUrl,
   externalBrowserPlan,
+  openExternalBrowser,
   resetEntryUrl,
 } from "./externalBrowser.ts";
 
@@ -38,10 +39,10 @@ test("detects the OS and the in-app browser", () => {
   assert.equal(detectApp(UA.safari), "none");
 });
 
-test("카카오톡 iOS: openExternal scheme, Safari copy", () => {
+test("카카오톡 iOS: attempts the default external browser without promising Safari", () => {
   const plan = externalBrowserPlan(UA.kakaoIos, URL_);
   assert.equal(plan.href, `kakaotalk://web/openExternal?url=${encodeURIComponent(URL_)}`);
-  assert.equal(plan.label, "Safari로 열기");
+  assert.equal(plan.label, "브라우저로 열기");
   assert.equal(plan.guide.text, "오른쪽 아래 메뉴 → Safari로 열기");
 });
 
@@ -60,23 +61,24 @@ test("인스타그램 Android: Chrome intent keeping the query, full URL as fall
       `S.browser_fallback_url=${encodeURIComponent(URL_)};end`,
   );
   assert.equal(plan.label, "브라우저로 열기");
-  assert.equal(plan.guide.text, "오른쪽 위 ⋯ → 외부 브라우저에서 열기");
+  assert.equal(plan.guide.text, "인스타그램의 ⋯ 또는 공유 메뉴 → 외부 브라우저에서 열기");
 });
 
-test("인스타그램 iOS: x-safari- scheme", () => {
+test("인스타그램 iOS: no undocumented Safari jump; exposes copy and manual steps", () => {
   const plan = externalBrowserPlan(UA.instaIos, URL_);
-  assert.equal(plan.href, `x-safari-${URL_}`);
-  assert.equal(plan.label, "Safari로 열기");
-  assert.equal(plan.guide.text, "오른쪽 위 ⋯ → 외부 브라우저에서 열기");
+  assert.equal(plan.href, null);
+  assert.equal(plan.label, "링크 복사");
+  assert.match(plan.guide.text, /Safari 주소창/);
+  assert.match(plan.guide.text, /인스타그램/);
 });
 
 test("plain Safari / Chrome: nothing to try, only the guide", () => {
   const safari = externalBrowserPlan(UA.safari, URL_);
   assert.equal(safari.href, null);
-  assert.equal(safari.label, "Safari로 열기");
+  assert.equal(safari.label, "링크 복사");
   const chrome = externalBrowserPlan(UA.chrome, URL_);
   assert.equal(chrome.href, null);
-  assert.equal(chrome.label, "브라우저로 열기");
+  assert.equal(chrome.label, "링크 복사");
   assert.equal(chrome.guide.text, "오른쪽 위 ⋯ 메뉴 → ‘다른 브라우저로 열기’");
 });
 
@@ -127,4 +129,45 @@ test("storage that throws falls back to the module copy", () => {
   };
   captureEntryUrl("https://yeonhakdang.com/?invite=abc123", broken);
   assert.equal(entryUrl(""), "https://yeonhakdang.com/?invite=abc123");
+});
+
+test("iPad desktop-style mobile user agents are recognized as iOS", () => {
+  assert.equal(detectOs("Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15) AppleWebKit/605.1.15 Mobile/15E148 Instagram"), "ios");
+});
+
+
+test("manual-only plans immediately offer the guide without trying a browser jump", () => {
+  let stayed = 0;
+  let left = 0;
+  const cancel = openExternalBrowser(externalBrowserPlan(UA.instaIos, URL_), {
+    onStayed: () => { stayed++; }, onLeft: () => { left++; },
+  });
+  cancel();
+  assert.equal(stayed, 1); assert.equal(left, 0);
+});
+
+test("a rejected navigation immediately falls back and removes visibility listeners", () => {
+  const previousWindow = Object.getOwnPropertyDescriptor(globalThis, "window");
+  const previousDocument = Object.getOwnPropertyDescriptor(globalThis, "document");
+  const listeners = new Set<unknown>();
+  Object.defineProperty(globalThis, "window", { configurable: true, value: {
+    location: { set href(_value: string) { throw new Error("blocked by webview"); } },
+  } });
+  Object.defineProperty(globalThis, "document", { configurable: true, value: {
+    visibilityState: "visible",
+    addEventListener: (_name: string, handler: unknown) => listeners.add(handler),
+    removeEventListener: (_name: string, handler: unknown) => listeners.delete(handler),
+  } });
+  try {
+    let stayed = 0;
+    openExternalBrowser(externalBrowserPlan(UA.kakaoIos, URL_), {
+      onStayed: () => { stayed++; }, onLeft: () => assert.fail("navigation was blocked"),
+    });
+    assert.equal(stayed, 1); assert.equal(listeners.size, 0);
+  } finally {
+    if (previousWindow) Object.defineProperty(globalThis, "window", previousWindow);
+    else Reflect.deleteProperty(globalThis, "window");
+    if (previousDocument) Object.defineProperty(globalThis, "document", previousDocument);
+    else Reflect.deleteProperty(globalThis, "document");
+  }
 });

@@ -1,96 +1,82 @@
 "use client";
 
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 
-import { BottomSheet, BottomSheetHeader, Dim } from "@/components/layout/BottomSheet";
-import { Anchored, Overlay, Screen } from "@/components/layout/Screen";
-import { MascotFaceBadge } from "@/components/mascot/MascotFaceBadge";
-import { SpeechBubble } from "@/components/mascot/SpeechBubble";
+import { BottomSheetHeader, Dim } from "@/components/layout/BottomSheet";
+import { Overlay, Screen } from "@/components/layout/Screen";
 import { LandingContent } from "@/components/screens/01-landing/Landing";
 import { Button } from "@/components/ui/Button";
 import { trackInappExternalOpen } from "@/lib/analytics";
-import { cn } from "@/lib/cn";
 import { entryUrl, externalBrowserPlan, openExternalBrowser } from "@/lib/externalBrowser";
 import { useProto } from "@/lib/proto";
+import { copyText } from "@/lib/sharing";
 
-/**
- * Figma: 9-4 인앱 브라우저 안내 · 바텀시트 (C-07) (34:1907)
- * Opens over the current screen when the prototype detects a 카카오톡 /
- * 인스타그램 in-app browser (or from the demo panel); every exit closes it.
- * The button opens the tab's first address in the phone's browser (see
- * lib/externalBrowser); the copy follows the OS and app. Prototype never
- * renders on the server, so navigator is there on the first render.
- */
+/** Optional browser guidance; iOS Instagram uses its own menu or an explicit copy. */
 export function InAppBrowserSheet() {
   const proto = useProto();
-  const continueAsFriend = proto.back;
-  const plan = externalBrowserPlan(navigator.userAgent, entryUrl(window.location.href));
+  const url = entryUrl(window.location.href);
+  const plan = externalBrowserPlan(navigator.userAgent, url);
+  const [manual, setManual] = useState(!plan.href);
+  const [status, setStatus] = useState("");
+  const [copying, setCopying] = useState(false);
   const cancel = useRef<() => void>(undefined);
   useEffect(() => () => cancel.current?.(), []);
+
+  const copyLink = async () => {
+    if (copying) return;
+    setCopying(true);
+    try {
+      await copyText(url);
+      setStatus(`링크를 복사했어요. ${plan.os === "ios" ? "Safari" : "브라우저"} 앱을 직접 열고 주소창에 붙여넣어 주세요.`);
+    } catch {
+      setStatus("자동 복사가 막혀 있어요. 아래 주소를 길게 눌러 선택한 뒤 직접 복사해 주세요.");
+    } finally {
+      setCopying(false);
+    }
+  };
+
   const openExternal = () => {
     trackInappExternalOpen();
     cancel.current?.();
+    if (manual) return void copyLink();
     cancel.current = openExternalBrowser(plan, {
       onLeft: proto.back,
-      // Nothing opened: the sheet stays, pointing at the manual steps.
-      onStayed: () => proto.toast(plan.guide.text),
+      onStayed: () => {
+        setManual(true);
+        setStatus("자동으로 열지 못했어요. 앱 메뉴에서 외부 브라우저로 열거나 아래 링크를 복사해 주세요.");
+      },
     });
   };
+
   return (
     <Screen>
       <LandingContent elementOrder={["목", "화", "토", "금", "수"]} />
-
       <Overlay>
-        <Dim onPress={continueAsFriend} />
-        <Anchored from={382}>
-          <BottomSheet top={460}>
-            <BottomSheetHeader title="외부 브라우저에서 열어 주세요" onClose={continueAsFriend} />
-
-            <div className="relative flex w-full shrink-0 flex-col items-start gap-[16px] overflow-clip px-[24px] pb-[8px]">
-              <p className="relative w-[345px] shrink-0 text-body-m-14 text-text-secondary">
-                카카오톡·인스타그램 앱 안에서는 로그인, 결제, 이미지 저장이 막힐 수
-                있어요. Safari나 Chrome에서 열면 더 안정적이에요.
-              </p>
-              {/* 방법 (34:1948) */}
-              <div className="relative flex w-[345px] shrink-0 items-center gap-[10px] overflow-clip rounded-[14px] bg-bg-subtle px-[16px] py-[14px]">
-                <div className="relative flex size-[32px] shrink-0 items-center justify-center overflow-clip rounded-[8px] bg-surface-default">
-                  <p className="relative shrink-0 whitespace-nowrap font-bold text-body-l-16">
-                    {plan.guide.icon}
-                  </p>
-                </div>
-                <p className="relative shrink-0 whitespace-nowrap font-medium text-body-m-14">
-                  {plan.guide.text}
-                </p>
-              </div>
-            </div>
-
-            <div className="relative flex w-full shrink-0 flex-col items-center gap-[6px] overflow-clip px-[24px] pb-[40px] pt-[12px]">
-              <Button label={plan.label} onPress={openExternal} className="w-[345px]" />
-              <Button
-                label="이대로 계속하기"
-                type="ghost"
-                size="M"
-                onPress={continueAsFriend}
-                className="w-[200px]"
-              />
-            </div>
-          </BottomSheet>
-
-          {/* 연학이 peeking over the sheet (14:50 · size L) */}
-          <MascotFaceBadge
-            size={96}
-            className={cn(
-              "absolute left-[24px] top-[382px] border-[3px]",
-              proto.active && "proto-sheet-in",
+        <Dim onPress={proto.back} />
+        <section role="dialog" aria-modal="true" aria-label="브라우저에서 이어보기"
+          className="proto-sheet-in screen-scroll absolute bottom-0 left-0 flex max-h-[90%] w-full flex-col rounded-t-[24px] bg-surface-default pb-[24px] shadow-sheet">
+          <BottomSheetHeader title="브라우저에서 이어보기" onClose={proto.back} />
+          <div className="flex shrink-0 flex-col gap-[14px] px-[24px] pb-[12px]">
+            <p className="text-body-m-14 text-text-secondary">
+              앱 안에서는 로그인·이미지 저장·공유가 제한될 수 있어요. 외부 브라우저로 옮기거나 이대로 계속할 수 있어요.
+            </p>
+            <p className="whitespace-pre-line rounded-[14px] bg-bg-subtle p-[14px] text-body-m-14">
+              {plan.guide.text}
+            </p>
+            {manual && (
+              <>
+                <input aria-label="외부 브라우저에서 열 주소" readOnly value={url}
+                  onFocus={(event) => event.target.select()}
+                  className="w-full rounded-[12px] border border-line-default bg-bg-subtle p-[12px] text-caption-12" />
+                <p className="text-caption-12 text-text-tertiary">브라우저를 옮기면 로그인이나 입력 정보를 다시 확인해야 할 수 있어요.</p>
+              </>
             )}
-          />
-          <SpeechBubble
-            tail="left"
-            className={cn("absolute left-[126px] top-[394px]", proto.active && "proto-sheet-in")}
-          >
-            {"여기선 내가 잘\n안 보일 수도 있어!"}
-          </SpeechBubble>
-        </Anchored>
+            {status && <p role="status" className="text-caption-12 font-bold text-brand-secondary">{status}</p>}
+            <Button label={copying ? "복사 중…" : manual ? "링크 복사" : plan.label}
+              disabled={copying} onPress={openExternal} />
+            <Button label="이대로 계속하기" type="ghost" size="M" onPress={proto.back} />
+          </div>
+        </section>
       </Overlay>
     </Screen>
   );
