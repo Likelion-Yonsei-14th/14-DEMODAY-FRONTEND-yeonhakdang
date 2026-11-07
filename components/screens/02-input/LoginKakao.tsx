@@ -23,17 +23,16 @@ export function LoginKakaoContent() {
   const proto = useProto();
   const { state } = proto;
   const purchasing = Boolean(state.afterInput) || state.afterLogin.startsWith("7-");
-  const memberFeature = state.afterLogin.startsWith("4-") ? "동기 합격자 명단" : state.afterLogin.startsWith("5-") ? "학과 카드 공유" : null;
   return (
     <>
       <TopBar title="" className="absolute left-0 top-[54px]" />
 
       <Headline
         className="absolute left-[24px] top-[118px]"
-        overline={memberFeature ? "카카오 로그인 후 이용할 수 있어요" : "거의 다 왔어요"}
+        overline="카카오 로그인"
         overlineTone="primary"
         size="h1"
-        title={memberFeature ? `${memberFeature}\n이어서 이용해요` : "카카오로 로그인하고\n연학당을 시작해요"}
+        title={"카카오로 로그인하고\n연학당을 시작해요"}
         body={purchasing ? "카카오로 로그인하고 구매를 계속해요.\n선택한 상품과 가격은 그대로 유지돼요." : state.analyzed ? "로그인해도 지금 입력한 정보와\n분석 결과는 그대로 유지돼요." : "카카오로 로그인한 뒤 정보를 입력해요.\n무료 분석은 게스트로도 이용할 수 있어요."}
       />
 
@@ -80,7 +79,6 @@ export function LoginKakaoContent() {
           label="카카오로 3초 만에 시작하기"
           onPress={() => {
             trackLoginClick();
-            proto.update({ afterLogin: state.afterLogin });
             // The real 카카오 login; 약관 (2-5) follows on return when needed.
             if (USE_BACKEND) {
               // Already logged in, only 약관 missing: no second trip to 카카오.

@@ -26,7 +26,7 @@ export type NavTabId = (typeof NAV_TABS)[number]["id"];
 function openTab(proto: Proto, tab: NavTabId) {
   const { state } = proto;
   if (tab === "major") return proto.reset("3-4");
-  if (tab === "list") return proto.requireLogin(rosterScreen(proto));
+  if (tab === "list") return proto.reset(rosterScreen(proto));
   // Paid tabs: product detail until bought, the result afterwards.
   const result = { compat: "8-1", benefactor: "8-2", charm: "8-3" }[tab];
   if (owns(state, tab)) return proto.reset(result);

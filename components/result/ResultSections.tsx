@@ -121,14 +121,13 @@ export function ResultActions({ className }: { className?: string }) {
     >
       <Button
         label="동기 합격자 명단 보기"
-        onPress={() => proto.requireLogin(rosterScreen(proto))}
+        onPress={() => proto.go(rosterScreen(proto))}
       />
       <Button
         label="내 학과 카드 공유하기"
         type="outline"
-        onPress={() => proto.requireLogin("5-1")}
+        onPress={() => proto.go("5-1")}
       />
-      {!proto.state.loggedIn && <p className="text-caption-12 text-text-secondary">명단과 카드 공유는 카카오 로그인 후 이용할 수 있어요.</p>}
     </div>
   );
 }

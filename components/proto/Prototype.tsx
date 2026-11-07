@@ -11,7 +11,6 @@ import { Toast } from "@/components/ui/Toast";
 import { trackInviteOpen, trackPurchaseClick, trackResultView, trackScreen } from "@/lib/analytics";
 import { cn } from "@/lib/cn";
 import { freshAnalysis } from "@/lib/analysisSession";
-import { requiresMember, visibleScreen } from "@/lib/memberAccess";
 import {
   ApiError,
   LOGIN_PATH,
@@ -323,8 +322,7 @@ export function Prototype() {
   }, [saveNow]);
 
   const login = useCallback(() => {
-    const target = navRef.current.stack.at(-1) ?? "";
-    saveNow({ loginPending: true, ...(requiresMember(target) ? { afterLogin: target } : {}) });
+    saveNow({ loginPending: true });
     window.location.assign(LOGIN_PATH);
   }, [saveNow]);
 
@@ -452,13 +450,10 @@ export function Prototype() {
     [go, update],
   );
 
-  // Direct hashes and expired sessions render login without mounting member-only features.
-  const memberTarget = !state.loggedIn && requiresMember(top) ? top : null;
-
   const proto = useMemo<Proto>(
     () => ({
       active: true,
-      state: memberTarget ? { ...state, afterLogin: memberTarget } : state,
+      state,
       update,
       demo,
       setDemo,
@@ -477,7 +472,7 @@ export function Prototype() {
       login,
       saveNow,
     }),
-    [state, memberTarget, update, demo, setDemo, go, replace, back, backTo, reset, restartAnalysis, toast, openMenu, closeMenu, openProduct, beginPurchase, requireLogin, login, saveNow],
+    [state, update, demo, setDemo, go, replace, back, backTo, reset, restartAnalysis, toast, openMenu, closeMenu, openProduct, beginPurchase, requireLogin, login, saveNow],
   );
 
   // Browser / gesture back pops the prototype stack: a sentinel history entry
@@ -522,7 +517,7 @@ export function Prototype() {
     [h, scale, safe.top, safe.bottom],
   );
 
-  const current = SCREENS.find((s) => s.id === visibleScreen(top, state.loggedIn)) ?? SCREENS[0];
+  const current = SCREENS.find((s) => s.id === top) ?? SCREENS[0];
   const { Component } = current;
 
   const enter =
