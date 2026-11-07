@@ -13,6 +13,7 @@ import { FiveElementsChips, type ElementKey } from "@/components/saju/FiveElemen
 import { Button } from "@/components/ui/Button";
 import { Headline } from "@/components/ui/Headline";
 import { TrustStats } from "@/components/ui/TrustStats";
+import { Tap } from "@/components/ui/Tap";
 import { useProto } from "@/lib/proto";
 
 /**
@@ -70,16 +71,16 @@ export function LandingContent({
 
       <Bottom from={718}>
         <Button
-          label="무료로 내 학과 찾기"
-          onPress={() => {
-            proto.update({ inviter: null });
-            proto.go("2-1");
-          }}
+          label={proto.state.loggedIn ? "무료로 내 학과 찾기" : "게스트로 시작하기"}
+          onPress={proto.restartAnalysis}
           className="absolute left-[24px] top-[718px] w-[345px]"
         />
-        <p className="absolute left-[24px] top-[786px] w-[345px] text-center text-caption-12 text-text-secondary">
-          지금까지 12,480명이 내 학과를 찾았어요
-        </p>
+        <Tap
+          onPress={() => proto.requireLogin(proto.state.analyzed ? "3-4" : "2-1")}
+          className="absolute left-[24px] top-[778px] flex h-[36px] w-[345px] items-center justify-center text-caption-12 font-bold text-brand-secondary"
+        >
+          {proto.state.loggedIn ? "로그인된 계정으로 계속하기" : "카카오로 로그인하고 시작하기"}
+        </Tap>
       </Bottom>
     </>
   );

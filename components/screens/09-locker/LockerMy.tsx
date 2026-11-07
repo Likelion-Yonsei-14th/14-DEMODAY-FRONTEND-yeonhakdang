@@ -116,7 +116,7 @@ export function LockerMy() {
               {name}
             </p>
             <p className="relative shrink-0 text-caption-12 text-brand-accent-tint">
-              갑목 · 개척하는 리더형 · 카카오 로그인
+              {state.loggedIn ? "카카오 로그인됨" : "게스트 이용 중"}
             </p>
           </div>
           <Tap label="내 정보 수정" onPress={() => proto.go("2-1")} className="rounded-full">
@@ -173,7 +173,7 @@ export function LockerMy() {
             onPress={() => proto.go("10-2")}
           />
           <ListItem label="내 정보 수정" value="이름 · 생년월일" onPress={() => proto.go("2-1")} />
-          <ListItem label="로그아웃" value="" onPress={logout} />
+          <ListItem label={state.loggedIn ? "로그아웃" : "카카오 로그인"} value="" onPress={state.loggedIn ? logout : () => proto.requireLogin(state.analyzed ? "3-4" : "2-1")} />
         </div>
 
         <Tap onPress={withdraw}>

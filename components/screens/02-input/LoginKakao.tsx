@@ -9,6 +9,7 @@ import { SpeechBubble } from "@/components/mascot/SpeechBubble";
 import { Button } from "@/components/ui/Button";
 import { BenefitList } from "@/components/ui/CheckRow";
 import { Chip } from "@/components/ui/Chip";
+import { Tap } from "@/components/ui/Tap";
 import { Headline } from "@/components/ui/Headline";
 import { trackLoginClick } from "@/lib/analytics";
 import { USE_BACKEND } from "@/lib/backend";
@@ -32,7 +33,7 @@ export function LoginKakaoContent() {
         overlineTone="primary"
         size="h1"
         title={"결과를 저장하고\n동기 명단을 만들어요"}
-        body={purchasing ? "카카오로 로그인하고 구매를 계속해요.\n선택한 상품과 가격은 그대로 유지돼요." : "카카오로 3초 만에 시작해요.\n입력한 정보는 그대로 이어서 분석해요."}
+        body={purchasing ? "카카오로 로그인하고 구매를 계속해요.\n선택한 상품과 가격은 그대로 유지돼요." : state.analyzed ? "로그인해도 지금 입력한 정보와\n분석 결과는 그대로 유지돼요." : "카카오로 로그인한 뒤 정보를 입력해요.\n무료 분석은 게스트로도 이용할 수 있어요."}
       />
 
       <div className="absolute left-[89.5px] top-[266px] size-[214px] opacity-45">
@@ -45,7 +46,7 @@ export function LoginKakaoContent() {
         height={178.807}
       />
       <SpeechBubble tail="bottom-left" className="absolute left-[222px] top-[270px]">
-        {"로그인하면 바로\n사주 풀어줄게!"}
+        {state.analyzed ? "지금 결과 그대로\n이어서 이용해!" : "무료 분석은\n게스트로도 가능해!"}
       </SpeechBubble>
 
       {/* Floating 오행 glyphs (22:350, 22:351) */}
@@ -92,9 +93,12 @@ export function LoginKakaoContent() {
           }}
           className="absolute left-[24px] top-[718px] w-[345px]"
         />
-        <p className="absolute left-[24px] top-[786px] w-[345px] text-center text-caption-12 text-text-tertiary">
-          {purchasing ? "처음이라면 약관 동의 후 구매를 계속할 수 있어요" : "처음이라면 약관 동의 후 바로 분석이 시작돼요"}
-        </p>
+        <Tap
+          onPress={() => proto.replace(state.analyzed ? "3-4" : "2-1")}
+          className="absolute left-[24px] top-[778px] flex h-[36px] w-[345px] items-center justify-center text-caption-12 text-text-secondary"
+        >
+          {state.analyzed ? "로그인 없이 현재 결과로 돌아가기" : "게스트로 무료 분석하기"}
+        </Tap>
       </Bottom>
     </>
   );

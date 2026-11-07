@@ -4,6 +4,7 @@ import { BottomNav } from "@/components/chrome/BottomNav";
 import { TopBar } from "@/components/chrome/TopBar";
 import { Screen, ScreenScroll } from "@/components/layout/Screen";
 import { CardType } from "@/components/result/CardType";
+import { AnalysisSessionPanel } from "@/components/result/AnalysisSessionPanel";
 import { ElementDistribution } from "@/components/result/ElementDistribution";
 import { typeTone } from "@/components/result/elementTone";
 import {
@@ -33,6 +34,7 @@ export function MajorResultContent({
   const { dayMaster, tags, counts, charCount, insight } = useAnalysis();
   return (
     <div className="flex w-[393px] flex-col items-start gap-[32px] px-[24px] pb-[130px] pt-[8px]">
+      <AnalysisSessionPanel />
       <ResultHero mascot={heroMascot} />
       <CardType
         title={`${dayMaster.name}(${dayMaster.hanja})\n${dayMaster.type}`}

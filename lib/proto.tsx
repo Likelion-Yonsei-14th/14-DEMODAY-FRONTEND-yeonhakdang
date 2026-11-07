@@ -267,6 +267,8 @@ export type Proto = {
   backTo: (id: string) => void;
   /** Clear the stack and start at `id`. */
   reset: (id: string, patch?: Partial<ProtoState>) => void;
+  /** Clear only the current analysis and open the input screen, preserving account and purchases. */
+  restartAnalysis: () => void;
   toast: (text: string) => void;
   openMenu: () => void;
   closeMenu: () => void;
@@ -295,6 +297,7 @@ const STATIC_PROTO: Proto = {
   back: noop,
   backTo: noop,
   reset: noop,
+  restartAnalysis: noop,
   toast: noop,
   openMenu: noop,
   closeMenu: noop,

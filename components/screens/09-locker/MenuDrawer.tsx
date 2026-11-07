@@ -94,7 +94,7 @@ export function DrawerPanel({ onClose }: { onClose: () => void }) {
             {state.name.trim() || !proto.active ? `${displayName(state)}님` : "반가워요!"}
           </p>
           <p className="relative shrink-0 text-caption-12 text-text-secondary">
-            {state.analyzed ? "경영학과 · 개척하는 리더형" : "아직 내 학과를 찾지 않았어요"}
+            {state.loggedIn ? "카카오 로그인됨" : "게스트 이용 중"}
           </p>
         </div>
       </div>
@@ -109,6 +109,12 @@ export function DrawerPanel({ onClose }: { onClose: () => void }) {
         onPress={then(() => proto.requireLogin("9-1"))}
       />
       <DrawerRow icon="icon-user-20" label="내 정보 수정" onPress={then(() => proto.go("2-1"))} />
+      <DrawerRow
+        icon="icon-user-20"
+        label="다시 분석하기"
+        caption="입력 정보 초기화 · 로그인과 구매 내역 유지"
+        onPress={then(proto.restartAnalysis)}
+      />
       <DrawerRow
         icon="icon-share-20"
         label="결과 공유하기"
@@ -129,7 +135,7 @@ export function DrawerPanel({ onClose }: { onClose: () => void }) {
 
       <Tap
         onPress={then(() => {
-          if (!state.loggedIn) return proto.requireLogin("9-1");
+          if (!state.loggedIn) return proto.requireLogin(state.analyzed ? "3-4" : "2-1");
           void signOut(proto);
         })}
         className="relative flex shrink-0 items-center gap-[8px] overflow-clip py-[12px] pl-[20px]"

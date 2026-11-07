@@ -10,6 +10,7 @@ import { DrawerPanel } from "@/components/screens/09-locker/MenuDrawer";
 import { Toast } from "@/components/ui/Toast";
 import { trackInviteOpen, trackPurchaseClick, trackResultView, trackScreen } from "@/lib/analytics";
 import { cn } from "@/lib/cn";
+import { freshAnalysis } from "@/lib/analysisSession";
 import {
   ApiError,
   LOGIN_PATH,
@@ -313,6 +314,11 @@ export function Prototype() {
     } catch {}
   }, []);
 
+  const restartAnalysis = useCallback(() => {
+    saveNow(freshAnalysis(stateRef.current));
+    reset("2-1");
+  }, [saveNow, reset]);
+
   const login = useCallback(() => {
     saveNow({ loginPending: true });
     window.location.assign(LOGIN_PATH);
@@ -454,6 +460,7 @@ export function Prototype() {
       back,
       backTo,
       reset,
+      restartAnalysis,
       toast,
       openMenu,
       closeMenu,
@@ -463,7 +470,7 @@ export function Prototype() {
       login,
       saveNow,
     }),
-    [state, update, demo, setDemo, go, replace, back, backTo, reset, toast, openMenu, closeMenu, openProduct, beginPurchase, requireLogin, login, saveNow],
+    [state, update, demo, setDemo, go, replace, back, backTo, reset, restartAnalysis, toast, openMenu, closeMenu, openProduct, beginPurchase, requireLogin, login, saveNow],
   );
 
   // Browser / gesture back pops the prototype stack: a sentinel history entry
