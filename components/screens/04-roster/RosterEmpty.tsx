@@ -31,19 +31,19 @@ export function RosterEmpty() {
         아직 명단이 비어 있어요
       </p>
       <div className="absolute left-[24px] top-[410px] w-[345px] whitespace-pre-line text-center text-body-m-14 text-text-secondary">
-        {"친구가 내 초대 링크로 결과를 보면\n서로의 합격자 명단에 자동 등록돼요."}
+        {"친구의 초대 링크로 결과를 확인하면\n그 친구가 내 기기의 명단에 등록돼요."}
       </div>
 
       {/* how (26:912) */}
       <div className="absolute left-[24px] top-[486px] flex w-[345px] flex-col items-start gap-[12px] overflow-clip rounded-[16px] border border-line-default bg-surface-default px-[20px] py-[18px]">
         <NumberedRow n={1} gap={12} weight="regular">
-          내 초대 링크를 카톡·인스타로 공유
+          카톡·인스타로 서로의 초대 링크를 공유
         </NumberedRow>
         <NumberedRow n={2} gap={12} weight="regular">
-          친구가 링크로 들어와 학과 결과 확인
+          친구의 링크로 들어와 내 학과 결과 확인
         </NumberedRow>
         <NumberedRow n={3} gap={12} weight="regular">
-          궁합 점수로 석차가 정해져요
+          사주 궁합으로 정한 재미 순위예요 · 실제 합격과 무관해요
         </NumberedRow>
       </div>
 

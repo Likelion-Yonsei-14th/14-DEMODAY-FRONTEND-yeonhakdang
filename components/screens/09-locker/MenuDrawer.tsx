@@ -119,7 +119,7 @@ export function DrawerPanel({ onClose }: { onClose: () => void }) {
         icon="icon-share-20"
         label="결과 공유하기"
         onPress={then(() =>
-          state.analyzed ? proto.go("5-1") : proto.toast("먼저 내 학과를 찾아 주세요"),
+          state.analyzed ? proto.requireLogin("5-1") : proto.toast("먼저 내 학과를 찾아 주세요"),
         )}
       />
       <DrawerRow

@@ -68,15 +68,18 @@ export function LandingContent({
         ]}
       />
 
-      <Bottom from={718}>
+      <Bottom from={708}>
         <Button
           label={proto.state.loggedIn ? "무료로 내 학과 찾기" : "게스트로 시작하기"}
+          size="M"
           onPress={proto.restartAnalysis}
-          className="absolute left-[24px] top-[718px] w-[345px]"
+          className="absolute left-[24px] top-[708px] w-[345px]"
         />
-        <p className="absolute left-[24px] top-[786px] w-[345px] text-center text-caption-12 text-text-secondary">
-          회원가입 없이 무료로 확인할 수 있어요
-        </p>
+        {!proto.state.loggedIn && (
+          <Button type="kakao" size="M" label="카카오 로그인"
+            onPress={() => proto.requireLogin(proto.state.analyzed ? "3-4" : "2-1")}
+            className="absolute left-[24px] top-[764px] w-[345px]" />
+        )}
       </Bottom>
     </>
   );
@@ -91,9 +94,8 @@ export function Landing() {
   return (
     <Screen contentSized>
       <LandingContent />
-      {/* The frame's own content, absolutely placed, ends where the pinned CTA
-          starts (718); in a static frame the CTA sits in place, so skip it too. */}
-      <div aria-hidden className={active ? "h-[664px] shrink-0" : "h-[798px] shrink-0"} />
+      {/* Reserve the content above the pinned pair of start buttons. */}
+      <div aria-hidden className={active ? "h-[654px] shrink-0" : "h-[812px] shrink-0"} />
       <section aria-labelledby="landing-prices" className="flex w-full flex-col items-start gap-[12px] px-[24px] pb-[24px] pt-[8px]">
         <h2 id="landing-prices" className="text-h3-18">유료 상품 및 가격</h2>
         <ProductPriceList />
