@@ -496,8 +496,11 @@ export function Prototype() {
   // rewrites the URL to its own canonical "/" some time after this effect.
   useEffect(() => {
     const mirror = () => {
-      if (window.location.hash !== `#${top}`) {
-        window.history.replaceState(window.history.state, "", `#${top}`);
+      // The app's external-browser menu uses this URL. Do not send the notice
+      // itself into Safari and show the same browser notice there again.
+      const hash = top === "9-4" ? "#1-1" : `#${top}`;
+      if (window.location.hash !== hash) {
+        window.history.replaceState(window.history.state, "", hash);
       }
     };
     const timers = [0, 150, 400, 1000].map((ms) => setTimeout(mirror, ms));

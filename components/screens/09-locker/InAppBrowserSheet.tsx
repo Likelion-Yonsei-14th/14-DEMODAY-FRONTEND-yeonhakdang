@@ -7,43 +7,40 @@ import { Overlay, Screen } from "@/components/layout/Screen";
 import { LandingContent } from "@/components/screens/01-landing/Landing";
 import { Button } from "@/components/ui/Button";
 import { trackInappExternalOpen } from "@/lib/analytics";
-import { entryUrl, externalBrowserPlan, openExternalBrowser } from "@/lib/externalBrowser";
+import { browserMenuUrl, entryUrl, externalBrowserPlan, openExternalBrowser } from "@/lib/externalBrowser";
 import { useProto } from "@/lib/proto";
-import { copyText } from "@/lib/sharing";
 
-/** Optional browser guidance; iOS Instagram uses its own menu or an explicit copy. */
+/** Optional browser guidance; iOS Instagram uses its own external-browser menu. */
 export function InAppBrowserSheet() {
   const proto = useProto();
   const url = entryUrl(window.location.href);
   const plan = externalBrowserPlan(navigator.userAgent, url);
   const [manual, setManual] = useState(!plan.href);
   const [status, setStatus] = useState("");
-  const [copying, setCopying] = useState(false);
   const cancel = useRef<() => void>(undefined);
   useEffect(() => () => cancel.current?.(), []);
-
-  const copyLink = async () => {
-    if (copying) return;
-    setCopying(true);
-    try {
-      await copyText(url);
-      setStatus(`링크를 복사했어요. ${plan.os === "ios" ? "Safari" : "브라우저"} 앱을 직접 열고 주소창에 붙여넣어 주세요.`);
-    } catch {
-      setStatus("자동 복사가 막혀 있어요. 아래 주소를 길게 눌러 선택한 뒤 직접 복사해 주세요.");
-    } finally {
-      setCopying(false);
-    }
-  };
+  useEffect(() => {
+    const before = new URL(window.location.href);
+    const handoff = new URL(browserMenuUrl(before.href, url));
+    if (before.href === handoff.href) return;
+    window.history.replaceState(window.history.state, "", handoff.href);
+    return () => {
+      const current = new URL(window.location.href);
+      if (current.search !== handoff.search) return;
+      current.search = before.search;
+      window.history.replaceState(window.history.state, "", current.href);
+    };
+  }, [url]);
 
   const openExternal = () => {
     trackInappExternalOpen();
     cancel.current?.();
-    if (manual) return void copyLink();
+    if (manual) return;
     cancel.current = openExternalBrowser(plan, {
       onLeft: proto.back,
       onStayed: () => {
         setManual(true);
-        setStatus("자동으로 열지 못했어요. 앱 메뉴에서 외부 브라우저로 열거나 아래 링크를 복사해 주세요.");
+        setStatus("자동으로 열지 못했어요. 위 안내에 따라 앱 메뉴에서 외부 브라우저로 열어 주세요.");
       },
     });
   };
@@ -63,18 +60,9 @@ export function InAppBrowserSheet() {
             <p className="whitespace-pre-line rounded-[14px] bg-bg-subtle p-[14px] text-body-m-14">
               {plan.guide.text}
             </p>
-            {manual && (
-              <>
-                <input aria-label="외부 브라우저에서 열 주소" readOnly value={url}
-                  onFocus={(event) => event.target.select()}
-                  className="w-full rounded-[12px] border border-line-default bg-bg-subtle p-[12px] text-caption-12" />
-                <p className="text-caption-12 text-text-tertiary">브라우저를 옮기면 로그인이나 입력 정보를 다시 확인해야 할 수 있어요.</p>
-              </>
-            )}
             {status && <p role="status" className="text-caption-12 font-bold text-brand-secondary">{status}</p>}
-            <Button label={copying ? "복사 중…" : manual ? "링크 복사" : plan.label}
-              disabled={copying} onPress={openExternal} />
-            <Button label="이대로 계속하기" type="ghost" size="M" onPress={proto.back} />
+            {!manual && <Button label={plan.label} onPress={openExternal} />}
+            <Button label="이대로 계속하기" type={manual ? "primary" : "ghost"} size="M" onPress={proto.back} />
           </div>
         </section>
       </Overlay>

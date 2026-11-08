@@ -4,6 +4,7 @@ import { beforeEach, test } from "node:test";
 
 import {
   captureEntryUrl,
+  browserMenuUrl,
   detectApp,
   detectOs,
   entryUrl,
@@ -64,21 +65,22 @@ test("인스타그램 Android: Chrome intent keeping the query, full URL as fall
   assert.equal(plan.guide.text, "인스타그램의 ⋯ 또는 공유 메뉴 → 외부 브라우저에서 열기");
 });
 
-test("인스타그램 iOS: no undocumented Safari jump; exposes copy and manual steps", () => {
+test("인스타그램 iOS: uses only the app menu guide without an unsupported Safari jump", () => {
   const plan = externalBrowserPlan(UA.instaIos, URL_);
   assert.equal(plan.href, null);
-  assert.equal(plan.label, "링크 복사");
-  assert.match(plan.guide.text, /Safari 주소창/);
+  assert.equal(plan.label, "외부 브라우저로 여는 방법");
+  assert.match(plan.guide.text, /Safari에서 열기/);
+  assert.doesNotMatch(plan.guide.text, /복사|붙여넣/);
   assert.match(plan.guide.text, /인스타그램/);
 });
 
 test("plain Safari / Chrome: nothing to try, only the guide", () => {
   const safari = externalBrowserPlan(UA.safari, URL_);
   assert.equal(safari.href, null);
-  assert.equal(safari.label, "링크 복사");
+  assert.equal(safari.label, "외부 브라우저로 여는 방법");
   const chrome = externalBrowserPlan(UA.chrome, URL_);
   assert.equal(chrome.href, null);
-  assert.equal(chrome.label, "링크 복사");
+  assert.equal(chrome.label, "외부 브라우저로 여는 방법");
   assert.equal(chrome.guide.text, "오른쪽 위 ⋯ 메뉴 → ‘다른 브라우저로 열기’");
 });
 
@@ -133,6 +135,20 @@ test("storage that throws falls back to the module copy", () => {
 
 test("iPad desktop-style mobile user agents are recognized as iOS", () => {
   assert.equal(detectOs("Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15) AppleWebKit/605.1.15 Mobile/15E148 Instagram"), "ios");
+});
+
+test("opening the app's browser menu keeps invite parameters without forwarding the browser-notice screen", () => {
+  const href = browserMenuUrl("https://yeonhakdang.com/#9-4", "https://yeonhakdang.com/?invite=friend-code#1-2");
+  assert.equal(href, "https://yeonhakdang.com/?invite=friend-code#1-1");
+});
+
+test("browser menu restoration never adds checkout confirmation parameters", () => {
+  assert.equal(browserMenuUrl("https://yeonhakdang.com/#9-4", "https://yeonhakdang.com/?checkoutOrder=o1&code=FAIL&message=x"), "https://yeonhakdang.com/#1-1");
+});
+
+test("browser menu restoration ignores a different host or path", () => {
+  assert.equal(browserMenuUrl("https://yeonhakdang.com/#9-4", "https://other.example/?invite=x"), "https://yeonhakdang.com/#1-1");
+  assert.equal(browserMenuUrl("https://yeonhakdang.com/#9-4", "https://yeonhakdang.com/other?invite=x"), "https://yeonhakdang.com/#1-1");
 });
 
 

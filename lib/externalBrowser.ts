@@ -1,6 +1,6 @@
 /**
  * 9-4 browser guidance: preserves the page that was first opened in this tab
- * for an external-browser attempt or manual copy from an in-app browser.
+ * for an external-browser attempt from an in-app browser.
  * Pure apart from `captureEntryUrl` / `entryUrl` / `openExternalBrowser`, so
  * `npm test` can run it under node.
  */
@@ -35,7 +35,7 @@ const GUIDE = {
   kakaoAndroid: { icon: "⋮", text: "오른쪽 아래 ⋮ → 다른 브라우저로 열기" },
   kakaoIos: { icon: "⋯", text: "오른쪽 아래 메뉴 → Safari로 열기" },
   instagram: { icon: "⋯", text: "인스타그램의 ⋯ 또는 공유 메뉴 → 외부 브라우저에서 열기" },
-  instagramIos: { icon: "↗", text: "인스타그램의 ⋯ 또는 공유 메뉴에서 ‘외부 브라우저에서 열기’를 선택해 주세요.\n메뉴가 없다면 아래 링크를 복사해 Safari 주소창에 붙여넣어 주세요." },
+  instagramIos: { icon: "↗", text: "인스타그램 화면의 ⋯ 또는 공유 메뉴를 누른 뒤\n‘외부 브라우저에서 열기’ 또는 ‘Safari에서 열기’를 선택해 주세요." },
   other: { icon: "⋯", text: "오른쪽 위 ⋯ 메뉴 → ‘다른 브라우저로 열기’" },
 };
 
@@ -65,9 +65,9 @@ export function externalBrowserPlan(ua: string, url: string): ExternalPlan {
   if (app === "instagram") {
     // Do not promise Safari navigation through an undocumented iOS URL scheme.
     const href = os === "android" ? chromeIntent(url) : null;
-    return { os, app, href, label: href ? label : "링크 복사", guide: os === "ios" ? GUIDE.instagramIos : GUIDE.instagram };
+    return { os, app, href, label: href ? label : "외부 브라우저로 여는 방법", guide: os === "ios" ? GUIDE.instagramIos : GUIDE.instagram };
   }
-  return { os, app, href: null, label: "링크 복사", guide: GUIDE.other };
+  return { os, app, href: null, label: "외부 브라우저로 여는 방법", guide: GUIDE.other };
 }
 
 /** Per tab: the address this tab was first opened at, before Prototype clears its query. */
@@ -107,6 +107,16 @@ export function captureEntryUrl(href: string, storage?: Storage): void {
 /** The captured address, or the current one when nothing was captured. */
 export function entryUrl(fallback: string): string {
   return entry ?? fallback;
+}
+
+/** App menus open the address bar URL; retain invite/purchase entry queries while guidance is visible. */
+export function browserMenuUrl(currentHref: string, entryHref: string): string {
+  const current = new URL(currentHref);
+  if (current.hash === "#9-4") current.hash = "#1-1";
+  const original = new URL(withoutCheckoutReturn(entryHref));
+  if (current.origin !== original.origin || current.pathname !== original.pathname || !original.search) return current.href;
+  current.search = original.search;
+  return current.href;
 }
 
 /** Only for tests. */
