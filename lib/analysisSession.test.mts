@@ -7,7 +7,7 @@ function fixture(): ProtoState {
   return {
     name: "김연학", birth: "2008.03.15", gender: 1, calendar: 1,
     leapMonth: true, time: "오후 2시 30분", unknownTime: true, analyzed: true,
-    loggedIn: true, agreedTerms: true, account: "member-1", afterLogin: "3-4", afterInput: "7-3",
+    loggedIn: true, agreedTerms: true, account: "member-1", analysisOwner: "member-1", afterLogin: "3-4", afterInput: "7-3",
     inviter: null, friends: [], rosterSeenAt: 17, friend: "previous-friend",
     product: "compat", plan: "single", universities: ["연세대학교"], relation: "선배", payMethod: "card",
     purchased: { compat: true, benefactor: false, charm: false }, charmRerolls: 2,
@@ -21,7 +21,7 @@ test("a new analysis clears personal input and derived summary but preserves acc
   const original = fixture();
   const fresh = freshAnalysis(original);
   assert.equal(fresh.name, ""); assert.equal(fresh.birth, ""); assert.equal(fresh.time, "");
-  assert.equal(fresh.analyzed, false); assert.equal(fresh.savedResult, null);
+  assert.equal(fresh.analysisOwner, "member-1"); assert.equal(fresh.analyzed, false); assert.equal(fresh.savedResult, null);
   assert.equal(fresh.calendar, 0); assert.equal(fresh.leapMonth, false); assert.equal(fresh.unknownTime, false);
   assert.equal(fresh.loggedIn, true); assert.equal(fresh.account, "member-1"); assert.equal(fresh.agreedTerms, true);
   assert.deepEqual(fresh.purchased, original.purchased); assert.deepEqual(fresh.orders, original.orders);
@@ -33,7 +33,7 @@ test("a new analysis clears personal input and derived summary but preserves acc
 test("starting again as a guest never creates a logged-in identity", () => {
   const fresh = freshAnalysis({ ...fixture(), loggedIn: false, agreedTerms: false, account: null });
   assert.equal(fresh.loggedIn, false); assert.equal(fresh.agreedTerms, false); assert.equal(fresh.account, null);
-  assert.equal(fresh.afterLogin, "2-1"); assert.equal(fresh.afterInput, null); assert.equal(fresh.loginPending, false);
+  assert.equal(fresh.analysisOwner, null); assert.equal(fresh.afterLogin, "2-1"); assert.equal(fresh.afterInput, null); assert.equal(fresh.loginPending, false);
 });
 
 test("a different person's analysis does not inherit the previous person's invitation or friends", () => {

@@ -70,9 +70,9 @@ export function LandingContent({
 
       <Bottom from={708}>
         <Button
-          label={proto.state.loggedIn ? "무료로 내 학과 찾기" : "게스트로 시작하기"}
+          label={proto.state.analyzed ? "내 분석 결과 이어보기" : proto.state.loggedIn ? "무료로 내 학과 찾기" : "게스트로 시작하기"}
           size="M"
-          onPress={proto.restartAnalysis}
+          onPress={() => proto.state.analyzed ? proto.go("3-4") : proto.restartAnalysis()}
           className="absolute left-[24px] top-[708px] w-[345px]"
         />
         {!proto.state.loggedIn && (

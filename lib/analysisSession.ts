@@ -12,6 +12,7 @@ export function freshAnalysis(state: ProtoState): ProtoState {
     time: "",
     unknownTime: false,
     analyzed: false,
+    analysisOwner: state.account,
     savedResult: null,
     inviter: null,
     friends: [],

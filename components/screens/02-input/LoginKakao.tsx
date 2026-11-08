@@ -61,7 +61,7 @@ export function LoginKakaoContent() {
         className="absolute left-[24px] top-[500px] w-[345px]"
         items={[
           "입력한 정보와 현재 분석 결과 그대로 유지",
-          "내 기기의 친구 명단 · 학과 카드 공유 이용",
+          "다른 기기에서도 내 정보 · 친구 명단 유지",
           "구매한 유료 결과 언제든 다시 보기",
         ]}
       />

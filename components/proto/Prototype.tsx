@@ -10,6 +10,7 @@ import { DrawerPanel } from "@/components/screens/09-locker/MenuDrawer";
 import { Toast } from "@/components/ui/Toast";
 import { trackInviteOpen, trackPurchaseClick, trackResultView, trackScreen } from "@/lib/analytics";
 import { cn } from "@/lib/cn";
+import { analysisProfile, profileToRestore, ProfileWriter, registerProfileFlush } from "@/lib/analysisProfile";
 import { freshAnalysis } from "@/lib/analysisSession";
 import {
   ApiError,
@@ -19,6 +20,8 @@ import {
   confirmation,
   errorMessage,
   getMe,
+  getAnalysisProfile,
+  saveAnalysisProfile,
   getPolicies,
   getProducts,
   hasRequiredConsents,
@@ -321,6 +324,11 @@ export function Prototype() {
     setNav((n) => ({ stack: ["1-1", "2-1"], op: "reset", from: n.stack.at(-1) }));
   }, [saveNow]);
 
+  const profileSource = useRef(state);
+  const profileWriter = useRef<ProfileWriter | null>(null);
+  const [profileLoadError, setProfileLoadError] = useState<string | null>(null);
+  const [profileReady, setProfileReady] = useState<string | null>(null);
+
   const login = useCallback(() => {
     saveNow({ loginPending: true });
     window.location.assign(LOGIN_PATH);
@@ -347,7 +355,7 @@ export function Prototype() {
   // Any call that finds the session gone (expired, logged out elsewhere) logs this tab out.
   useEffect(() => {
     if (!USE_BACKEND) return;
-    onUnauthorized(() => update({ loggedIn: false, agreedTerms: false, account: null }));
+    onUnauthorized(() => update({ loggedIn: false, agreedTerms: false, account: null, analysisOwner: stateRef.current.analysisOwner ?? stateRef.current.account }));
     return () => onUnauthorized(null);
   }, [update]);
 
@@ -374,7 +382,7 @@ export function Prototype() {
         const me = await getMe();
         if (cancelled) return;
         if (!me) {
-          update({ loggedIn: false, agreedTerms: false, loginPending: false, account: null, purchased: { compat: false, benefactor: false, charm: false }, orders: {} });
+          update({ loggedIn: false, agreedTerms: false, loginPending: false, account: null, analysisOwner: s.analysisOwner ?? s.account, purchased: { compat: false, benefactor: false, charm: false }, orders: {} });
           if (s.loginPending) toast("로그인하지 못했어요. 다시 시도해 주세요.");
           if (s.pendingOrder) {
             update({ pendingOrder: null });
@@ -383,6 +391,7 @@ export function Prototype() {
           return;
         }
         const agreed = hasRequiredConsents(me, await getPolicies());
+        profileSource.current = stateRef.current;
         update({ loggedIn: true, agreedTerms: agreed, loginPending: false, account: me.id });
         await syncLocker(update);
         if (cancelled) return;
@@ -421,6 +430,53 @@ export function Prototype() {
       cancelled = true;
     };
   }, [update, replace, toast]);
+
+  // Hydrate once per authenticated account, before any local snapshot can be uploaded.
+  useEffect(() => {
+    if (!USE_BACKEND || !state.loggedIn || !state.agreedTerms || !state.account) return;
+    const account = state.account;
+    let cancelled = false;
+    let writer: ProfileWriter | null = null;
+    getAnalysisProfile().then((remote) => {
+      if (cancelled) return;
+      if (remote.accountId !== account) throw new ApiError(409, "PROFILE_ACCOUNT_CHANGED");
+      const local = profileSource.current;
+      const restored = profileToRestore(local, remote);
+      writer = new ProfileWriter(remote, saveAnalysisProfile);
+      profileWriter.current = writer;
+      registerProfileFlush(() => writer!.flush());
+      if (restored) {
+        // Keep an invitation opened in this tab while restoring the account roster.
+        const friends = stateRef.current.inviter
+          ? addFriend(restored.friends, stateRef.current.inviter, Date.now()) : restored.friends;
+        update({ ...restored, friends, analysisOwner: account, savedResult: null, friend: "" });
+        if (restored.analyzed && !local.analyzed && navRef.current.stack.at(-1) === "2-1") replace("3-4");
+      } else if ((local.analysisOwner ?? local.account) && (local.analysisOwner ?? local.account) !== account) {
+        update(freshAnalysis({ ...stateRef.current, account }));
+      }
+      setProfileReady(account);
+    }).catch((error) => {
+      if (!cancelled) {
+        setProfileLoadError(account);
+        toast(`계정 정보를 불러오지 못했어요. ${errorMessage(error)}`);
+      }
+    });
+    return () => {
+      cancelled = true;
+      writer?.stop();
+      profileWriter.current = null;
+      registerProfileFlush(null);
+      setProfileReady(null);
+    };
+  }, [state.account, state.loggedIn, state.agreedTerms, update, replace, toast]);
+
+  useEffect(() => {
+    if (!profileReady || profileReady !== state.account || !state.loggedIn || !state.analyzed || !state.name.trim() || state.name.length > 10 || !analyzeBirth(state).ok) return;
+    const writer = profileWriter.current;
+    if (!writer) return;
+    writer.enqueue(analysisProfile(state));
+    void writer.flush().catch((error) => toast(`계정 정보 저장에 실패했어요. ${errorMessage(error)}`));
+  }, [state, profileReady, toast]);
 
   const openProduct = useCallback<Proto["openProduct"]>(
     (kind, plan = "single") => {
@@ -569,6 +625,18 @@ export function Prototype() {
                 <div className="absolute inset-0">
                   <Dim onPress={closeMenu} />
                   <DrawerPanel onClose={closeMenu} />
+                </div>
+              )}
+
+              {USE_BACKEND && state.loggedIn && state.agreedTerms && state.account && profileReady !== state.account && (
+                <div role="status" className="absolute inset-0 z-50 flex flex-col items-center justify-center gap-4 bg-bg-base px-6 text-center">
+                  <p className="text-body-l-16">{profileLoadError === state.account ? "계정 정보를 불러오지 못했어요" : "저장된 계정 정보를 불러오고 있어요…"}</p>
+                  {profileLoadError === state.account ? (
+                    <>
+                      <p className="text-body-m-14 text-text-secondary">기존 정보가 덮어써지지 않도록 기다리고 있어요.</p>
+                      <button type="button" onClick={() => window.location.reload()} className="rounded-[14px] bg-brand-primary px-6 py-3 text-text-inverse">다시 불러오기</button>
+                    </>
+                  ) : <div className="proto-spinner size-6 rounded-full border-[3px] border-line-default border-t-text-secondary" />}
                 </div>
               )}
 

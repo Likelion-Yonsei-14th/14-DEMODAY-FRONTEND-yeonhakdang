@@ -7,6 +7,7 @@
  * Off unless NEXT_PUBLIC_USE_BACKEND=true; the prototype then runs on its own
  * demo data exactly as before.
  */
+import type { ProfileSnapshot } from "./analysisProfile";
 import type { Analysis } from "./saju/analyze.ts";
 import type { Element } from "./saju/elements.ts";
 
@@ -95,6 +96,8 @@ export class ApiError extends Error {
 }
 
 const MESSAGES: Record<string, string> = {
+  PROFILE_CONFLICT: "다른 창에서 정보가 변경됐어요. 새로고침해 최신 정보를 불러와 주세요.",
+  PROFILE_ACCOUNT_CHANGED: "로그인 계정이 변경됐어요. 새로고침해 주세요.",
   NETWORK_ERROR: "서버에 연결하지 못했어요. 네트워크를 확인하고 다시 시도해 주세요.",
   UNAUTHENTICATED: "로그인이 필요해요.",
   ACCOUNT_INACTIVE: "사용할 수 없는 계정이에요. 고객센터로 문의해 주세요.",
@@ -167,13 +170,15 @@ async function refreshCsrf(): Promise<string> {
   return body.token;
 }
 
-type Call = { method?: "GET" | "POST" | "PUT" | "DELETE"; body?: unknown; headers?: Record<string, string> };
+type Call = { method?: "GET" | "POST" | "PUT" | "DELETE"; body?: unknown; headers?: Record<string, string>; keepalive?: boolean; timeoutMs?: number };
 
-async function api<T>(path: string, { method = "GET", body, headers = {} }: Call = {}, retried = false): Promise<T> {
+async function api<T>(path: string, { method = "GET", body, headers = {}, keepalive = false, timeoutMs }: Call = {}, retried = false): Promise<T> {
   const mutating = method !== "GET";
   const token = mutating ? (csrfToken ?? (await refreshCsrf())) : null;
   const response = await send(`/api${path}`, {
     method,
+    keepalive,
+    ...(timeoutMs ? { signal: AbortSignal.timeout(timeoutMs) } : {}),
     headers: {
       ...(body === undefined ? {} : { "Content-Type": "application/json" }),
       ...(token ? { "X-CSRF-TOKEN": token } : {}),
@@ -186,7 +191,7 @@ async function api<T>(path: string, { method = "GET", body, headers = {} }: Call
     // A stale CSRF token is a bare 403: fetch a fresh one and try once more.
     if (response.status === 403 && mutating && !retried) {
       csrfToken = null;
-      return api<T>(path, { method, body, headers }, true);
+      return api<T>(path, { method, body, headers, keepalive, timeoutMs }, true);
     }
     if (response.status === 401) {
       csrfToken = null;
@@ -212,6 +217,10 @@ export async function getMe(): Promise<Me | null> {
     throw error;
   }
 }
+
+export const getAnalysisProfile = () => api<ProfileSnapshot>("/me/analysis-profile", { timeoutMs: 20000 });
+export const saveAnalysisProfile = (snapshot: ProfileSnapshot) =>
+  api<ProfileSnapshot>("/me/analysis-profile", { method: "PUT", body: snapshot, keepalive: true, timeoutMs: 20000 });
 
 export type ConsentAnswers = { age14: boolean; terms: boolean; privacy: boolean; marketing: boolean };
 export const saveConsents = (version: string, answers: ConsentAnswers) =>

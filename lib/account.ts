@@ -1,5 +1,6 @@
 "use client";
 
+import { flushAnalysisProfile } from "@/lib/analysisProfile";
 import { ApiError, USE_BACKEND, errorMessage, logout, withdraw } from "@/lib/backend";
 import { INITIAL_STATE, type Proto } from "@/lib/proto";
 
@@ -7,6 +8,7 @@ import { INITIAL_STATE, type Proto } from "@/lib/proto";
 export async function signOut(proto: Proto) {
   if (USE_BACKEND) {
     try {
+      await flushAnalysisProfile();
       await logout();
     } catch (error) {
       // Already logged out on the server is fine; anything else stops here.

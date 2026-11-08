@@ -22,7 +22,7 @@ export type Relation = "선배" | "동기" | "교수님" | "연인";
 export type ProtoState = {
   /** Who sent the invite link this session came through (1-2); null otherwise. */
   inviter: FriendInput | null;
-  /** 합격자 명단 — kept on this device until there is a backend. */
+  /** 합격자 명단 — guests keep it locally; signed-in members sync it to their account. */
   friends: Friend[];
   /** When the 명단 was last opened: friends added after it get NEW. */
   rosterSeenAt: number;
@@ -58,6 +58,8 @@ export type ProtoState = {
   loginPending: boolean;
   /** The logged-in member's server id (from /api/me); null when logged out. */
   account: string | null;
+  /** Ownership of local analysis, retained if the server session expires. */
+  analysisOwner: string | null;
   /** The analysis summary last saved to the server, its id, and whose it is. */
   savedResult: SavedResult | null;
   /** The checkout in progress: one Idempotency-Key per order request. */
@@ -115,6 +117,7 @@ export const FIGMA_STATE: ProtoState = {
   friend: friendKey(EXAMPLE_FRIENDS[0]),
   loginPending: false,
   account: null,
+  analysisOwner: null,
   savedResult: null,
   checkout: null,
   pendingOrder: null,
