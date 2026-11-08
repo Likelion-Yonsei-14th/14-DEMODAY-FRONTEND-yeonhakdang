@@ -36,6 +36,7 @@ import {
   sendKakaoInvite,
   shareImageFile,
   shareLink,
+  usesMobileStoryShare,
 } from "@/lib/sharing";
 
 type CardKind = "major" | "roster";
@@ -155,12 +156,12 @@ type Sheet =
   /** In-app browsers block downloads: long-press the image instead. */
   | { mode: "save"; png: Png }
   /** The image is ready but the click that asked for it has passed: share from a new tap. */
-  | { mode: "story"; png: Png }
+  | { mode: "story"; png: Png | null; failed?: boolean }
   /** The clipboard is blocked: select the link by hand. */
   | { mode: "link"; url: string };
 
 /** What appears after an action needs the visitor once more. */
-function ShareSheet({ sheet, onShare, onSave, onClose }: { sheet: Sheet; onShare: (png: Png) => void; onSave: (png: Png) => void; onClose: () => void }) {
+function ShareSheet({ sheet, desktop, onRetry, onShare, onSave, onClose }: { sheet: Sheet; desktop: boolean; onRetry: () => void; onShare: (png: Png) => void; onSave: (png: Png) => void; onClose: () => void }) {
   const title = sheet.mode === "link" ? "링크 복사" : sheet.mode === "save" ? "이미지 저장" : "인스타 스토리";
   return (
     <Overlay>
@@ -187,16 +188,30 @@ function ShareSheet({ sheet, onShare, onSave, onClose }: { sheet: Sheet; onShare
           </div>
         ) : (
           <div className="flex w-full flex-col items-center gap-[16px] px-[24px] pt-[4px]">
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src={sheet.png.url} alt="연학당 공유 카드" className="max-h-[240px] max-w-full shrink-0 rounded-[12px] object-contain shadow-sheet" />
+            {sheet.png && (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img src={sheet.png.url} alt="연학당 공유 카드" className="max-h-[240px] max-w-full shrink-0 rounded-[12px] object-contain shadow-sheet" />
+            )}
             {sheet.mode === "save" ? (
               <HintText title="이미지를 길게 눌러 저장해 주세요" caption="인앱 브라우저에선 다운로드 버튼이 막힐 수 있어요" />
+            ) : !sheet.png ? (
+              sheet.failed ? (
+                <>
+                  <HintText title="이미지를 만들지 못했어요" caption="네트워크를 확인하고 다시 시도해 주세요." />
+                  <Button label="이미지 다시 만들기" size="M" onPress={onRetry} />
+                </>
+              ) : (
+                <div role="status" className="flex flex-col items-center gap-3 py-6 text-body-m-14">
+                  <div className="proto-spinner size-6 rounded-full border-[3px] border-line-default border-t-text-secondary" />
+                  스토리 이미지를 만들고 있어요…
+                </div>
+              )
             ) : (
               <>
-                <HintText title="스토리용 이미지가 준비됐어요" caption="공유 목록에 Instagram이 보이면 선택해 주세요. 인스타 앱으로 바로 이동하는 기능은 아니에요." />
-                <Button label="휴대폰 공유 목록 열기" size="M" onPress={() => onShare(sheet.png)} className="w-full" />
-                <Button label="이미지 저장하고 직접 올리기" type="outline" size="M" onPress={() => onSave(sheet.png)} className="w-full" />
-                <p className="text-caption-12 text-text-secondary">공유 목록에 인스타그램이 없으면 이미지를 저장한 뒤, 인스타그램 앱 → 스토리 만들기 → 저장한 사진을 선택해 주세요. 인앱 브라우저에서는 위 이미지를 길게 눌러 저장할 수 있어요.</p>
+                <HintText title="스토리용 이미지가 준비됐어요" caption={desktop ? "PC에서는 스토리 이미지를 다운로드한 뒤 휴대폰으로 옮겨 인스타그램 앱에서 올려 주세요." : "공유 목록에 Instagram이 보이면 선택해 주세요. 인스타 앱으로 바로 이동하는 기능은 아니에요."} />
+                {!desktop && <Button label="휴대폰 공유 목록 열기" size="M" onPress={() => onShare(sheet.png!)} className="w-full" />}
+                <Button label={desktop ? "스토리 이미지 다운로드" : "이미지 저장하고 직접 올리기"} type={desktop ? "primary" : "outline"} size="M" onPress={() => onSave(sheet.png!)} className="w-full" />
+                <p className="text-caption-12 text-text-secondary">인스타그램 앱 → 스토리 만들기 → 저장한 사진을 선택해 주세요.{!desktop && " 인앱 브라우저에서는 위 이미지를 길게 눌러 저장할 수 있어요."}</p>
               </>
             )}
           </div>
@@ -221,6 +236,7 @@ export function ShareScreen({
   staticToast?: string;
 }) {
   const proto = useProto();
+  const mobileStoryShare = typeof navigator !== "undefined" && usesMobileStoryShare(navigator.userAgent, navigator.maxTouchPoints);
   const kakaoImage = ilganArt(useAnalysis().dayMaster.name).card;
   const { toast } = proto;
   const [card, setCard] = useState(initialCard);
@@ -286,19 +302,30 @@ export function ShareScreen({
     if (!w || w.key !== done) return;
     waitingRef.current = null;
     setWaiting(null);
-    if (!png) return toast("이미지를 만들지 못했어요. 네트워크를 확인하고 다시 시도해 주세요.");
+    if (!png) {
+      if (w.kind === "인스타 스토리" && !mobileStoryShare) setSheet({ mode: "story", png: null, failed: true });
+      return toast("이미지를 만들지 못했어요. 네트워크를 확인하고 다시 시도해 주세요.");
+    }
     // The tap is long gone: saving still works, sharing needs a fresh tap.
     if (w.kind === "이미지 저장") saveImage(png);
+    else if (!mobileStoryShare) setSheet({ mode: "story", png });
     else toast("스토리 이미지가 준비됐어요. 인스타 스토리 버튼을 다시 눌러 공유해 주세요.");
-  }, [toast, saveImage]);
+  }, [toast, saveImage, mobileStoryShare]);
 
   const imageAction = (kind: ImageAction) => {
-    if (waitingRef.current) return;
+    const desktopStory = kind === "인스타 스토리" && !mobileStoryShare;
+    if (waitingRef.current && !desktopStory) return toast("공유 이미지를 준비 중이에요. 잠시만 기다려 주세요.");
     const ratioFor = kind === "인스타 스토리" ? "스토리 9:16" : ratio;
     const target = cardKey(card, ratioFor);
     if (ratioFor !== ratio) setRatio(ratioFor);
     const png = pngs[target];
-    if (png) return kind === "이미지 저장" ? saveImage(png) : void shareStory(png);
+    if (desktopStory) setSheet({ mode: "story", png: png ?? null });
+    if (png) {
+      if (kind === "이미지 저장") return saveImage(png);
+      if (mobileStoryShare) return void shareStory(png);
+      wait(null);
+      return;
+    }
     // Not rendered yet, or it failed last time: (re)render and finish when it lands.
     if (png === null) setPngs((all) => Object.fromEntries(Object.entries(all).filter(([k]) => k !== target)));
     wait({ kind, key: target });
@@ -391,11 +418,11 @@ export function ShareScreen({
         <Toast className="absolute left-[97px] top-[580px]" text={staticToast} />
       )}
 
-      {sheet && <ShareSheet sheet={sheet} onShare={(png) => void shareStory(png)} onSave={(png) => {
+      {sheet && <ShareSheet sheet={sheet} desktop={!mobileStoryShare} onRetry={() => imageAction("인스타 스토리")} onShare={(png) => void shareStory(png)} onSave={(png) => {
         if (isInAppBrowser()) return toast("위 이미지를 길게 눌러 사진으로 저장해 주세요.");
         downloadImage(png.url, png.filename);
         toast("이미지 저장을 요청했어요. 저장한 사진을 인스타 스토리에 추가해 주세요.");
-      }} onClose={() => setSheet(null)} />}
+      }} onClose={() => { wait(null); setSheet(null); }} />}
       {rendering && <CardExporter key={key} card={card} ratio={ratio} onDone={onRendered} />}
       {preparingStory && <CardExporter key={storyKey} card={card} ratio="스토리 9:16" onDone={onRendered} />}
     </Screen>

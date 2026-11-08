@@ -15,6 +15,7 @@ type FakeScript = { integrity?: string; removed?: boolean; onload: () => void; o
 type Payload = { content: { title: string; imageUrl: string; link: { webUrl: string } } };
 type Api = {
   kakaoConfigured: boolean;
+  usesMobileStoryShare: (ua: string, touchPoints?: number) => boolean;
   prepareKakao: () => Promise<void>;
   sendKakaoInvite: (name: string, url: string, image: string) => unknown;
   copyText: (value: string) => Promise<void>;
@@ -131,4 +132,18 @@ test("permission denial falls back instead of leaving an unhandled rejection", a
   const s = setup(); s.navigator.canShare = () => true;
   s.navigator.share = async () => { throw new DOMException("blocked", "NotAllowedError"); };
   assert.equal(await s.api.shareImageFile({} as File), "unsupported");
+});
+
+
+test("desktop story sharing uses download even on a browser with file share support", () => {
+  const s = setup();
+  assert.equal(s.api.usesMobileStoryShare("Mozilla/5.0 (Windows NT 10.0; Win64; x64) Chrome/140.0"), false);
+  assert.equal(s.api.usesMobileStoryShare("Mozilla/5.0 (Macintosh; Intel Mac OS X 14_0) Version/18 Safari/605.1.15"), false);
+});
+
+test("mobile story sharing keeps the native picker including desktop-style iPads", () => {
+  const s = setup();
+  assert.equal(s.api.usesMobileStoryShare("Mozilla/5.0 (iPhone; CPU iPhone OS 18_0)"), true);
+  assert.equal(s.api.usesMobileStoryShare("Mozilla/5.0 (Linux; Android 15)"), true);
+  assert.equal(s.api.usesMobileStoryShare("Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15)", 5), true);
 });

@@ -105,6 +105,11 @@ export function imageFile(dataUrl: string, filename: string): File {
   return new File([bytes], filename, { type: "image/png" });
 }
 
+/** Desktop story actions use an explicit download flow, regardless of OS share support. */
+export function usesMobileStoryShare(ua: string, touchPoints = 0): boolean {
+  return /iPhone|iPad|iPod|Android/i.test(ua) || (/Macintosh/i.test(ua) && touchPoints > 1);
+}
+
 /** The OS share sheet with the image (Instagram is one of its targets on phones). */
 export async function shareImageFile(file: File): Promise<"shared" | "cancelled" | "unsupported"> {
   try {
