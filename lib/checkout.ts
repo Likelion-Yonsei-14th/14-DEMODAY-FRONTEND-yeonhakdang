@@ -22,10 +22,11 @@ import {
   resultSummary,
   reusableResult,
   saveResult,
+  savePurchaseSnapshot,
   type Order,
 } from "@/lib/backend";
 import type { Proto, ProtoState } from "@/lib/proto";
-import { analyzeBirth } from "@/lib/saju";
+import { analyzeBirth, personalOf, PAID_CONTENT, compatResult, benefactorResult, charmResult } from "@/lib/saju";
 
 type Update = (patch: Partial<ProtoState>) => void;
 
@@ -53,7 +54,7 @@ async function resultId(state: ProtoState, update: Update): Promise<string> {
 
 /** Refreshes 보유 상품 from the server's locker. */
 export async function syncLocker(update: Update) {
-  update(ownedFromLocker(await getLocker()));
+  update({ ...ownedFromLocker(await getLocker()), paidResults: {} });
 }
 
 /** Server confirmation, then the locker, so 7-4 shows what was really bought. */
@@ -73,7 +74,7 @@ export async function checkout(proto: Pick<Proto, "state" | "update" | "saveNow"
   const { state, update } = proto;
   const { version } = await getPolicies();
   const request = orderRequest({ ...state, resultId: await resultId(state, update), policyVersion: version });
-  const fingerprint = JSON.stringify(request);
+  const fingerprint = JSON.stringify({ request, input: { name: state.name, birth: state.birth, gender: state.gender, calendar: state.calendar, leapMonth: state.leapMonth, time: state.time, unknownTime: state.unknownTime }, snapshotVersion: 1 });
   // Keep the key while the order is the same, so a retry or refresh reuses it…
   let key = state.checkout?.request === fingerprint ? state.checkout.key : newIdempotencyKey();
   let order = await createOrder(key, request);
@@ -88,8 +89,24 @@ export async function checkout(proto: Pick<Proto, "state" | "update" | "saveNow"
     key = newIdempotencyKey();
     order = await createOrder(key, request);
   }
-  // Persist before provider I/O too: an uncertain request must retain the same order on retry.
   proto.saveNow({ checkout: { request: fingerprint, key, orderId: order.id } });
+  // Freeze the report before opening a payment page. A failed save prevents payment.
+  const analyzed = analyzeBirth(state);
+  if (!analyzed.ok) throw new Error(analyzed.error);
+  const analysis = analyzed.analysis;
+  const personal = personalOf(analysis, state, state.gender, state.name);
+  const { name, birth, gender, calendar, leapMonth, time, unknownTime } = state;
+  const kinds = request.product === "package" ? ["compat", "benefactor", "charm"] : [request.product];
+  const variants = kinds.includes("charm") ? [0, 1, 2, 3].map((n) => charmResult(analysis, n, PAID_CONTENT, personal)) : [];
+  await savePurchaseSnapshot(order.id, {
+    version: 1, input: { name, birth, gender, calendar, leapMonth, time, unknownTime },
+    universities: request.universities, relation: request.relation,
+    results: {
+      ...(kinds.includes("compat") ? { compat: compatResult(analysis, request.universities, PAID_CONTENT, personal) } : {}),
+      ...(kinds.includes("benefactor") ? { benefactor: benefactorResult(analysis, state.relation, PAID_CONTENT, personal) } : {}),
+      ...(variants.length ? { charm: variants[0] } : {}),
+    }, charmVariants: variants,
+  });
   const payload = await prepareOrder(order.id, state.payMethod, phone);
   const url = payAppPaymentUrl(payload);
   window.location.assign(url);

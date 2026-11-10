@@ -2,6 +2,7 @@
 
 import { createContext, useContext } from "react";
 
+import type { SavedPaidResult } from "@/lib/purchaseSnapshot";
 import type { SavedResult } from "@/lib/backend";
 import { PACKAGE_PRICE, PRODUCTS, type ProductKind } from "@/lib/catalog";
 import { detectApp } from "@/lib/externalBrowser";
@@ -68,6 +69,7 @@ export type ProtoState = {
   pendingOrder: { id: string; message: string | null } | null;
   /** The order that holds each owned product, for /open and refunds. */
   orders: Partial<Record<ProductKind, string>>;
+  paidResults: Partial<Record<ProductKind, SavedPaidResult>>;
   /** The 이용권 code that opened every paid result on this device; null when none. */
   unlockCode: string | null;
 };
@@ -122,6 +124,7 @@ export const FIGMA_STATE: ProtoState = {
   checkout: null,
   pendingOrder: null,
   orders: {},
+  paidResults: {},
   unlockCode: null,
 };
 

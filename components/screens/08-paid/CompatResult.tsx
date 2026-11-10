@@ -1,5 +1,6 @@
 "use client";
 
+import { SavedResultStatus } from "@/components/paid/SavedResultStatus";
 import { BottomNav } from "@/components/chrome/BottomNav";
 import { Screen } from "@/components/layout/Screen";
 import { MascotFaceBadge } from "@/components/mascot/MascotFaceBadge";
@@ -32,18 +33,20 @@ const BAR_TONES = ["bg-brand-secondary", "bg-brand-secondary-light"];
 /** Figma: 8-1 합격 궁합 · 결과 (PR-03) (32:1579) — a 1658px-tall frame. */
 export function CompatResult() {
   const proto = useProto();
-  useOpenRecord("compat");
+  const saved = useOpenRecord("compat");
   const result = useCompatResult();
   const [first] = result.universities;
   const retry = proto.active && unlocked(proto.state);
   const height = FRAME_HEIGHT + (result.universities.length - 3) * CARD_STEP + (retry ? RETRY_STEP : 0);
+
+  if (!saved.ready) return <SavedResultStatus error={saved.error} />;
 
   return (
     <Screen height={height} bleed contentSized>
       <PaidHero
         height={300}
         badge={`지원 대학 ${result.universities.length}곳 분석`}
-        title={`${displayName(proto.state)}님의\n합격 궁합`}
+        title={`${(proto.state.paidResults?.compat?.input.name ?? displayName(proto.state))}님의\n합격 궁합`}
         subtitle={`가장 기운이 맞는 곳은 ${first.name}(${first.score}점)예요`}
         pose="celebrate"
         poseInner={{ left: -5, top: 24.22, width: 150, height: 124.18 }}

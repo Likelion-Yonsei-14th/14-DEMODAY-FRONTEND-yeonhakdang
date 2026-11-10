@@ -7,7 +7,7 @@ function fixture(): ProtoState {
   return {
     name: "김연학", birth: "2008.03.15", gender: 1, calendar: 1,
     leapMonth: true, time: "오후 2시 30분", unknownTime: true, analyzed: true,
-    loggedIn: true, agreedTerms: true, account: "member-1", analysisOwner: "member-1", afterLogin: "3-4", afterInput: "7-3",
+    loggedIn: true, agreedTerms: true, paidResults: {}, account: "member-1", analysisOwner: "member-1", afterLogin: "3-4", afterInput: "7-3",
     inviter: null, friends: [], rosterSeenAt: 17, friend: "previous-friend",
     product: "compat", plan: "single", universities: ["연세대학교"], relation: "선배", payMethod: "card",
     purchased: { compat: true, benefactor: false, charm: false }, charmRerolls: 2,

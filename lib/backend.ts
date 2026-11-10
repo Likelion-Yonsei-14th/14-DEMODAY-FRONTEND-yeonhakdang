@@ -7,6 +7,7 @@
  * Off unless NEXT_PUBLIC_USE_BACKEND=true; the prototype then runs on its own
  * demo data exactly as before.
  */
+import type { PurchaseSnapshot, SavedPaidResult } from "./purchaseSnapshot";
 import type { ProfileSnapshot } from "./analysisProfile";
 import type { Analysis } from "./saju/analyze.ts";
 import type { Element } from "./saju/elements.ts";
@@ -96,6 +97,10 @@ export class ApiError extends Error {
 }
 
 const MESSAGES: Record<string, string> = {
+  SAVED_RESULT_MISSING: "이 주문의 저장된 결과를 찾지 못했어요. 고객센터로 문의해 주세요.",
+  CONTENT_IMMUTABLE: "주문에 저장된 결과는 변경할 수 없어요. 기존 결과를 다시 열어 주세요.",
+  RESULT_CHANGED: "다른 창에서 부적을 다시 뽑았어요. 결과를 다시 열어 주세요.",
+  NO_REDRAWS_LEFT: "부적 다시 뽑기를 모두 사용했어요.",
   PROFILE_CONFLICT: "다른 창에서 정보가 변경됐어요. 새로고침해 최신 정보를 불러와 주세요.",
   PROFILE_ACCOUNT_CHANGED: "로그인 계정이 변경됐어요. 새로고침해 주세요.",
   NETWORK_ERROR: "서버에 연결하지 못했어요. 네트워크를 확인하고 다시 시도해 주세요.",
@@ -312,6 +317,13 @@ export const getLocker = () => api<LockerItem[]>("/locker");
 /** Records the first view: call only when the result is actually shown. */
 export const openProduct = (orderId: string, kind: ProductKind) =>
   api<Opened>(`/orders/${orderId}/products/${kind}/open`, { method: "POST" });
+
+export const savePurchaseSnapshot = (id: string, snapshot: PurchaseSnapshot) =>
+  api<void>(`/orders/${id}/result-snapshot`, { method: "PUT", body: snapshot });
+export const openSavedResult = (id: string, kind: ProductKind) =>
+  api<SavedPaidResult>(`/orders/${id}/saved-results/${kind}/open`, { method: "POST" });
+export const redrawSavedCharm = (id: string, expectedVariant: number) =>
+  api<SavedPaidResult>(`/orders/${id}/saved-results/charm/redraw`, { method: "POST", body: { expectedVariant } });
 
 export const requestRefund = (orderId: string, reason: RefundReason) =>
   api<Refund>(`/orders/${orderId}/refunds`, { method: "POST", body: { reason } });

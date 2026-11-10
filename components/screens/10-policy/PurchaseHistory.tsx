@@ -32,6 +32,7 @@ const orderDate = (iso: string) => new Date(iso).toLocaleDateString("ko-KR");
 
 /** The visitor's orders from the server, each with its own 환불 신청. */
 function ServerOrders() {
+  const proto = useProto();
   const [orders, setOrders] = useState<Order[] | null>(null);
   const [error, setError] = useState("");
   const [refunding, setRefunding] = useState<Order | null>(null);
@@ -55,6 +56,16 @@ function ServerOrders() {
           <p className="text-caption-12 text-text-tertiary">
             {orderDate(order.paid_at ?? order.created_at)} · {ORDER_STATUS[order.status] ?? order.status} · 주문번호 {order.id.slice(0, 8)}
           </p>
+          {isPaid(order) && (
+            <div className="flex flex-wrap gap-2">
+              {(order.product_code === "package" ? ["compat", "benefactor", "charm"] as const : [order.product_code]).map((kind) => (
+                <Button key={kind} label={`${PRODUCTS[kind].name} 다시 보기`} type="outline" size="M" className="h-[36px] w-auto rounded-[10px] px-[14px] [&>p]:text-caption-12" onPress={() => {
+                  proto.update({ orders: { ...proto.state.orders, [kind]: order.id } });
+                  proto.go(PRODUCTS[kind].result);
+                }} />
+              ))}
+            </div>
+          )}
           {isPaid(order) && (
             <div className="flex justify-end">
               <Button label="환불 신청" type="outline" size="M" className="h-[36px] w-auto shrink-0 rounded-[10px] px-[14px] [&>p]:text-caption-12" onPress={() => setRefunding(order)} />

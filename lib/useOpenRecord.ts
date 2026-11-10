@@ -1,25 +1,29 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
+import { USE_BACKEND, errorMessage, openSavedResult, type ProductKind } from "@/lib/backend";
+import { unlocked, useProto } from "@/lib/proto";
 
-import { ApiError, USE_BACKEND, errorMessage, openProduct, type ProductKind } from "@/lib/backend";
-import { useProto } from "@/lib/proto";
-
-/**
- * A paid result (8-1 · 8-2 · 8-3) is on screen: tell the server, which records
- * the first view (the point after which 단순 변심 refunds end). The screen
- * itself is still drawn by the app; the server's content is not used yet.
- * Never call this ahead of time (prefetch, preload): only on a real open.
- */
+/** Only a real result screen opens the purchased snapshot and records its first view. */
 export function useOpenRecord(kind: ProductKind) {
-  const { active, state, toast, back } = useProto();
+  const { active, state, update } = useProto();
   const orderId = state.orders[kind];
+  const needed = Boolean(USE_BACKEND && active && (orderId || state.purchased[kind] || !unlocked(state)));
+  const key = `${state.account}/${orderId}/${kind}`;
+  const [loaded, setLoaded] = useState("");
+  const [failure, setFailure] = useState<{ key: string; message: string } | null>(null);
   useEffect(() => {
-    if (!USE_BACKEND || !active || !orderId) return;
-    openProduct(orderId, kind).catch((error: unknown) => {
-      toast(errorMessage(error));
-      // Refunded or under review: this result is no longer the visitor's to see.
-      if (error instanceof ApiError && (error.code === "ENTITLEMENT_NOT_ACTIVE" || error.code === "ORDER_NOT_ACCESSIBLE")) back();
-    });
-  }, [active, orderId, kind, toast, back]);
+    if (!needed || !orderId) return;
+    let cancelled = false;
+    openSavedResult(orderId, kind).then((saved) => {
+      if (cancelled) return;
+      if (saved.orderId !== orderId || saved.kind !== kind || saved.version !== 1) throw new Error("Invalid saved result");
+      update({ paidResults: { ...state.paidResults, [kind]: saved }, ...(kind === "charm" ? { charmRerolls: saved.charmRerolls } : {}) });
+      setLoaded(key);
+    }).catch((error) => { if (!cancelled) setFailure({ key, message: errorMessage(error) }); });
+    return () => { cancelled = true; };
+    // The cache changes after this request; it must not open the report a second time.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [needed, orderId, kind, key, update]);
+  return { ready: !needed || loaded === key, error: failure?.key === key ? failure.message : needed && !orderId ? "구매한 결과를 찾지 못했어요. 보관함에서 다시 열어 주세요." : null };
 }

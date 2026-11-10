@@ -2,6 +2,7 @@
 
 import { useMemo } from "react";
 
+import { savedFor } from "@/lib/purchaseSnapshot";
 import { FIGMA_STATE, useProto } from "@/lib/proto";
 import { PAID_CONTENT, benefactorResult, charmResult, compatResult } from "@/lib/saju";
 import { useAnalysis, usePersonal } from "@/lib/useAnalysis";
@@ -14,24 +15,30 @@ import { useAnalysis, usePersonal } from "@/lib/useAnalysis";
 export function useCompatResult() {
   const analysis = useAnalysis();
   const personal = usePersonal();
-  const { universities } = useProto().state;
+  const state = useProto().state;
+  const { universities } = state;
+  const stored = savedFor(state.paidResults, state.orders, "compat");
   return useMemo(
-    () => compatResult(analysis, universities.length ? universities : FIGMA_STATE.universities, PAID_CONTENT, personal),
-    [analysis, universities, personal],
+    () => stored ?? compatResult(analysis, universities.length ? universities : FIGMA_STATE.universities, PAID_CONTENT, personal),
+    [stored, analysis, universities, personal],
   );
 }
 
 export function useBenefactorResult() {
   const analysis = useAnalysis();
   const personal = usePersonal();
-  const { relation } = useProto().state;
-  return useMemo(() => benefactorResult(analysis, relation, PAID_CONTENT, personal), [analysis, relation, personal]);
+  const state = useProto().state;
+  const { relation } = state;
+  const stored = savedFor(state.paidResults, state.orders, "benefactor");
+  return useMemo(() => stored ?? benefactorResult(analysis, relation, PAID_CONTENT, personal), [stored, analysis, relation, personal]);
 }
 
 /** `charmRerolls` left of 3: each 다시 뽑기 draws the next design. */
 export function useCharmResult() {
   const analysis = useAnalysis();
   const personal = usePersonal();
-  const { charmRerolls } = useProto().state;
-  return useMemo(() => charmResult(analysis, 3 - charmRerolls, PAID_CONTENT, personal), [analysis, charmRerolls, personal]);
+  const state = useProto().state;
+  const { charmRerolls } = state;
+  const stored = savedFor(state.paidResults, state.orders, "charm");
+  return useMemo(() => stored ?? charmResult(analysis, 3 - charmRerolls, PAID_CONTENT, personal), [stored, analysis, charmRerolls, personal]);
 }

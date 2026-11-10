@@ -16,6 +16,8 @@ import {
   useProto,
   type ProductKind,
 } from "@/lib/proto";
+import { USE_BACKEND } from "@/lib/backend";
+import { useAnalysis } from "@/lib/useAnalysis";
 import { elementLabel } from "@/lib/saju";
 import { useCharmResult, useCompatResult } from "@/lib/usePaid";
 import { useRoster } from "@/lib/useRoster";
@@ -84,6 +86,7 @@ export function LockerMy() {
   const { state } = proto;
   const roster = useRoster();
   const name = displayName(state);
+  const analysis = useAnalysis();
   const boughtCount = Object.values(state.purchased).filter(Boolean).length;
   const compat = useCompatResult().universities[0];
   const charm = useCharmResult();
@@ -131,7 +134,7 @@ export function LockerMy() {
           <LockerRow
             icon="icon-crown-18"
             title="내 학과 결과"
-            caption={state.analyzed ? "경영학과 · 94점" : "아직 분석 전이에요"}
+            caption={state.analyzed ? `${analysis.top[0].major.대표학과[0]} · ${analysis.top[0].display}점` : "아직 분석 전이에요"}
             divider={false}
             onPress={() => proto.go(state.analyzed ? "3-4" : "2-1")}
           />
@@ -153,7 +156,7 @@ export function LockerMy() {
                 icon={icon}
                 iconTone={owned ? "tint" : "subtle"}
                 title={PRODUCTS[kind].name}
-                caption={owned ? `${summary[kind]} · ${how(kind)}` : "아직 받지 않았어요"}
+                caption={owned ? USE_BACKEND && state.purchased[kind] ? "구매 당시 저장된 결과 다시 보기" : `${summary[kind]} · ${how(kind)}` : "아직 받지 않았어요"}
                 cta={owned ? undefined : "구매하기"}
                 onPress={() =>
                   owned ? proto.go(PRODUCTS[kind].result) : proto.openProduct(kind)

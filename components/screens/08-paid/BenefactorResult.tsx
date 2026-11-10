@@ -1,5 +1,6 @@
 "use client";
 
+import { SavedResultStatus } from "@/components/paid/SavedResultStatus";
 import { BottomNav } from "@/components/chrome/BottomNav";
 import { Screen } from "@/components/layout/Screen";
 import { MascotFaceBadge } from "@/components/mascot/MascotFaceBadge";
@@ -17,10 +18,12 @@ import { useBenefactorResult } from "@/lib/usePaid";
 /** Figma: 8-2 귀인 · 결과 (PR-04) (33:1626) — a 1458px-tall frame. */
 export function BenefactorResult() {
   const proto = useProto();
-  useOpenRecord("benefactor");
-  const { relation } = proto.state;
+  const saved = useOpenRecord("benefactor");
+  const relation = proto.state.paidResults?.benefactor?.relation || proto.state.relation;
   const result = useBenefactorResult();
   const last = result.timeline.length - 1;
+  if (!saved.ready) return <SavedResultStatus error={saved.error} />;
+
   return (
     <Screen height={1458} bleed contentSized>
       <PaidHero

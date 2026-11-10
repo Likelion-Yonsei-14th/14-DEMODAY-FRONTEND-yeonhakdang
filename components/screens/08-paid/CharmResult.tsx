@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 
+import { SavedResultStatus } from "@/components/paid/SavedResultStatus";
 import { BottomNav } from "@/components/chrome/BottomNav";
 import { TopBar } from "@/components/chrome/TopBar";
 import { BottomSheetHeader, Dim } from "@/components/layout/BottomSheet";
@@ -12,6 +13,7 @@ import { Button } from "@/components/ui/Button";
 import { Chip } from "@/components/ui/Chip";
 import { HintText } from "@/components/ui/HintText";
 import { Icon } from "@/components/ui/Icon";
+import { USE_BACKEND, redrawSavedCharm, errorMessage } from "@/lib/backend";
 import { renderCard } from "@/lib/cardImage";
 import { cn } from "@/lib/cn";
 import { displayName, isInAppBrowser, useProto } from "@/lib/proto";
@@ -63,7 +65,7 @@ function SaveSheet({ url, onClose }: { url: string; onClose: () => void }) {
 /** Figma: 8-3 부적 · 결과 (PR-01·02) (33:1762) — a 1136px-tall frame. */
 export function CharmResult() {
   const proto = useProto();
-  useOpenRecord("charm");
+  const saved = useOpenRecord("charm");
   const { charmRerolls } = proto.state;
   const charm = useCharmResult();
   const exportRef = useRef<HTMLDivElement>(null);
@@ -101,6 +103,16 @@ export function CharmResult() {
   const redraw = () => {
     setDraw("away");
     after(TURN_AWAY_MS, () => {
+      if (USE_BACKEND && proto.state.purchased.charm) {
+        const orderId = proto.state.orders.charm;
+        if (!orderId) { setDraw("idle"); return; }
+        void redrawSavedCharm(orderId, 3 - charmRerolls).then((saved) => {
+          proto.update({ paidResults: { ...proto.state.paidResults, charm: saved }, charmRerolls: saved.charmRerolls });
+          setDraw("in");
+          after(INK_IN_MS, () => setDraw("idle"));
+        }).catch((error) => { setDraw("idle"); proto.toast(errorMessage(error)); });
+        return;
+      }
       proto.update({ charmRerolls: charmRerolls - 1 });
       setDraw("in");
       proto.toast("연학이가 새 부적을 그렸어요");
@@ -119,7 +131,7 @@ export function CharmResult() {
     return () => {
       cancelled = true;
     };
-  }, [active, artKey]);
+  }, [active, artKey, saved.ready]);
 
   const save = () => {
     if (!ready) return;
@@ -127,6 +139,8 @@ export function CharmResult() {
     downloadImage(ready, `yeonhakdang-charm-${charm.art.word}.png`);
     proto.toast("고화질 부적을 저장했어요");
   };
+
+  if (!saved.ready) return <SavedResultStatus error={saved.error} />;
 
   return (
     <Screen height={1136}>
@@ -136,7 +150,7 @@ export function CharmResult() {
       <div className="flex w-[393px] flex-col items-center gap-[24px] overflow-clip px-[24px] pb-[120px] pt-[8px]">
         <div className="relative flex shrink-0 flex-col items-center gap-[6px] overflow-clip whitespace-nowrap font-bold">
           <p className="relative shrink-0 text-overline-12 text-brand-secondary">
-            {displayName(proto.state)}님의 합격 부적
+            {(proto.state.paidResults?.charm?.input.name ?? displayName(proto.state))}님의 합격 부적
           </p>
           <p className="relative shrink-0 font-serif text-h2-22">{charm.title}</p>
         </div>
