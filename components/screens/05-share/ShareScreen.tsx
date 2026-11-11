@@ -3,6 +3,7 @@
 import Image from "next/image";
 import { useCallback, useEffect, useRef, useState } from "react";
 
+import { RosterLoginGate } from "@/components/screens/04-roster/RosterLoginGate";
 import { TopBar } from "@/components/chrome/TopBar";
 import { BottomSheetHeader, Dim } from "@/components/layout/BottomSheet";
 import { Bottom, Overlay, Screen } from "@/components/layout/Screen";
@@ -357,6 +358,7 @@ export function ShareScreen({
 
   /** Switching card or ratio abandons an image action still waiting for the old one. */
   const choose = (next: { card?: CardKind; ratio?: ShareRatio }) => {
+    if (next.card === "roster" && !proto.state.loggedIn) return proto.requireLogin("5-2");
     wait(null);
     if (next.card) setCard(next.card);
     if (next.ratio) setRatio(next.ratio);
@@ -407,6 +409,8 @@ export function ShareScreen({
     trackShareClick(SHARE_METHODS[kind]);
     return kind === "이미지 저장" || kind === "인스타 스토리" ? imageAction(kind) : void linkAction(kind);
   };
+
+  if (proto.active && card === "roster" && !proto.state.loggedIn) return <RosterLoginGate target="5-2" />;
 
   return (
     <Screen>

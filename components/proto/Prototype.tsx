@@ -6,6 +6,7 @@ import { verifyUnlockCode } from "@/app/actions/unlock";
 
 import { Dim } from "@/components/layout/BottomSheet";
 import { SCREEN_WIDTH, ViewportContext } from "@/components/layout/Screen";
+import { RosterLoginGate } from "@/components/screens/04-roster/RosterLoginGate";
 import { DrawerPanel } from "@/components/screens/09-locker/MenuDrawer";
 import { Toast } from "@/components/ui/Toast";
 import { trackInviteOpen, trackPurchaseClick, trackResultView, trackScreen } from "@/lib/analytics";
@@ -43,6 +44,7 @@ import {
   FIGMA_STATE,
   isInAppBrowser,
   preparePurchase,
+  rosterScreen,
   purchaseSteps,
   selfAsFriend,
   type DemoFlags,
@@ -57,6 +59,7 @@ const SCREEN_IDS = new Set(SCREENS.map((s) => s.id));
 const SHEETS = new Set(["2-5", "4-3", "9-4", "9-5"]);
 /** The free 학과 결과 screens. */
 const RESULTS = new Set(["3-3", "3-4"]);
+const MEMBER_ROSTER_SCREENS = new Set(["4-1", "4-2", "4-3", "5-2"]);
 
 type Op = "push" | "pop" | "replace" | "reset";
 type Nav = { stack: string[]; op: Op; from?: string };
@@ -680,7 +683,8 @@ export function Prototype() {
     [h, scale, safe.top, safe.bottom],
   );
 
-  const current = SCREENS.find((s) => s.id === top) ?? SCREENS[0];
+  const renderedScreen = top === "4-1" || top === "4-2" ? rosterScreen({ state, demo }) : top;
+  const current = SCREENS.find((s) => s.id === renderedScreen) ?? SCREENS[0];
   const { Component } = current;
 
   const enter =
@@ -722,7 +726,7 @@ export function Prototype() {
           <ViewportContext.Provider value={viewport}>
             <ProtoContext.Provider value={proto}>
               <div key={`${nav.stack.length}-${top}`} className={cn("absolute inset-0", enter)}>
-                <Component />
+                {MEMBER_ROSTER_SCREENS.has(top) && !state.loggedIn ? <RosterLoginGate target={top} /> : <Component />}
               </div>
 
               {menuOpen && (

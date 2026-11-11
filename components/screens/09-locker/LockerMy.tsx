@@ -146,7 +146,7 @@ export function LockerMy() {
                 ? `동기 ${roster.entries.length}명 · 수석 ${roster.entries[0].name}`
                 : "아직 동기가 없어요"
             }
-            onPress={() => proto.go(rosterScreen(proto))}
+            onPress={() => proto.requireLogin(rosterScreen(proto))}
           />
           {PAID_ROWS.map(({ kind, icon }) => {
             const owned = owns(state, kind);

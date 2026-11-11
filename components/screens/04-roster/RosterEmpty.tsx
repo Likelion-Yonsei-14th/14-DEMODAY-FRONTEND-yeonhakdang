@@ -58,7 +58,7 @@ export function RosterEmpty() {
       <Bottom from={676} to={762}>
         <Button
           label="친구 초대하고 명단 채우기"
-          onPress={() => proto.go("5-2")}
+          onPress={() => proto.requireLogin("5-2")}
           className="absolute left-[24px] top-[676px] w-[345px]"
         />
       </Bottom>

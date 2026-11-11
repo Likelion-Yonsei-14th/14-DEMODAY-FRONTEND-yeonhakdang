@@ -121,7 +121,7 @@ export function ResultActions({ className }: { className?: string }) {
     >
       <Button
         label="동기 합격자 명단 보기"
-        onPress={() => proto.go(rosterScreen(proto))}
+        onPress={() => proto.requireLogin(rosterScreen(proto))}
       />
       <Button
         label="내 학과 카드 공유하기"
