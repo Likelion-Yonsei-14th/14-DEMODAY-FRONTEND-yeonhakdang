@@ -8,17 +8,22 @@ export function HintText({
   title,
   caption,
   captionTone = "tertiary",
+  wrap = false,
   className,
 }: {
   title: string;
   caption: string;
   captionTone?: "tertiary" | "secondary";
+  wrap?: boolean;
   className?: string;
 }) {
   return (
     <div
       className={cn(
-        "relative flex shrink-0 flex-col items-start overflow-clip whitespace-nowrap",
+        "relative flex shrink-0 flex-col items-start overflow-clip",
+        wrap
+          ? "w-full min-w-0 whitespace-normal break-keep [overflow-wrap:anywhere] [&>p]:w-full"
+          : "whitespace-nowrap",
         className,
       )}
     >

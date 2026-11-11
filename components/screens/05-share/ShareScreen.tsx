@@ -176,7 +176,7 @@ function ShareSheet({ sheet, desktop, onRetry, onShare, onSave, onClose }: { she
         <BottomSheetHeader title={title} onClose={onClose} />
         {sheet.mode === "link" ? (
           <div className="flex w-full flex-col gap-[12px] px-[24px] pt-[4px]">
-            <HintText title="링크를 길게 눌러 복사해 주세요" caption="이 브라우저에서는 자동 복사가 막혀 있어요" />
+            <HintText wrap title="링크를 길게 눌러 복사해 주세요" caption="이 브라우저에서는 자동 복사가 막혀 있어요" />
             <input
               aria-label="초대 링크"
               readOnly
@@ -193,11 +193,11 @@ function ShareSheet({ sheet, desktop, onRetry, onShare, onSave, onClose }: { she
               <img src={sheet.png.url} alt="연학당 공유 카드" className="max-h-[240px] max-w-full shrink-0 rounded-[12px] object-contain shadow-sheet" />
             )}
             {sheet.mode === "save" ? (
-              <HintText title="이미지를 길게 눌러 저장해 주세요" caption="인앱 브라우저에선 다운로드 버튼이 막힐 수 있어요" />
+              <HintText wrap title="이미지를 길게 눌러 저장해 주세요" caption="인앱 브라우저에선 다운로드 버튼이 막힐 수 있어요" />
             ) : !sheet.png ? (
               sheet.failed ? (
                 <>
-                  <HintText title="이미지를 만들지 못했어요" caption="네트워크를 확인하고 다시 시도해 주세요." />
+                  <HintText wrap title="이미지를 만들지 못했어요" caption="네트워크를 확인하고 다시 시도해 주세요." />
                   <Button label="이미지 다시 만들기" size="M" onPress={onRetry} />
                 </>
               ) : (
@@ -208,10 +208,10 @@ function ShareSheet({ sheet, desktop, onRetry, onShare, onSave, onClose }: { she
               )
             ) : (
               <>
-                <HintText title="스토리용 이미지가 준비됐어요" caption={desktop ? "PC에서는 스토리 이미지를 다운로드한 뒤 휴대폰으로 옮겨 인스타그램 앱에서 올려 주세요." : "공유 목록에 Instagram이 보이면 선택해 주세요. 인스타 앱으로 바로 이동하는 기능은 아니에요."} />
+                <HintText wrap title="스토리용 이미지가 준비됐어요" caption={desktop ? "PC에서는 스토리 이미지를 다운로드한 뒤 휴대폰으로 옮겨 인스타그램 앱에서 올려 주세요." : "공유 목록에 Instagram이 보이면 선택해 주세요. 인스타 앱으로 바로 이동하는 기능은 아니에요."} />
                 {!desktop && <Button label="휴대폰 공유 목록 열기" size="M" onPress={() => onShare(sheet.png!)} className="w-full" />}
                 <Button label={desktop ? "스토리 이미지 다운로드" : "이미지 저장하고 직접 올리기"} type={desktop ? "primary" : "outline"} size="M" onPress={() => onSave(sheet.png!)} className="w-full" />
-                <p className="text-caption-12 text-text-secondary">인스타그램 앱 → 스토리 만들기 → 저장한 사진을 선택해 주세요.{!desktop && " 인앱 브라우저에서는 위 이미지를 길게 눌러 저장할 수 있어요."}</p>
+                <p className="w-full whitespace-normal break-keep text-caption-12 text-text-secondary [overflow-wrap:anywhere]">인스타그램 앱 → 스토리 만들기 → 저장한 사진을 선택해 주세요.{!desktop && " 인앱 브라우저에서는 위 이미지를 길게 눌러 저장할 수 있어요."}</p>
               </>
             )}
           </div>
