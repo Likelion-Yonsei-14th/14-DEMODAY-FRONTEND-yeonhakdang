@@ -40,6 +40,7 @@ import {
   FIGMA_STATE,
   isInAppBrowser,
   preparePurchase,
+  purchaseSteps,
   selfAsFriend,
   type DemoFlags,
   type Proto,
@@ -175,6 +176,14 @@ function restore(): Start {
   return { nav: { stack: stack.length ? stack : ["1-1"], op: "reset" }, state, demo };
 }
 
+function parentOf(id: string, s: ProtoState): string | null {
+  const steps = purchaseSteps(s);
+  const i = steps.indexOf(id === "7-3" && s.plan === "package" ? "7-3b" : id);
+  if (i > 0) return steps[i - 1];
+  if (i === 0) return PRODUCTS[s.product].detail;
+  return null;
+}
+
 /** The iPhone notch / home bar insets, read off a probe styled with env(). */
 function readSafeArea(probe: HTMLElement | null): { top: number; bottom: number } {
   if (!probe) return { top: 0, bottom: 0 };
@@ -264,11 +273,11 @@ export function Prototype() {
   }, []);
 
   const back = useCallback(() => {
-    setNav((n) =>
-      n.stack.length > 1
-        ? { stack: n.stack.slice(0, -1), op: "pop", from: n.stack.at(-1) }
-        : n,
-    );
+    setNav((n) => {
+      if (n.stack.length > 1) return { stack: n.stack.slice(0, -1), op: "pop", from: n.stack.at(-1) };
+      const parent = parentOf(n.stack[0], stateRef.current);
+      return parent ? { stack: [parent], op: "pop", from: n.stack[0] } : n;
+    });
   }, []);
 
   const backTo = useCallback((id: string) => {
@@ -539,7 +548,7 @@ export function Prototype() {
     }
     const onPop = () => {
       if (menuRef.current) setMenuOpen(false);
-      else if (navRef.current.stack.length > 1) back();
+      else if (navRef.current.stack.length > 1 || parentOf(navRef.current.stack[0], stateRef.current)) back();
       else return; // At the root: let the browser leave the prototype.
       window.history.pushState({ yeonhakProto: true }, "", window.location.href);
     };
