@@ -20,6 +20,7 @@ export function stripInvite(url: string): string {
   try {
     const parsed = new URL(url);
     parsed.searchParams.delete("invite");
+    parsed.searchParams.delete("inviteId");
     return parsed.toString();
   } catch {
     return "";
@@ -28,7 +29,8 @@ export function stripInvite(url: string): string {
 
 /** The address still carries an invite code: GA must not load yet. */
 export function addressHasInvite(): boolean {
-  return new URLSearchParams(window.location.search).has("invite");
+  const params = new URLSearchParams(window.location.search);
+  return params.has("invite") || params.has("inviteId");
 }
 
 // gtag.js reads `arguments` objects off the data layer, not plain arrays.

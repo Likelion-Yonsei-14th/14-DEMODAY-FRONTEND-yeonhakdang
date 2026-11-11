@@ -60,3 +60,9 @@ test("a failed save stays dirty for retry, and an unmounted account stops new wr
   await writer.flush();assert.equal(calls, 2);
   writer.stop();writer.enqueue(profile);await writer.flush();assert.equal(calls, 2);
 });
+
+test("server relationships and pending account invitations are not duplicated into analysis snapshots", () => {
+  const friend = { name: "친구", birth: "2005.01.01", calendar: 0 as const, leapMonth: false, time: "", unknownTime: true, addedAt: 1 };
+  const saved = analysisProfile({ ...profile, friends: [friend, { ...friend, memberId: "account" }, { ...friend, invitationId: "token" }] });
+  assert.deepEqual(saved.friends, [friend]);
+});

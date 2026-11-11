@@ -8,7 +8,7 @@ export type ProfileSnapshot = { accountId: string; revision: number; profile: An
 export function analysisProfile(s: AnalysisProfile): AnalysisProfile {
   return { name: s.name, birth: s.birth, gender: s.gender, calendar: s.calendar,
     leapMonth: s.leapMonth, time: s.time, unknownTime: s.unknownTime, analyzed: s.analyzed,
-    friends: s.friends.map(({ name, birth, calendar, leapMonth, time, unknownTime, addedAt }) =>
+    friends: s.friends.filter((friend) => !friend.memberId && !friend.invitationId).map(({ name, birth, calendar, leapMonth, time, unknownTime, addedAt }) =>
       ({ name, birth, calendar, leapMonth, time, unknownTime, addedAt })), rosterSeenAt: s.rosterSeenAt };
 }
 
@@ -58,6 +58,6 @@ export class ProfileWriter {
   }
 }
 
-let flushCurrent: (() => Promise<void>) | null = null;
-export function registerProfileFlush(flush: (() => Promise<void>) | null) { flushCurrent = flush; }
-export async function flushAnalysisProfile() { await flushCurrent?.(); }
+let flushCurrent: ((profile?: AnalysisProfile) => Promise<void>) | null = null;
+export function registerProfileFlush(flush: ((profile?: AnalysisProfile) => Promise<void>) | null) { flushCurrent = flush; }
+export async function flushAnalysisProfile(profile?: AnalysisProfile) { await flushCurrent?.(profile); }

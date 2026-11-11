@@ -43,3 +43,24 @@ test("같은 친구는 한 번만, 처음 등록한 시각을 유지", () => {
 test("시간을 모르면 시간 라벨은 키에서 빠진다", () => {
   assert.equal(friendKey({ ...민지, time: "오후 2시 30분" }), friendKey(민지));
 });
+
+test("account roster refresh replaces withdrawn server friends and preserves legacy invitations", async () => {
+  const { mergeRoster } = await import("./friends.ts");
+  const legacy = { ...민지, addedAt: 1 };
+  const removed = { ...민지, name: "탈퇴친구", memberId: "withdrawn", addedAt: 2 };
+  const connected = { ...민지, memberId: "member", addedAt: 3 };
+  assert.deepEqual(mergeRoster([legacy, removed], [connected]), [connected]);
+  assert.deepEqual(mergeRoster([legacy, removed], []), [legacy]);
+});
+test("equal personal inputs from different accounts retain distinct roster identities", async () => {
+  const a = { ...민지, memberId: "first", addedAt: 1 };
+  const b = { ...민지, memberId: "second", addedAt: 2 };
+  assert.notEqual(friendKey(a), friendKey(b));
+});
+test("server invitation identifiers accept only UUID tokens", async () => {
+  const { invitationId } = await import("./friends.ts");
+  const token = "f2026f90-9876-4321-8888-123456789abc";
+  assert.equal(invitationId(token), token);
+  assert.equal(invitationId("../private"), null);
+  assert.equal(invitationId(null), null);
+});

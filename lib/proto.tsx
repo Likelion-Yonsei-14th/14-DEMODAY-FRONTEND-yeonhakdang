@@ -23,6 +23,7 @@ export type Relation = "선배" | "동기" | "교수님" | "연인";
 export type ProtoState = {
   /** Who sent the invite link this session came through (1-2); null otherwise. */
   inviter: FriendInput | null;
+  pendingInviteId: string | null;
   /** 합격자 명단 — guests keep it locally; signed-in members sync it to their account. */
   friends: Friend[];
   /** When the 명단 was last opened: friends added after it get NEW. */
@@ -95,6 +96,7 @@ const EXAMPLE_FRIENDS: Friend[] = [
 /** What the static frames show. */
 export const FIGMA_STATE: ProtoState = {
   inviter: EXAMPLE_FRIENDS[0],
+  pendingInviteId: null,
   friends: EXAMPLE_FRIENDS,
   rosterSeenAt: 4,
   name: "김연학",

@@ -8,6 +8,7 @@
  * demo data exactly as before.
  */
 import type { PurchaseSnapshot, SavedPaidResult } from "./purchaseSnapshot";
+import type { Friend, FriendInput } from "./friends";
 import type { ProfileSnapshot } from "./analysisProfile";
 import type { Analysis } from "./saju/analyze.ts";
 import type { Element } from "./saju/elements.ts";
@@ -101,6 +102,7 @@ const MESSAGES: Record<string, string> = {
   CONTENT_IMMUTABLE: "주문에 저장된 결과는 변경할 수 없어요. 기존 결과를 다시 열어 주세요.",
   RESULT_CHANGED: "다른 창에서 부적을 다시 뽑았어요. 결과를 다시 열어 주세요.",
   NO_REDRAWS_LEFT: "부적 다시 뽑기를 모두 사용했어요.",
+  ANALYSIS_REQUIRED: "먼저 내 학과 분석을 완료해 주세요.",
   PROFILE_CONFLICT: "다른 창에서 정보가 변경됐어요. 새로고침해 최신 정보를 불러와 주세요.",
   PROFILE_ACCOUNT_CHANGED: "로그인 계정이 변경됐어요. 새로고침해 주세요.",
   NETWORK_ERROR: "서버에 연결하지 못했어요. 네트워크를 확인하고 다시 시도해 주세요.",
@@ -226,6 +228,12 @@ export async function getMe(): Promise<Me | null> {
 export const getAnalysisProfile = () => api<ProfileSnapshot>("/me/analysis-profile", { timeoutMs: 20000 });
 export const saveAnalysisProfile = (snapshot: ProfileSnapshot) =>
   api<ProfileSnapshot>("/me/analysis-profile", { method: "PUT", body: snapshot, keepalive: true, timeoutMs: 20000 });
+
+export type AccountRoster = { accountId: string; friends: Friend[] };
+export const createInvitation = () => api<{ token: string; accountId: string }>("/invitations", { method: "POST", timeoutMs: 20000 });
+export const getInvitation = (token: string) => api<FriendInput>(`/invitations/${token}`, { timeoutMs: 20000 });
+export const acceptInvitation = (token: string) => api<AccountRoster & { connected: boolean }>(`/invitations/${token}/accept`, { method: "POST", timeoutMs: 20000 });
+export const getAccountRoster = () => api<AccountRoster>("/me/friends", { timeoutMs: 20000 });
 
 export type ConsentAnswers = { age14: boolean; terms: boolean; privacy: boolean; marketing: boolean };
 export const saveConsents = (version: string, answers: ConsentAnswers) =>

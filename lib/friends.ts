@@ -1,18 +1,19 @@
 /**
  * Friends and invite links — the one place that knows where friends come from.
- * Today they travel inside the invite link and are kept on this device; once
- * there is a backend, swap these for API calls and the screens stay as they are.
+ * Legacy invite links carry shared inputs. Account invitations use server-owned
+ * relationships; their roster entries are refreshed separately from the local list.
  */
 import { birthError, type BirthInput } from "./saju/birth.ts";
 
 export type FriendInput = BirthInput & { name: string };
-export type Friend = FriendInput & { /** ms since epoch: breaks 석차 ties and drives NEW. */ addedAt: number };
+export type Friend = FriendInput & { memberId?: string; invitationId?: string;  /** ms since epoch: breaks 석차 ties and drives NEW. */ addedAt: number };
 
 /** Same as the 정보 입력 form's 이름 field. */
 const NAME_MAX = 10;
 
 /** Same name and birth → the same person. */
 export function friendKey(f: FriendInput): string {
+  if ("memberId" in f && typeof f.memberId === "string") return `member:${f.memberId}`;
   return [f.name.trim(), f.birth, f.calendar, f.leapMonth ? 1 : 0, f.unknownTime ? "" : f.time].join("|");
 }
 
@@ -58,4 +59,16 @@ export function decodeInvite(code: string | null): FriendInput | null {
   if (!name || name.length > NAME_MAX) return null;
   const friend: FriendInput = { name, birth: b, calendar: c, leapMonth: l, time: t, unknownTime: t === "" };
   return birthError(friend) ? null : friend;
+}
+
+/** Account friendships replace the previous server list; legacy invite entries remain local. */
+export function mergeRoster(local: Friend[], server: Friend[]): Friend[] {
+  const inputKey = (f: FriendInput) => friendKey({ name: f.name, birth: f.birth, calendar: f.calendar, leapMonth: f.leapMonth, time: f.time, unknownTime: f.unknownTime });
+  const shared = new Set(server.map(inputKey));
+  const legacy = local.filter((f) => !f.memberId && !shared.has(inputKey(f)));
+  return [...legacy, ...server];
+}
+
+export function invitationId(value: string | null): string | null {
+  return value && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(value) ? value : null;
 }

@@ -77,3 +77,7 @@ test("events wait for startGa; a repeated screen is not sent twice", () => {
     ["share_click", { method: "kakao" }],
   ]);
 });
+
+test("account invitation tokens are stripped from analytics locations", () => {
+  assert.equal(setup().api.stripInvite("https://example.com/?inviteId=private-token&x=1"), "https://example.com/?x=1");
+});

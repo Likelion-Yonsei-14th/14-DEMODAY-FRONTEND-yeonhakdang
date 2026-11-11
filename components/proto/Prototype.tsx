@@ -10,7 +10,7 @@ import { DrawerPanel } from "@/components/screens/09-locker/MenuDrawer";
 import { Toast } from "@/components/ui/Toast";
 import { trackInviteOpen, trackPurchaseClick, trackResultView, trackScreen } from "@/lib/analytics";
 import { cn } from "@/lib/cn";
-import { analysisProfile, profileToRestore, ProfileWriter, registerProfileFlush } from "@/lib/analysisProfile";
+import { analysisProfile, profileToRestore, ProfileWriter, registerProfileFlush, flushAnalysisProfile } from "@/lib/analysisProfile";
 import { freshAnalysis } from "@/lib/analysisSession";
 import {
   ApiError,
@@ -20,6 +20,9 @@ import {
   confirmation,
   errorMessage,
   getMe,
+  getInvitation,
+  acceptInvitation,
+  getAccountRoster,
   getAnalysisProfile,
   saveAnalysisProfile,
   getPolicies,
@@ -31,7 +34,7 @@ import {
 import { PACKAGE_PRICE } from "@/lib/catalog";
 import { confirmOrder, syncLocker } from "@/lib/checkout";
 import { captureEntryUrl } from "@/lib/externalBrowser";
-import { addFriend, decodeInvite, friendKey } from "@/lib/friends";
+import { addFriend, decodeInvite, friendKey, invitationId, mergeRoster } from "@/lib/friends";
 import {
   INITIAL_DEMO,
   INITIAL_STATE,
@@ -147,6 +150,15 @@ function restore(): Start {
         entry: { kind: "purchase", product, plan },
       };
     }
+  }
+  const pendingInviteId = invitationId(params.get("inviteId"));
+  if (params.has("inviteId") && !pendingInviteId) {
+    window.history.replaceState(null, "", window.location.pathname);
+    return { nav: { stack: state.analyzed ? ["3-4"] : ["1-1"], op: "reset" }, state: { ...state, pendingInviteId: null }, demo, notice: "사용할 수 없는 초대 링크예요." };
+  }
+  if (pendingInviteId) {
+    window.history.replaceState(null, "", window.location.pathname);
+    return { nav: { stack: state.analyzed ? ["3-4"] : ["1-1"], op: "reset" }, state: { ...state, pendingInviteId }, demo, entry: { kind: "invite" } };
   }
   if (params.has("invite")) {
     window.history.replaceState(null, "", window.location.pathname);
@@ -453,13 +465,17 @@ export function Prototype() {
       const restored = profileToRestore(local, remote);
       writer = new ProfileWriter(remote, saveAnalysisProfile);
       profileWriter.current = writer;
-      registerProfileFlush(() => writer!.flush());
+      registerProfileFlush((profile) => {
+        if (profile) writer!.enqueue(profile);
+        return writer!.flush();
+      });
       if (restored) {
         // Keep an invitation opened in this tab while restoring the account roster.
-        const friends = stateRef.current.inviter
-          ? addFriend(restored.friends, stateRef.current.inviter, Date.now()) : restored.friends;
+        const incoming = stateRef.current.inviter;
+        const friends = incoming ? addFriend(restored.friends, incoming, Date.now()) : restored.friends;
         update({ ...restored, friends, analysisOwner: account, savedResult: null, friend: "" });
-        if (restored.analyzed && !local.analyzed && navRef.current.stack.at(-1) === "2-1") replace("3-4");
+        if (restored.analyzed && stateRef.current.pendingInviteId && ["1-1", "1-2"].includes(navRef.current.stack.at(-1)!)) replace("4-1");
+        else if (restored.analyzed && !local.analyzed && navRef.current.stack.at(-1) === "2-1") replace("3-4");
       } else if ((local.analysisOwner ?? local.account) && (local.analysisOwner ?? local.account) !== account) {
         update(freshAnalysis({ ...stateRef.current, account }));
       }
@@ -486,6 +502,85 @@ export function Prototype() {
     writer.enqueue(analysisProfile(state));
     void writer.flush().catch((error) => toast(`계정 정보 저장에 실패했어요. ${errorMessage(error)}`));
   }, [state, profileReady, toast]);
+
+  const [invitationReady, setInvitationReady] = useState<string | null>(null);
+  const [invitationError, setInvitationError] = useState<string | null>(null);
+  useEffect(() => {
+    const token = state.pendingInviteId;
+    if (!USE_BACKEND || !token) return;
+    let cancelled = false;
+    getInvitation(token).then((inviter) => {
+      if (cancelled) return;
+      const current = stateRef.current;
+      const self = friendKey(inviter) === friendKey(selfAsFriend(current));
+      const shared = { ...inviter, invitationId: token };
+      update({ inviter: self ? null : shared, ...(current.analyzed && !self ? { friends: addFriend(current.friends, shared, Date.now()) } : {}) });
+      setInvitationReady(token);
+      if (initial.entry?.kind === "invite") replace(current.analyzed ? "4-1" : "1-2");
+    }).catch((error) => {
+      if (cancelled) return;
+      setInvitationError(token);
+      toast(error instanceof ApiError && error.status === 404 ? "사용할 수 없는 초대 링크예요." : errorMessage(error));
+    });
+    return () => { cancelled = true; };
+  }, [state.pendingInviteId, initial.entry, update, replace, toast]);
+
+  // Account friendships have their own server records and never overwrite the analysis snapshot.
+  useEffect(() => {
+    if (!USE_BACKEND || !profileReady || profileReady !== state.account || !state.loggedIn) return;
+    let cancelled = false;
+    let running = false;
+    const refresh = async () => {
+      if (running || document.visibilityState === "hidden") return;
+      running = true;
+      try {
+        const roster = await getAccountRoster();
+        if (!cancelled && roster.accountId === stateRef.current.account) {
+          const friends = mergeRoster(stateRef.current.friends, roster.friends);
+          if (JSON.stringify(friends) !== JSON.stringify(stateRef.current.friends)) update({ friends });
+        }
+      } catch { /* The visible roster is retained while offline; the next refresh retries. */ }
+      finally { running = false; }
+    };
+    void refresh();
+    const timer = setInterval(() => void refresh(), 15000);
+    const focus = () => void refresh();
+    window.addEventListener("focus", focus);
+    document.addEventListener("visibilitychange", focus);
+    return () => { cancelled = true; clearInterval(timer); window.removeEventListener("focus", focus); document.removeEventListener("visibilitychange", focus); };
+  }, [profileReady, state.account, state.loggedIn, update]);
+
+  const acceptedInvite = useRef<string | null>(null);
+  const [inviteRetry, setInviteRetry] = useState(0);
+  useEffect(() => {
+    const token = state.pendingInviteId;
+    if (!token || invitationReady !== token || profileReady !== state.account || !state.loggedIn || !state.agreedTerms || !state.analyzed || !analyzeBirth(state).ok) return;
+    const requestKey = `${state.account}/${token}`;
+    if (acceptedInvite.current === requestKey) return;
+    acceptedInvite.current = requestKey;
+    let cancelled = false;
+    let retry: ReturnType<typeof setTimeout> | undefined;
+    (async () => {
+      try {
+        await flushAnalysisProfile(analysisProfile(stateRef.current));
+        const result = await acceptInvitation(token);
+        if (cancelled || result.accountId !== stateRef.current.account) return;
+        update({ pendingInviteId: null, friends: mergeRoster(stateRef.current.friends, result.friends) });
+        toast(result.connected ? "서로의 동기 합격자 명단에 등록됐어요" : "내 초대 링크예요");
+      } catch (error) {
+        if (!cancelled) {
+          acceptedInvite.current = null;
+          toast(errorMessage(error));
+          if (error instanceof ApiError && error.status === 404) update({ pendingInviteId: null });
+          else if (!(error instanceof ApiError) || error.status === 0 || error.status >= 500)
+            retry = setTimeout(() => setInviteRetry((attempt) => attempt + 1), 5000);
+        }
+      }
+    })();
+    return () => { cancelled = true; clearTimeout(retry); if (acceptedInvite.current === requestKey) acceptedInvite.current = null; };
+    // Saving or roster refresh changes state while this same acceptance is in flight.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [state.pendingInviteId, invitationReady, profileReady, state.account, state.loggedIn, state.agreedTerms, state.analyzed, inviteRetry, update, toast]);
 
   const openProduct = useCallback<Proto["openProduct"]>(
     (kind, plan = "single") => {
@@ -637,6 +732,15 @@ export function Prototype() {
                 </div>
               )}
 
+              {USE_BACKEND && state.pendingInviteId && invitationReady !== state.pendingInviteId && (
+                <div role="status" className="absolute inset-0 z-50 flex flex-col items-center justify-center gap-4 bg-bg-base px-6 text-center">
+                  <p>{invitationError === state.pendingInviteId ? "초대 링크를 확인하지 못했어요" : "초대 정보를 확인하고 있어요…"}</p>
+                  {invitationError === state.pendingInviteId && <>
+                    <button type="button" onClick={() => window.location.reload()} className="rounded-[14px] bg-brand-primary px-6 py-3 text-text-inverse">다시 확인하기</button>
+                    <button type="button" onClick={() => { update({ pendingInviteId: null, inviter: null }); replace(state.analyzed ? "3-4" : "1-1"); }}>초대 없이 계속하기</button>
+                  </>}
+                </div>
+              )}
               {USE_BACKEND && state.loggedIn && state.agreedTerms && state.account && profileReady !== state.account && (
                 <div role="status" className="absolute inset-0 z-50 flex flex-col items-center justify-center gap-4 bg-bg-base px-6 text-center">
                   <p className="text-body-l-16">{profileLoadError === state.account ? "계정 정보를 불러오지 못했어요" : "저장된 계정 정보를 불러오고 있어요…"}</p>

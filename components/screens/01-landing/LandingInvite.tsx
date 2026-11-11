@@ -68,7 +68,7 @@ export function LandingInvite() {
       {/* how it works (19:214) */}
       <div className="absolute left-[24px] top-[566px] flex w-[345px] flex-col items-start gap-[10px] overflow-clip rounded-[16px] border border-line-default bg-surface-default px-[18px] py-[16px]">
         <NumberedRow n={1}>생년월일시 입력하고 내 학과 TOP 3 확인</NumberedRow>
-        <NumberedRow n={2}>{name}님이 내 명단에 자동 등록</NumberedRow>
+        <NumberedRow n={2}>{proto.state.pendingInviteId ? "로그인하면 서로의 명단에 자동 등록" : `${name}님이 내 명단에 자동 등록`}</NumberedRow>
         <NumberedRow n={3}>궁합 점수로 정해지는 동기 석차 확인</NumberedRow>
       </div>
 
@@ -79,7 +79,7 @@ export function LandingInvite() {
           className="absolute left-[24px] top-[718px] w-[345px]"
         />
         <p className="absolute left-[24px] top-[786px] w-[345px] text-center text-caption-12 text-text-tertiary">
-          잘못된 초대 링크면 일반 첫 화면으로 이동해요
+          {proto.state.pendingInviteId ? "분석 후 로그인하면 서로의 명단에 이름과 궁합이 표시돼요" : "잘못된 초대 링크면 일반 첫 화면으로 이동해요"}
         </p>
       </Bottom>
     </Screen>

@@ -25,6 +25,8 @@ import { Toast } from "@/components/ui/Toast";
 import { trackShareClick, type ShareMethod } from "@/lib/analytics";
 import { renderCard } from "@/lib/cardImage";
 import { ilganArt } from "@/lib/ilganArt";
+import { analysisProfile, flushAnalysisProfile } from "@/lib/analysisProfile";
+import { createInvitation, USE_BACKEND } from "@/lib/backend";
 import { displayName, inviteUrl, isInAppBrowser, useProto } from "@/lib/proto";
 import { useAnalysis } from "@/lib/useAnalysis";
 import {
@@ -254,6 +256,27 @@ export function ShareScreen({
   const [sheet, setSheet] = useState<Sheet | null>(null);
   const [kakaoReady, setKakaoReady] = useState(false);
   const [kakaoError, setKakaoError] = useState("");
+  const [preparedInvite, setPreparedInvite] = useState<{ accountId: string; url: string } | null>(null);
+  const [inviteFailure, setInviteFailure] = useState<string | null>(null);
+  const [inviteAttempt, setInviteAttempt] = useState(0);
+  const accountInvite = USE_BACKEND && proto.state.loggedIn && proto.state.agreedTerms && Boolean(proto.state.account);
+  useEffect(() => {
+    if (!accountInvite || !proto.active || !proto.state.analyzed) return;
+    const account = proto.state.account!;
+    let cancelled = false;
+    (async () => {
+      try {
+        await flushAnalysisProfile(analysisProfile(proto.state));
+        const invitation = await createInvitation();
+        if (cancelled || invitation.accountId !== account) return;
+        const origin = process.env.NEXT_PUBLIC_SITE_URL?.trim().replace(/\/+$/, "") || window.location.origin;
+        setPreparedInvite({ accountId: account, url: `${origin}/?inviteId=${invitation.token}` });
+      } catch { if (!cancelled) setInviteFailure(account); }
+    })();
+    return () => { cancelled = true; };
+    // Sharing has its own prepared URL so the actual tap can open native share synchronously.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [accountInvite, proto.active, proto.state.account, proto.state.analyzed, inviteAttempt]);
   const linkLock = useRef(false);
   const storyLock = useRef(false);
 
@@ -343,7 +366,12 @@ export function ShareScreen({
     if (linkLock.current) return;
     linkLock.current = true;
     try {
-      const url = inviteUrl(proto.state);
+      if (accountInvite && preparedInvite?.accountId !== proto.state.account) {
+        if (inviteFailure === proto.state.account) setInviteAttempt((attempt) => attempt + 1);
+        toast("초대 링크를 준비 중이에요. 잠시 후 다시 눌러 주세요.");
+        return;
+      }
+      const url = accountInvite ? preparedInvite!.url : inviteUrl(proto.state);
       if (kind === "카카오톡 공유" && kakaoConfigured) {
         if (!kakaoReady) {
           toast(kakaoError || "카카오톡 공유를 준비 중이에요. 잠시 후 다시 눌러 주세요.");
@@ -409,6 +437,7 @@ export function ShareScreen({
       <Bottom from={640}>
         <ShareMessageBox
           className="absolute left-[24px] top-[640px] w-[345px]"
+          caption={accountInvite ? "친구도 로그인하면 서로 명단에 등록돼요" : "게스트 초대는 받은 사람 명단에 등록돼요"}
           message={SHARE_MESSAGE}
         />
         <ShareActions busy={waiting?.kind} onAction={onAction} className="absolute left-[24px] top-[712px] w-[345px]" />
