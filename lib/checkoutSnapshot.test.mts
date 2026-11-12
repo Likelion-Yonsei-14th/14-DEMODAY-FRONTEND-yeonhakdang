@@ -84,3 +84,15 @@ test("ownership refresh does not erase exact purchased report content", async ()
   assert.equal("paidResults" in s.patches[0], false);
   assert.equal(s.patches[0].purchased?.compat, true);
 });
+
+test("switching Kakao Pay to Toss Pay creates a new order instead of reopening the Kakao URL", async () => {
+  const s = setup();
+  s.proto.state.payMethod = "kakao";await s.run();
+  s.proto.state.payMethod = "toss";await s.run();
+  assert.notEqual(s.keys[0], s.keys[1]);
+});
+test("retrying the same payment method reuses the existing order key", async () => {
+  const s = setup();s.proto.state.payMethod = "toss";
+  await s.run();await s.run();
+  assert.equal(s.keys[0], s.keys[1]);
+});
