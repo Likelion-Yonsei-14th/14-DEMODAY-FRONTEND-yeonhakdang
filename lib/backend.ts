@@ -170,7 +170,7 @@ async function send(path: string, init: RequestInit): Promise<Response> {
 }
 
 async function refreshCsrf(): Promise<string> {
-  const response = await send("/api/csrf", { method: "GET" });
+  const response = await send("/api/csrf", { method: "GET", signal: AbortSignal.timeout(20000) });
   if (!response.ok) throw new ApiError(response.status, "INTERNAL_ERROR");
   const body = (await response.json()) as { token: string };
   csrfToken = body.token;
@@ -213,12 +213,12 @@ async function api<T>(path: string, { method = "GET", body, headers = {}, keepal
 /* ── Endpoints ────────────────────────────────────────────────────── */
 
 export const getProducts = () => api<Product[]>("/products");
-export const getPolicies = () => api<Policies>("/policies");
+export const getPolicies = () => api<Policies>("/policies", { timeoutMs: 20000 });
 
 /** null when nobody is logged in. */
 export async function getMe(): Promise<Me | null> {
   try {
-    return await api<Me>("/me");
+    return await api<Me>("/me", { timeoutMs: 20000 });
   } catch (error) {
     if (error instanceof ApiError && error.status === 401) return null;
     throw error;
@@ -319,6 +319,9 @@ export const prepareOrder = (id: string, method: PayMethod, phone?: string) =>
 
 /** Only the server state, updated by verified PayApp feedback, decides 결제 완료. */
 export const completeOrder = (id: string) => api<Order>(`/orders/${id}/complete`, { method: "POST" });
+
+export type AccountLibrary = { accountId: string; items: LockerItem[]; orders: Order[] };
+export const getLibrary = () => api<AccountLibrary>("/me/library", { timeoutMs: 20000 });
 
 export const getLocker = () => api<LockerItem[]>("/locker");
 

@@ -10,7 +10,8 @@ import {
   completeOrder,
   confirmation,
   createOrder,
-  getLocker,
+  getLibrary,
+  ApiError,
   getPolicies,
   includesCharm,
   checkoutAction,
@@ -28,6 +29,8 @@ import {
 import type { Proto, ProtoState } from "@/lib/proto";
 import { analyzeBirth, personalOf, PAID_CONTENT, compatResult, benefactorResult, charmResult } from "@/lib/saju";
 
+import { purchasedDestination } from "./purchaseAccess";
+
 type Update = (patch: Partial<ProtoState>) => void;
 
 /**
@@ -35,6 +38,7 @@ type Update = (patch: Partial<ProtoState>) => void;
  * way yet (PG settling, operator review): never 결제 실패, never pay again.
  */
 export type CheckoutOutcome =
+  | { kind: "owned"; screen: string }
   | { kind: "paid" }
   | { kind: "pending" }
   | { kind: "failed"; message?: string }
@@ -53,8 +57,17 @@ async function resultId(state: ProtoState, update: Update): Promise<string> {
 }
 
 /** Refreshes 보유 상품 from the server's locker. */
-export async function syncLocker(update: Update) {
-  update({ ...ownedFromLocker(await getLocker()), paidResults: {} });
+export async function syncLocker(update: Update, account?: string | null, selected: ProtoState["orders"] = {}) {
+  const library = await getLibrary();
+  if (account && library.accountId !== account) throw new ApiError(409, "PROFILE_ACCOUNT_CHANGED");
+  const owned = ownedFromLocker(library.items);
+  // A refresh must retain a selected historical report and its exact saved content.
+  for (const item of library.items) {
+    if (item.status === "ACTIVE" && selected[item.product_code] === item.order_id)
+      owned.orders[item.product_code] = item.order_id;
+  }
+  update(owned);
+  return { ...owned, accountId: library.accountId, history: library.orders };
 }
 
 /** Server confirmation, then the locker, so 7-4 shows what was really bought. */
@@ -72,6 +85,12 @@ export async function confirmOrder(orderId: string, update: Update): Promise<Ord
 
 export async function checkout(proto: Pick<Proto, "state" | "update" | "saveNow">, phone: string): Promise<CheckoutOutcome> {
   const { state, update } = proto;
+  const library = await syncLocker(update, state.account, state.orders);
+  const destination = purchasedDestination(state.product, state.plan, library.purchased);
+  if (destination) return { kind: "owned", screen: destination };
+  if (library.history.some((order) => ["PENDING", "REVIEW_REQUIRED"].includes(order.status)
+    && (state.plan === "package" || order.product_code === "package" || order.product_code === state.product)))
+    return { kind: "pending" };
   const { version } = await getPolicies();
   const request = orderRequest({ ...state, resultId: await resultId(state, update), policyVersion: version });
   const fingerprint = JSON.stringify({ request, input: { name: state.name, birth: state.birth, gender: state.gender, calendar: state.calendar, leapMonth: state.leapMonth, time: state.time, unknownTime: state.unknownTime }, snapshotVersion: 1 });
@@ -107,7 +126,15 @@ export async function checkout(proto: Pick<Proto, "state" | "update" | "saveNow"
       ...(variants.length ? { charm: variants[0] } : {}),
     }, charmVariants: variants,
   });
-  const payload = await prepareOrder(order.id, state.payMethod, phone);
+  let payload;
+  try { payload = await prepareOrder(order.id, state.payMethod, phone); }
+  catch (error) {
+    if (!(error instanceof ApiError) || error.code !== "ALREADY_OWNED") throw error;
+    const restored = await syncLocker(update, state.account);
+    const screen = purchasedDestination(state.product, state.plan, restored.purchased);
+    if (!screen) throw error;
+    return { kind: "owned", screen };
+  }
   const url = payAppPaymentUrl(payload);
   window.location.assign(url);
   return { kind: "redirected" };

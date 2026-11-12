@@ -159,6 +159,7 @@ export function OrderPayment() {
     setCheckingOut(true);
     try {
       const outcome = await checkout(proto, phone);
+      if (outcome.kind === "owned") return replace(outcome.screen);
       if (outcome.kind === "paid") return replace("7-4");
       if (outcome.kind === "pending") {
         // Money may have moved: show the order, never 결제 실패.

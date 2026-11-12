@@ -9,7 +9,7 @@ import { RefundApplyDialog } from "@/components/policy/RefundApplyDialog";
 import { RefundRequestDialog } from "@/components/policy/RefundRequestDialog";
 import { Button } from "@/components/ui/Button";
 import { InfoBox } from "@/components/ui/InfoBox";
-import { USE_BACKEND, errorMessage, getOrders, isListedOrder, isPaid, type Order } from "@/lib/backend";
+import { USE_BACKEND, errorMessage, getLibrary, isListedOrder, isPaid, type Order } from "@/lib/backend";
 import { BUSINESS } from "@/lib/business";
 import { PACKAGE_NAME } from "@/lib/catalog";
 import { cn } from "@/lib/cn";
@@ -39,7 +39,7 @@ function ServerOrders() {
 
   useEffect(() => {
     // Orders that never reached a payment (abandoned at the PG window) are left out.
-    getOrders().then((all) => setOrders(all.filter(isListedOrder)), (e: unknown) => setError(errorMessage(e)));
+    getLibrary().then((library) => setOrders(library.orders.filter(isListedOrder)), (e: unknown) => setError(errorMessage(e)));
   }, []);
 
   if (error) return <InfoBox>{error}</InfoBox>;

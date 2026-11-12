@@ -32,6 +32,7 @@ import {
   onUnauthorized,
   priceMismatches,
 } from "@/lib/backend";
+import { ownedScreen, purchasedDestination } from "@/lib/purchaseAccess";
 import { PACKAGE_PRICE } from "@/lib/catalog";
 import { confirmOrder, syncLocker } from "@/lib/checkout";
 import { captureEntryUrl } from "@/lib/externalBrowser";
@@ -173,7 +174,7 @@ function restore(): Start {
       if (state.analyzed && analyzeBirth(self).ok) {
         return {
           nav: { stack: ["4-1"], op: "reset" },
-          state: { ...state, friends: addFriend(state.friends, inviter, Date.now()) },
+          state: { ...state, inviter, friends: addFriend(state.friends, inviter, Date.now()) },
           demo,
           notice: `${inviter.name}님이 합격자 명단에 등록됐어요`,
           entry: { kind: "invite" },
@@ -348,6 +349,8 @@ export function Prototype() {
     setNav((n) => ({ stack: ["1-1", "2-1"], op: "reset", from: n.stack.at(-1) }));
   }, [saveNow]);
 
+  const [accountReady, setAccountReady] = useState(!USE_BACKEND);
+  const [accountLoadError, setAccountLoadError] = useState(false);
   const profileSource = useRef(state);
   const profileWriter = useRef<ProfileWriter | null>(null);
   const [profileLoadError, setProfileLoadError] = useState<string | null>(null);
@@ -379,7 +382,7 @@ export function Prototype() {
   // Any call that finds the session gone (expired, logged out elsewhere) logs this tab out.
   useEffect(() => {
     if (!USE_BACKEND) return;
-    onUnauthorized(() => update({ loggedIn: false, agreedTerms: false, account: null, analysisOwner: stateRef.current.analysisOwner ?? stateRef.current.account }));
+    onUnauthorized(() => update({ loggedIn: false, agreedTerms: false, account: null, analysisOwner: stateRef.current.analysisOwner ?? stateRef.current.account, purchased: { compat: false, benefactor: false, charm: false }, orders: {}, paidResults: {} }));
     return () => onUnauthorized(null);
   }, [update]);
 
@@ -406,6 +409,7 @@ export function Prototype() {
         const me = await getMe();
         if (cancelled) return;
         if (!me) {
+          setAccountReady(true);
           update({ loggedIn: false, agreedTerms: false, loginPending: false, account: null, analysisOwner: s.analysisOwner ?? s.account, purchased: { compat: false, benefactor: false, charm: false }, orders: {} });
           if (s.loginPending) toast("로그인하지 못했어요. 다시 시도해 주세요.");
           if (s.pendingOrder) {
@@ -416,13 +420,14 @@ export function Prototype() {
         }
         const agreed = hasRequiredConsents(me, await getPolicies());
         profileSource.current = stateRef.current;
-        update({ loggedIn: true, agreedTerms: agreed, loginPending: false, account: me.id });
-        await syncLocker(update);
+        update({ loggedIn: true, agreedTerms: agreed, loginPending: false, account: me.id, ...(s.account !== me.id ? { paidResults: {} } : {}) });
+        const library = await syncLocker((patch) => { if (!cancelled) update(patch); }, me.id, s.account === me.id ? s.orders : {});
         if (cancelled) return;
         if (s.pendingOrder) {
-          update({ pendingOrder: null });
           const result = confirmation(await confirm(s.pendingOrder.id));
           if (cancelled) return;
+          update({ pendingOrder: null });
+          setAccountReady(true);
           if (result === "paid") return replace("7-4");
           if (result === "pending") {
             // Money may have moved: show the order, never 결제 실패.
@@ -431,13 +436,16 @@ export function Prototype() {
           }
           if (s.pendingOrder.message) toast(s.pendingOrder.message);
           replace("7-5");
-        } else if (s.loginPending) {
+        } else {
+          setAccountReady(true);
+          if (!s.loginPending) return;
           if (!agreed) return replace("2-5");
-          if (s.afterLogin !== navRef.current.stack.at(-1)) replace(s.afterLogin);
+          const target = ownedScreen(s.afterLogin, { ...s, purchased: library.purchased });
+          if (target !== navRef.current.stack.at(-1)) replace(target);
           toast("카카오로 로그인했어요");
         }
       } catch (error) {
-        if (!cancelled) toast(errorMessage(error));
+        if (!cancelled) { setAccountReady(false); setAccountLoadError(true); toast(errorMessage(error)); }
       }
     })();
     // Prices on screen come from the catalog; the server's are what it charges.
@@ -457,13 +465,13 @@ export function Prototype() {
 
   // Hydrate once per authenticated account, before any local snapshot can be uploaded.
   useEffect(() => {
-    if (!USE_BACKEND || !state.loggedIn || !state.agreedTerms || !state.account) return;
+    if (!USE_BACKEND || !accountReady || !state.loggedIn || !state.agreedTerms || !state.account) return;
     const account = state.account;
     let cancelled = false;
     let writer: ProfileWriter | null = null;
-    getAnalysisProfile().then((remote) => {
+    Promise.all([getAnalysisProfile(), getAccountRoster()]).then(([remote, roster]) => {
       if (cancelled) return;
-      if (remote.accountId !== account) throw new ApiError(409, "PROFILE_ACCOUNT_CHANGED");
+      if (remote.accountId !== account || roster.accountId !== account) throw new ApiError(409, "PROFILE_ACCOUNT_CHANGED");
       const local = profileSource.current;
       const restored = profileToRestore(local, remote);
       writer = new ProfileWriter(remote, saveAnalysisProfile);
@@ -475,13 +483,15 @@ export function Prototype() {
       if (restored) {
         // Keep an invitation opened in this tab while restoring the account roster.
         const incoming = stateRef.current.inviter;
-        const friends = incoming ? addFriend(restored.friends, incoming, Date.now()) : restored.friends;
+        const legacy = incoming ? addFriend(restored.friends, incoming, Date.now()) : restored.friends;
+        const friends = mergeRoster(legacy, roster.friends);
         update({ ...restored, friends, analysisOwner: account, savedResult: null, friend: "" });
         if (restored.analyzed && stateRef.current.pendingInviteId && ["1-1", "1-2"].includes(navRef.current.stack.at(-1)!)) replace("4-1");
         else if (restored.analyzed && !local.analyzed && navRef.current.stack.at(-1) === "2-1") replace("3-4");
       } else if ((local.analysisOwner ?? local.account) && (local.analysisOwner ?? local.account) !== account) {
-        update(freshAnalysis({ ...stateRef.current, account }));
+        update({ ...freshAnalysis({ ...stateRef.current, account }), friends: mergeRoster([], roster.friends) });
       }
+      if (!restored && (!(local.analysisOwner ?? local.account) || (local.analysisOwner ?? local.account) === account)) update({ friends: mergeRoster(local.friends, roster.friends) });
       setProfileReady(account);
     }).catch((error) => {
       if (!cancelled) {
@@ -496,7 +506,7 @@ export function Prototype() {
       registerProfileFlush(null);
       setProfileReady(null);
     };
-  }, [state.account, state.loggedIn, state.agreedTerms, update, replace, toast]);
+  }, [accountReady, state.account, state.loggedIn, state.agreedTerms, update, replace, toast]);
 
   useEffect(() => {
     if (!profileReady || profileReady !== state.account || !state.loggedIn || !state.analyzed || !state.name.trim() || state.name.length > 10 || !analyzeBirth(state).ok) return;
@@ -553,6 +563,28 @@ export function Prototype() {
     return () => { cancelled = true; clearInterval(timer); window.removeEventListener("focus", focus); document.removeEventListener("visibilitychange", focus); };
   }, [profileReady, state.account, state.loggedIn, update]);
 
+  // Existing tabs pick up purchases made in another tab or device when revisited.
+  useEffect(() => {
+    if (!USE_BACKEND || !accountReady || !state.account || !state.loggedIn) return;
+    let cancelled = false;
+    let running = false;
+    const account = state.account;
+    const refresh = async () => {
+      if (running || document.visibilityState === "hidden") return;
+      running = true;
+      try {
+        await syncLocker((patch) => {
+          if (!cancelled && stateRef.current.account === account) update(patch);
+        }, account, stateRef.current.orders);
+      } catch { /* Retain the last verified ownership; checkout always checks again. */ }
+      finally { running = false; }
+    };
+    const timer = setInterval(() => void refresh(), 15000);
+    window.addEventListener("focus", refresh);
+    document.addEventListener("visibilitychange", refresh);
+    return () => { cancelled = true; clearInterval(timer); window.removeEventListener("focus", refresh); document.removeEventListener("visibilitychange", refresh); };
+  }, [accountReady, state.account, state.loggedIn, update]);
+
   const acceptedInvite = useRef<string | null>(null);
   const [inviteRetry, setInviteRetry] = useState(0);
   useEffect(() => {
@@ -588,7 +620,7 @@ export function Prototype() {
   const openProduct = useCallback<Proto["openProduct"]>(
     (kind, plan = "single") => {
       update({ product: kind, plan });
-      go(PRODUCTS[kind].detail);
+      go(purchasedDestination(kind, plan, stateRef.current.purchased) ?? PRODUCTS[kind].detail);
     },
     [go, update],
   );
@@ -683,7 +715,7 @@ export function Prototype() {
     [h, scale, safe.top, safe.bottom],
   );
 
-  const renderedScreen = top === "4-1" || top === "4-2" ? rosterScreen({ state, demo }) : top;
+  const renderedScreen = top === "4-1" || top === "4-2" ? rosterScreen({ state, demo }) : ownedScreen(top, state);
   const current = SCREENS.find((s) => s.id === renderedScreen) ?? SCREENS[0];
   const { Component } = current;
 
@@ -743,6 +775,12 @@ export function Prototype() {
                     <button type="button" onClick={() => window.location.reload()} className="rounded-[14px] bg-brand-primary px-6 py-3 text-text-inverse">다시 확인하기</button>
                     <button type="button" onClick={() => { update({ pendingInviteId: null, inviter: null }); replace(state.analyzed ? "3-4" : "1-1"); }}>초대 없이 계속하기</button>
                   </>}
+                </div>
+              )}
+              {!accountReady && (
+                <div role="status" className="absolute inset-0 z-50 flex flex-col items-center justify-center gap-4 bg-bg-base px-6 text-center">
+                  <p>{accountLoadError ? "구매 정보를 확인하지 못했어요" : "로그인과 구매 정보를 확인하고 있어요…"}</p>
+                  {accountLoadError && <button type="button" onClick={() => window.location.reload()} className="rounded-[14px] bg-brand-primary px-6 py-3 text-text-inverse">다시 불러오기</button>}
                 </div>
               )}
               {USE_BACKEND && state.loggedIn && state.agreedTerms && state.account && profileReady !== state.account && (

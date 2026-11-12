@@ -38,7 +38,13 @@ test("starting again as a guest never creates a logged-in identity", () => {
 
 test("a different person's analysis does not inherit the previous person's invitation or friends", () => {
   const person = { name: "친구", birth: "2007.04.12", calendar: 0 as const, leapMonth: false, time: "", unknownTime: true };
-  const fresh = freshAnalysis({ ...fixture(), inviter: person, friends: [{ ...person, addedAt: 1 }] });
+  const fresh = freshAnalysis({ ...fixture(), account: null, inviter: person, friends: [{ ...person, addedAt: 1 }] });
   assert.equal(fresh.inviter, null); assert.deepEqual(fresh.friends, []);
   assert.equal(fresh.rosterSeenAt, 0); assert.equal(fresh.friend, "");
+});
+
+test("reanalysis retains account roster membership and its read marker", () => {
+  const member = { name: "동기", birth: "2007.04.12", calendar: 0 as const, leapMonth: false, time: "", unknownTime: true, memberId: "peer-account", addedAt: 1 };
+  const fresh = freshAnalysis({ ...fixture(), friends: [member] });
+  assert.deepEqual(fresh.friends, [member]); assert.equal(fresh.rosterSeenAt, 17);
 });

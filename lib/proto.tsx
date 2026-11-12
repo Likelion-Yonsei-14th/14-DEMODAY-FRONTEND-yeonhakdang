@@ -1,4 +1,5 @@
 "use client";
+import { purchasedDestination } from "./purchaseAccess";
 
 import { createContext, useContext } from "react";
 
@@ -194,6 +195,8 @@ export function stepLabel(s: Pick<ProtoState, "product" | "plan">, screen: strin
  * for 결제하기 (7-3), so a 이용권 code works without an account.
  */
 export function preparePurchase(state: ProtoState, product: ProductKind, plan = state.plan) {
+  const owned = purchasedDestination(product, plan, state.purchased);
+  if (owned) return { state: { ...state, product, plan, afterInput: null, afterLogin: owned }, screen: owned };
   const next = stepOrResult({ ...state, product }, purchaseSteps({ product, plan })[0]);
   const hasProfile = state.name.trim() !== "" && !birthError(selfAsFriend(state));
   const target = hasProfile ? next : "2-1";
