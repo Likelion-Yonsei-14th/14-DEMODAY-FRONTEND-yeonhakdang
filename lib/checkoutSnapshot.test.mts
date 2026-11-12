@@ -33,16 +33,17 @@ function setup(failSave = false, owned = false, libraryFailure = false) {
     prepareOrder: async () => { events.push("prepare"); return {}; },
     payAppPaymentUrl: () => "https://payment.example/fixture",
   };
+  const catalog = { PACKAGE_PRICE: 3790, PRODUCTS: { compat: { price: 2900 }, benefactor: { price: 1900 }, charm: { price: 1000 } } };
   const engine = {
     analyzeBirth: () => ({ ok: true, analysis: {} }), personalOf: () => ({}), PAID_CONTENT: {},
     compatResult: () => ({ universities: [{ name: "연세대학교", score: 85 }] }),
     benefactorResult: () => ({ type: "saved" }), charmResult: (_a: unknown, variant: number) => ({ art: { variant } }),
   };
-  const context = { exports: {} as { syncLocker: (update: (patch: Partial<ProtoState>) => void, account: string, selected?: ProtoState["orders"]) => Promise<unknown>; checkout: (proto: Proto, phone: string) => Promise<unknown> }, require: (name: string) => name === "@/lib/backend" ? backend : name.includes("purchaseAccess") ? { purchasedDestination } : engine, window: { location: { assign: () => events.push("navigate") } } };
+  const context = { exports: {} as { syncLocker: (update: (patch: Partial<ProtoState>) => void, account: string, selected?: ProtoState["orders"]) => Promise<unknown>; checkout: (proto: Proto, phone: string) => Promise<unknown> }, require: (name: string) => name === "@/lib/backend" ? backend : name.includes("purchaseAccess") ? { purchasedDestination } : name.includes("catalog") ? catalog : engine, window: { location: { assign: () => events.push("navigate") } } };
   vm.runInNewContext(compiled, context);
   const state = { account: "member-1", product: "compat", plan: "single", orders: {}, name: "구매당시이름", birth: "2005.03.15", gender: 0, calendar: 0, leapMonth: false, time: "", unknownTime: true, relation: "선배", universities: ["연세대학교"], payMethod: "card", checkout: null } as unknown as Proto["state"];
   const proto = { state, update: () => {}, saveNow: (patch: Partial<Proto["state"]>) => { Object.assign(state, patch); } } as unknown as Proto;
-  return { events, keys, proto, backend, patches, sync: (account: string) => context.exports.syncLocker((patch) => patches.push(patch), account), run: () => context.exports.checkout(proto, "01000000000"), snapshot: () => snapshot };
+  return { events, keys, proto, backend, catalog, patches, sync: (account: string) => context.exports.syncLocker((patch) => patches.push(patch), account), run: () => context.exports.checkout(proto, "01000000000"), snapshot: () => snapshot };
 }
 test("payment opens only after the purchase input, reports and all charm variants are saved", async () => {
   const s = setup();await s.run();
@@ -95,4 +96,11 @@ test("retrying the same payment method reuses the existing order key", async () 
   const s = setup();s.proto.state.payMethod = "toss";
   await s.run();await s.run();
   assert.equal(s.keys[0], s.keys[1]);
+});
+
+test("a price update does not reuse an older below-minimum charm order", async () => {
+  const s = setup();s.proto.state.product = "charm";
+  s.catalog.PRODUCTS.charm.price = 990;await s.run();
+  s.catalog.PRODUCTS.charm.price = 1000;await s.run();
+  assert.notEqual(s.keys[0], s.keys[1]);
 });

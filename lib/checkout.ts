@@ -29,6 +29,7 @@ import {
 import type { Proto, ProtoState } from "@/lib/proto";
 import { analyzeBirth, personalOf, PAID_CONTENT, compatResult, benefactorResult, charmResult } from "@/lib/saju";
 
+import { PRODUCTS, PACKAGE_PRICE } from "./catalog";
 import { purchasedDestination } from "./purchaseAccess";
 
 type Update = (patch: Partial<ProtoState>) => void;
@@ -93,7 +94,7 @@ export async function checkout(proto: Pick<Proto, "state" | "update" | "saveNow"
     return { kind: "pending" };
   const { version } = await getPolicies();
   const request = orderRequest({ ...state, resultId: await resultId(state, update), policyVersion: version });
-  const fingerprint = JSON.stringify({ request, paymentMethod: state.payMethod, input: { name: state.name, birth: state.birth, gender: state.gender, calendar: state.calendar, leapMonth: state.leapMonth, time: state.time, unknownTime: state.unknownTime }, snapshotVersion: 1 });
+  const fingerprint = JSON.stringify({ request, price: state.plan === "package" ? PACKAGE_PRICE : PRODUCTS[state.product].price, paymentMethod: state.payMethod, input: { name: state.name, birth: state.birth, gender: state.gender, calendar: state.calendar, leapMonth: state.leapMonth, time: state.time, unknownTime: state.unknownTime }, snapshotVersion: 1 });
   // Keep the key while the order is the same, so a retry or refresh reuses it…
   let key = state.checkout?.request === fingerprint ? state.checkout.key : newIdempotencyKey();
   let order = await createOrder(key, request);
