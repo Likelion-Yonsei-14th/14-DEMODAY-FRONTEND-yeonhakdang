@@ -140,9 +140,9 @@ test("the locker gives owned products and the newest order holding each", () => 
 });
 
 test("price mismatches name the products the server prices differently", () => {
-  const shown = { compat: 2900, benefactor: 1900, charm: 990, package: 3790 };
+  const shown = { compat: 2900, benefactor: 1900, charm: 1000, package: 3790 };
   assert.deepEqual(priceMismatches([{ code: "compat", title: "", price: 2900 }], shown), []);
-  assert.deepEqual(priceMismatches([{ code: "charm", title: "", price: 1100 }], shown), ["charm: 화면 990원 · 서버 1100원"]);
+  assert.deepEqual(priceMismatches([{ code: "charm", title: "", price: 1100 }], shown), ["charm: 화면 1000원 · 서버 1100원"]);
 });
 
 test("any 401 tells the app the session is gone", async () => {

@@ -15,7 +15,7 @@ import {
 } from "@/components/product/ProductSections";
 import { MascotTipSmall } from "@/components/result/ResultSections";
 import { SectionTitle } from "@/components/ui/SectionTitle";
-import { PACKAGE_PRICE, SINGLES_TOTAL, won } from "@/lib/catalog";
+import { PACKAGE_PRICE, PRODUCTS, SINGLES_TOTAL, won } from "@/lib/catalog";
 
 /** Figma: 6-3 부적 · 상품 상세 (29:1541). */
 export function ProductCharm() {
@@ -88,7 +88,7 @@ export function ProductCharm() {
           single={{
             title: "부적 단건",
             description: "고화질 저장 + 다시 뽑기 3회",
-            price: "990원",
+            price: won(PRODUCTS.charm.price),
           }}
         />
 

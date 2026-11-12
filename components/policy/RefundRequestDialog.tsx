@@ -6,6 +6,7 @@ import { BottomSheetHeader } from "@/components/layout/BottomSheet";
 import { Button } from "@/components/ui/Button";
 import { InfoBox } from "@/components/ui/InfoBox";
 import { BUSINESS } from "@/lib/business";
+import { packageRefund, won } from "@/lib/catalog";
 import { useProto } from "@/lib/proto";
 
 /** Drafts the request; the refund is filed once it is e-mailed to 고객센터. */
@@ -23,7 +24,7 @@ export function RefundRequestDialog({ onClose }: { onClose: () => void }) {
     "결제일: 2026.10.24",
     "상품: 3종 패키지 · 귀인 + 부적 부분 환불",
     "결제 수단: 카카오페이",
-    "환불 요청 금액: 1,891원",
+    `환불 요청 금액: ${won(packageRefund(["compat"]))}`,
     `사유: ${reason.trim()}`,
   ].join("\n");
 
@@ -55,7 +56,7 @@ export function RefundRequestDialog({ onClose }: { onClose: () => void }) {
       <div className="pb-[24px]">
         <BottomSheetHeader title="환불 신청 안내" onClose={onClose} />
         <div className="flex flex-col gap-[16px] px-[24px] pt-[12px]">
-          <h2 id="refund-request-title" className="font-bold text-body-l-16">귀인 + 부적 · 1,891원 부분 환불</h2>
+          <h2 id="refund-request-title" className="font-bold text-body-l-16">귀인 + 부적 · {won(packageRefund(["compat"]))} 부분 환불</h2>
           <InfoBox>아래 내용을 작성해 고객센터 <a href={`mailto:${BUSINESS.email}`} className="underline">{BUSINESS.email}</a>로 보내 주세요. 이메일을 보내야 환불 신청이 접수됩니다.</InfoBox>
           <label className="flex flex-col gap-[8px] font-bold text-body-m-14">
             카카오 계정 이름
