@@ -34,6 +34,7 @@ export class ProfileWriter {
   private saved: string;
   private running: Promise<void> | null = null;
   private stopped = false;
+  private committing = false;
   private snapshot: ProfileSnapshot;
   private save: (s: ProfileSnapshot) => Promise<ProfileSnapshot>;
   constructor(snapshot: ProfileSnapshot, save: (s: ProfileSnapshot) => Promise<ProfileSnapshot>) {
@@ -42,7 +43,19 @@ export class ProfileWriter {
     this.saved = JSON.stringify(snapshot.profile);
   }
   stop() { this.stopped = true; }
-  enqueue(profile: AnalysisProfile) { this.latest = analysisProfile(profile); }
+  enqueue(profile: AnalysisProfile) { if (!this.committing) this.latest = analysisProfile(profile); }
+  /** An explicit save cannot be replaced by a background update of the old UI state. */
+  async commit(profile: AnalysisProfile): Promise<void> {
+    if (this.stopped) throw new Error("Profile writer is unavailable");
+    this.committing = true;
+    try {
+      await this.flush();
+      if (this.stopped) throw new Error("Profile writer is unavailable");
+      this.latest = analysisProfile(profile);
+      await this.flush();
+      if (this.stopped) throw new Error("Profile writer is unavailable");
+    } finally { this.committing = false; }
+  }
   flush(): Promise<void> {
     if (this.stopped) return Promise.resolve();
     if (this.running) return this.running;
@@ -60,4 +73,7 @@ export class ProfileWriter {
 
 let flushCurrent: ((profile?: AnalysisProfile) => Promise<void>) | null = null;
 export function registerProfileFlush(flush: ((profile?: AnalysisProfile) => Promise<void>) | null) { flushCurrent = flush; }
-export async function flushAnalysisProfile(profile?: AnalysisProfile) { await flushCurrent?.(profile); }
+export async function flushAnalysisProfile(profile?: AnalysisProfile, required = false) {
+  if (!flushCurrent && required) throw new Error("Profile writer is unavailable");
+  await flushCurrent?.(profile);
+}

@@ -122,7 +122,7 @@ export function LockerMy() {
               {state.loggedIn ? "카카오 로그인됨" : "게스트 이용 중"}
             </p>
           </div>
-          <Tap label="내 정보 수정" onPress={() => proto.go("2-1")} className="rounded-full">
+          <Tap label="내 정보 수정" onPress={() => { proto.update({ afterInput: null }); proto.go("2-1"); }} className="rounded-full">
             <Icon name="icon-edit" size={20} />
           </Tap>
         </div>
@@ -175,7 +175,7 @@ export function LockerMy() {
             value={`${boughtCount}건`}
             onPress={() => proto.go("10-2")}
           />
-          <ListItem label="내 정보 수정" value="이름 · 생년월일" onPress={() => proto.go("2-1")} />
+          <ListItem label="내 정보 수정" value="이름 · 생년월일" onPress={() => { proto.update({ afterInput: null }); proto.go("2-1"); }} />
           <ListItem label={state.loggedIn ? "로그아웃" : "카카오 로그인"} value="" onPress={state.loggedIn ? logout : () => proto.requireLogin(state.analyzed ? "3-4" : "2-1")} />
         </div>
 

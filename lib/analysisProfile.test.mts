@@ -66,3 +66,24 @@ test("server relationships and pending account invitations are not duplicated in
   const saved = analysisProfile({ ...profile, friends: [friend, { ...friend, memberId: "account" }, { ...friend, invitationId: "token" }] });
   assert.deepEqual(saved.friends, [friend]);
 });
+
+test("explicit input save cannot be overwritten by an autosave of the still-visible old profile", async () => {
+  const sent: ProfileSnapshot[] = [];
+  let release!: () => void;
+  const waiting = new Promise<void>((r) => { release = r; });
+  const writer = new ProfileWriter(remote, async (s) => {
+    sent.push(s);await waiting;return { ...s, revision: s.revision + 1 };
+  });
+  const saving = writer.commit({ ...profile, name: "수정완료" });
+  await Promise.resolve();
+  writer.enqueue(profile); // e.g. a roster refresh while the old form is visible
+  release();await saving;
+  assert.deepEqual(sent.map((s) => s.profile?.name), ["수정완료"]);
+});
+test("an explicit save reports a missing or stopped account writer instead of silently succeeding", async () => {
+  const { flushAnalysisProfile, registerProfileFlush } = await import("./analysisProfile.ts");
+  registerProfileFlush(null);
+  await assert.rejects(flushAnalysisProfile(profile, true), /unavailable/);
+  const writer = new ProfileWriter(remote, async (s) => s);writer.stop();
+  await assert.rejects(writer.commit(profile), /unavailable/);
+});

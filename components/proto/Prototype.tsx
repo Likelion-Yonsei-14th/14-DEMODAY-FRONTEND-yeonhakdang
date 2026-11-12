@@ -477,8 +477,7 @@ export function Prototype() {
       writer = new ProfileWriter(remote, saveAnalysisProfile);
       profileWriter.current = writer;
       registerProfileFlush((profile) => {
-        if (profile) writer!.enqueue(profile);
-        return writer!.flush();
+        return profile ? writer!.commit(profile) : writer!.flush();
       });
       if (restored) {
         // Keep an invitation opened in this tab while restoring the account roster.
@@ -758,7 +757,7 @@ export function Prototype() {
           <ViewportContext.Provider value={viewport}>
             <ProtoContext.Provider value={proto}>
               <div key={`${nav.stack.length}-${top}`} className={cn("absolute inset-0", enter)}>
-                {MEMBER_ROSTER_SCREENS.has(top) && !state.loggedIn ? <RosterLoginGate target={top} /> : <Component />}
+                {MEMBER_ROSTER_SCREENS.has(top) && !state.loggedIn ? <RosterLoginGate target={top} /> : <Component key={["2-1", "2-2", "2-3"].includes(top) ? `${state.account ?? "guest"}/${profileReady ?? "pending"}` : top} />}
               </div>
 
               {menuOpen && (

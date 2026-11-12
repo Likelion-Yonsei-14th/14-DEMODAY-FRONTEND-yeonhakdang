@@ -108,7 +108,7 @@ export function DrawerPanel({ onClose }: { onClose: () => void }) {
         active
         onPress={then(() => proto.requireLogin("9-1"))}
       />
-      <DrawerRow icon="icon-user-20" label="내 정보 수정" onPress={then(() => proto.go("2-1"))} />
+      <DrawerRow icon="icon-user-20" label="내 정보 수정" onPress={then(() => { proto.update({ afterInput: null }); proto.go("2-1"); })} />
       <DrawerRow
         icon="icon-user-20"
         label="다시 분석하기"

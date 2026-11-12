@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useRef, useState } from "react";
 
 import { TopBar } from "@/components/chrome/TopBar";
 import { Bottom, Screen, ScreenScroll } from "@/components/layout/Screen";
@@ -14,13 +14,13 @@ import { StepProgress } from "@/components/ui/StepProgress";
 import { TextField } from "@/components/ui/TextField";
 import { trackAnalysisStart } from "@/lib/analytics";
 import { cn } from "@/lib/cn";
-import { useProto, type ProtoState } from "@/lib/proto";
+import { useProto } from "@/lib/proto";
 import { birthError } from "@/lib/saju";
 
-export type InputValues = Pick<
-  ProtoState,
-  "name" | "birth" | "gender" | "calendar" | "leapMonth" | "time" | "unknownTime"
->;
+import { commitAnalysisInput, inputValues, type InputValues } from "@/lib/analysisInput";
+import { flushAnalysisProfile } from "@/lib/analysisProfile";
+import { ApiError, errorMessage, USE_BACKEND } from "@/lib/backend";
+export type { InputValues } from "@/lib/analysisInput";
 
 /** Half-hour slots for the 태어난 시간 picker. */
 const TIME_OPTIONS = Array.from({ length: 48 }, (_, i) => {
@@ -46,10 +46,33 @@ function formatBirth(raw: string): string {
  */
 export function InputForm({ initial }: { initial: InputValues }) {
   const proto = useProto();
-  const [local, setLocal] = useState(initial);
-  const v: InputValues = proto.active ? proto.state : local;
-  const set = (patch: Partial<InputValues>) =>
-    proto.active ? proto.update(patch) : setLocal((s) => ({ ...s, ...patch }));
+  const [local, setLocal] = useState<InputValues>(() => inputValues(proto.active ? proto.state : initial));
+  const [saving, setSaving] = useState(false);
+  const savingRef = useRef(false);
+  const [saveError, setSaveError] = useState("");
+  const [needsReload, setNeedsReload] = useState(false);
+  const v = local;
+  const set = (patch: Partial<InputValues>) => {
+    if (!savingRef.current) setLocal((s) => ({ ...s, ...patch }));
+  };
+  const submit = async () => {
+    if (savingRef.current || !complete) return;
+    savingRef.current = true;setSaving(true);setSaveError("");setNeedsReload(false);
+    try {
+      const state = proto.state;
+      const save = USE_BACKEND && state.loggedIn && state.account
+        ? (profile: Parameters<typeof flushAnalysisProfile>[0]) => flushAnalysisProfile(profile, true) : undefined;
+      const patch = await commitAnalysisInput(state, v, save);
+      const next = state.afterInput ?? "3-1";
+      if (!state.afterInput) trackAnalysisStart();
+      proto.update(patch);
+      proto.go(next);
+    } catch (error) {
+      setSaveError(errorMessage(error));
+      proto.toast(`저장하지 못했어요. ${errorMessage(error)}`);
+      setNeedsReload(error instanceof ApiError && ["PROFILE_CONFLICT", "PROFILE_ACCOUNT_CHANGED"].includes(error.code));
+    } finally { savingRef.current = false;setSaving(false); }
+  };
 
   // 양력·음력·윤달 all checked against the 만세력, so 음력 2월 30일 is caught too.
   const error = birthError(v);
@@ -65,7 +88,7 @@ export function InputForm({ initial }: { initial: InputValues }) {
 
   return (
     <Screen fit>
-      <TopBar title="내 정보 입력" />
+      <TopBar title={proto.state.analyzed ? "내 정보 수정" : "내 정보 입력"} onBack={() => { if (!savingRef.current) proto.back(); }} />
 
       {/* form (21:192 · 21:269 · 21:352) */}
       <ScreenScroll>
@@ -76,6 +99,10 @@ export function InputForm({ initial }: { initial: InputValues }) {
           )}
         >
           <StepProgress label="STEP 1 / 2 · 사주 정보" value={235 / 345} />
+          {saveError && <div role="alert" className="w-full whitespace-normal break-keep text-body-m-14 text-brand-primary">
+            <p>저장하지 못했어요. {saveError}</p>
+            {needsReload && <button type="button" onClick={() => window.location.reload()} className="mt-2 underline">최신 정보 다시 불러오기</button>}
+          </div>}
           <MascotTip>{tip}</MascotTip>
           <TextField
             label="이름"
@@ -141,14 +168,9 @@ export function InputForm({ initial }: { initial: InputValues }) {
       <Bottom from={740}>
         <BottomCta className="absolute left-0 top-[740px]">
           <Button
-            label={proto.state.afterInput ? "입력 완료 · 구매 계속하기" : "내 학과 분석하기"}
-            disabled={!complete}
-            onPress={() => {
-              const next = proto.state.afterInput ?? "3-1";
-              if (!proto.state.afterInput) trackAnalysisStart();
-              proto.update({ afterInput: null });
-              proto.go(next);
-            }}
+            label={saving ? "저장하고 있어요…" : proto.state.afterInput ? "입력 완료 · 구매 계속하기" : proto.state.analyzed ? "수정 내용 저장 · 다시 분석" : "내 학과 분석하기"}
+            disabled={!complete || saving || needsReload}
+            onPress={() => void submit()}
           />
         </BottomCta>
       </Bottom>
