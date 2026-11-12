@@ -2,6 +2,7 @@ import Image from "next/image";
 
 import { Icon } from "@/components/ui/Icon";
 import { Tap } from "@/components/ui/Tap";
+import { PRODUCTS, won } from "@/lib/catalog";
 import { cn } from "@/lib/cn";
 
 /** Figma: Banner/Product — 합격 궁합 (17:219) | 귀인 (17:229) | 부적 (17:239). */
@@ -35,7 +36,7 @@ export const PRODUCT_BANNERS: Array<{
     product: "charm",
     title: "합격 기운 배경화면 부적",
     sub: "내 오행 색·문양으로 그린 고화질 부적",
-    price: "990원",
+    price: won(PRODUCTS.charm.price),
   },
 ];
 

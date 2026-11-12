@@ -11,7 +11,7 @@ import { Button } from "@/components/ui/Button";
 import { InfoBox } from "@/components/ui/InfoBox";
 import { USE_BACKEND, errorMessage, getLibrary, isListedOrder, isPaid, type Order } from "@/lib/backend";
 import { BUSINESS } from "@/lib/business";
-import { PACKAGE_NAME } from "@/lib/catalog";
+import { PACKAGE_NAME, packageRefund } from "@/lib/catalog";
 import { cn } from "@/lib/cn";
 import { PRODUCTS, useProto, won } from "@/lib/proto";
 
@@ -125,7 +125,7 @@ export function PurchaseHistory() {
             ))}
             <div className="flex items-center justify-between gap-[8px] rounded-[12px] bg-brand-secondary-tint p-[12px]">
               <div className="min-w-0">
-                <p className="font-bold text-body-m-14 text-brand-secondary">부분 환불 가능 1,891원</p>
+                <p className="font-bold text-body-m-14 text-brand-secondary">부분 환불 가능 {won(packageRefund(["compat"]))}</p>
                 <p className="font-medium text-caption-11 text-text-secondary">10월 31일까지 · 귀인 + 부적</p>
               </div>
               <Button label="환불 신청" type="outline" size="M" className="h-[36px] w-auto shrink-0 rounded-[10px] px-[14px] [&>p]:text-caption-12" onPress={() => setRefundOpen(true)} />
@@ -133,7 +133,7 @@ export function PurchaseHistory() {
           </article>
 
           <article className="flex w-full flex-col gap-[8px] rounded-[16px] border border-line-default bg-surface-default p-[16px]">
-            <div className="flex justify-between font-bold text-body-l-16"><h2>부적 단건</h2><p>990원</p></div>
+            <div className="flex justify-between font-bold text-body-l-16"><h2>부적 단건</h2><p>{won(PRODUCTS.charm.price)}</p></div>
             <p className="text-caption-12 text-text-tertiary">2026.10.14 · 토스페이 · 주문번호 HS-20261014-0732</p>
             <p className="text-caption-12 text-text-secondary">결과를 열어봐서 단순 변심 환불은 어려워요. 결과가 안 보이거나 오류가 있다면 고객센터로 알려 주세요.</p>
           </article>

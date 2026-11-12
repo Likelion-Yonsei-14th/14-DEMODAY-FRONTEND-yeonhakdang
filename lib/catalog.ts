@@ -59,7 +59,7 @@ export const PRODUCTS: Record<
   charm: {
     name: "부적",
     single: "부적 단건",
-    price: 990,
+    price: 1000,
     glyph: "符",
     detail: "6-3",
     result: "8-3",
@@ -83,7 +83,7 @@ export function won(n: number): string {
 }
 
 /**
- * 3종 패키지 부분 환불 (환불규정): 3,790원 × (열지 않은 상품 단건가 합계 ÷ 5,790원),
+ * 3종 패키지 부분 환불 (환불규정): 3,790원 × (열지 않은 상품 단건가 합계 ÷ 5,800원),
  * 원 단위 미만 버림.
  */
 export function packageRefund(opened: ProductKind[]): number {
