@@ -42,32 +42,37 @@ export type Insights = {
 };
 
 export type Scoring = {
-  /** 성향 vs 보완; they add up to 1. */
-  tendencyWeight: number;
+  /** 성향 · 일간 궁합 · 보완; they add up to 1. */
+  presenceWeight: number;
+  dayMasterWeight: number;
   complementWeight: number;
-  /** Inside 성향: how much the major's element is present vs. its 일간 relation. */
-  presenceShare: number;
-  dayMasterShare: number;
-  /** 일간 관계 points. */
-  sameAsDayMaster: number;
-  fedByDayMaster: number;
-  /** A 보조 오행 counts this much of a 주 오행 in 성향. */
-  subElementWeight: number;
-  /** 보완 points for filling the weakest / second-weakest element. */
-  fillsWeakest: number;
-  fillsSecondWeakest: number;
-  /** Shown score = displayMin + (displayMax − displayMin) × total. */
+  /** A major's 오행 비중: 주오행 · 보조오행 · 분야 보정; they add up to 1. */
+  mainShare: number;
+  subShare: number;
+  fieldShare: number;
+  /** 0–1 points for each 일간 관계 (see DayMasterRelation in score.ts). */
+  dayMasterRelation: Record<"same" | "fed" | "controlled" | "feeder" | "controller", number>;
+  /** An element under this share of my 사주 (0.2 = 고르게 나뉜 몫) counts as 부족. */
+  deficitBelow: number;
+  /** Shown score = displayMin + (displayMax − displayMin) × (total − totalFloor) / (totalCeil − totalFloor), clamped. */
+  totalFloor: number;
+  totalCeil: number;
   displayMin: number;
   displayMax: number;
   /** TOP N, each from a different 중계열. */
   topCount: number;
 };
 
+/** data/field-elements.csv: "대계열/중계열" → 0–3 보정 per 오행. */
+export type FieldElements = Record<string, Record<Element, number>>;
+
 export type Content = {
   majors: MajorRow[];
   dayMasters: Record<string, DayMasterType>;
   insights: Insights;
   scoring: Scoring;
+  /** 분야(중계열)별 오행 보정. */
+  fields: FieldElements;
   /** data/sipsin-aptitude.json + data/sipsin-majors.json: 근거 문장만, 점수에는 안 쓴다. */
   sipsin: SipsinContent;
 };

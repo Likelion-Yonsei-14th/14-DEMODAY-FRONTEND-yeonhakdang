@@ -116,3 +116,53 @@ try {
 } catch {}
 if (previous !== json) writeFileSync(OUT, json);
 console.log(`✓ data/majors.csv → data/majors.json (학과군 ${majors.length}개)`);
+
+/* ── data/field-elements.csv → data/field-elements.json: 분야(중계열)별 오행 보정 ── */
+
+const FIELD_SRC = join(root, "data", "field-elements.csv");
+const FIELD_OUT = join(root, "data", "field-elements.json");
+const FIELD_COLUMNS = ["대계열", "중계열", ...ELEMENTS, "메모"];
+
+const [fieldHeader, ...fieldBody] = parseCsv(readFileSync(FIELD_SRC, "utf8").replace(/^﻿/, ""));
+const fieldErrors = [];
+if (fieldHeader.map((h) => h.trim()).join(",") !== FIELD_COLUMNS.join(",")) {
+  fieldErrors.push(`1번째 줄(제목 줄)은 정확히 "${FIELD_COLUMNS.join(",")}" 이어야 해요.`);
+}
+const fields = {};
+fieldBody.forEach((cells, i) => {
+  const line = i + 2;
+  if (cells.every((c) => c.trim() === "")) return;
+  if (cells.length !== FIELD_COLUMNS.length) {
+    fieldErrors.push(`${line}번째 줄: 칸이 ${FIELD_COLUMNS.length}개여야 하는데 ${cells.length}개예요.`);
+    return;
+  }
+  const r = Object.fromEntries(FIELD_COLUMNS.map((col, j) => [col, cells[j].trim()]));
+  const key = `${r.대계열}/${r.중계열}`;
+  if (fields[key]) fieldErrors.push(`${line}번째 줄: "${key}"가 다른 줄과 겹쳐요.`);
+  const boost = {};
+  for (const e of ELEMENTS) {
+    const n = Number(r[e]);
+    if (r[e] === "" || !Number.isInteger(n) || n < 0 || n > 3) {
+      fieldErrors.push(`${line}번째 줄 (${key}): ${e} 칸은 0~3 사이 정수여야 해요. 지금: "${r[e]}"`);
+    }
+    boost[e] = n;
+  }
+  fields[key] = boost;
+});
+for (const m of majors) {
+  const key = `${m.대계열}/${m.중계열}`;
+  if (!fields[key]) fieldErrors.push(`"${key}" 분야가 data/field-elements.csv에 없어요 (학과 ${m.id}). 한 줄 추가해 주세요.`);
+}
+if (fieldErrors.length > 0) {
+  console.error(`\n✖ data/field-elements.csv에 고칠 곳이 ${fieldErrors.length}개 있어요:\n`);
+  for (const e of [...new Set(fieldErrors)]) console.error(`  - ${e}`);
+  console.error("");
+  process.exit(1);
+}
+const fieldJson = `${JSON.stringify(fields, null, 2)}\n`;
+let previousField = "";
+try {
+  previousField = readFileSync(FIELD_OUT, "utf8");
+} catch {}
+if (previousField !== fieldJson) writeFileSync(FIELD_OUT, fieldJson);
+console.log(`✓ data/field-elements.csv → data/field-elements.json (분야 ${Object.keys(fields).length}개)`);

@@ -20,6 +20,7 @@ const CONTENT: Content = {
   dayMasters: readJson("day-masters.json"),
   insights: readJson("insights.json"),
   scoring: readJson("scoring.json"),
+  fields: readJson("field-elements.json"),
   sipsin: { aptitude: readJson("sipsin-aptitude.json"), majors: readJson("sipsin-majors.json") },
 };
 
@@ -80,27 +81,27 @@ test("같은 입력이면 항상 같은 결과", () => {
   assert.deepEqual(a, b);
 });
 
-test("TOP 3는 서로 다른 중계열, 점수는 60~99", () => {
+test("TOP 3는 서로 다른 중계열, 점수는 30~98", () => {
   const r = analyze(input(), CONTENT);
   assert.ok(r.ok);
   const { top } = r.analysis;
   assert.equal(top.length, 3);
   assert.equal(new Set(top.map((t) => t.major.중계열)).size, 3);
-  for (const t of top) assert.ok(t.display >= 60 && t.display <= 99, `${t.display}`);
+  for (const t of top) assert.ok(t.display >= 30 && t.display <= 98, `${t.display}`);
   assert.ok(top[0].total >= top[1].total && top[1].total >= top[2].total);
   assert.equal(r.analysis.reasons.length, 5);
 });
 
-test("점수 규칙: 일간과 같은 오행, 가장 약한 오행을 채우면 가산", () => {
+test("점수 규칙: 일간이 생해 주는 기운 · 강한 기운 · 부족한 기운이 점수를 올린다", () => {
   const s = CONTENT.scoring;
   const profile = { counts: { 목: 4, 화: 0, 토: 2, 금: 1, 수: 1 }, dayMaster: "목" as const, seed: "무자을묘갑인신미" };
   const row = (주오행: MajorRow["주오행"], 보조오행: MajorRow["보조오행"] = null): MajorRow => ({
     id: "T", 대계열: "", 중계열: "", 학과군: "", 대표학과: ["테스트학과"], 주오행, 보조오행, 근거: "",
   });
-  // 목: 4/4 present + same as 일간 → tendency 1, no complement → 0.7
-  assert.equal(scoreMajor(row("목"), profile, s).total, 0.7);
-  // 화: absent but fed by 갑목 (0.5 × 0.5) and fills the weakest → 0.7×0.25 + 0.3×1
-  assert.equal(scoreMajor(row("화"), profile, s).total, 0.7 * 0.25 + 0.3);
+  // 목 only: 4/4 present, same as 일간(0.85), not lacking.
+  assert.ok(Math.abs(scoreMajor(row("목"), profile, s).total - (s.presenceWeight * 1 + s.dayMasterWeight * 0.85)) < 1e-9);
+  // 화 only: absent, fed by 갑목(1.0), I have none → full 보완.
+  assert.ok(Math.abs(scoreMajor(row("화"), profile, s).total - (s.dayMasterWeight * 1 + s.complementWeight * 1)) < 1e-9);
   // Ties: a fixed order per 사주 — the same 사주 always gives the same order…
   const tied = ["A", "B", "C", "D", "E", "F"].map((id) => ({ ...row("금"), id }));
   const order = (seed: string) => rankMajors(tied, { ...profile, seed }, s).map((r) => r.major.id).join("");

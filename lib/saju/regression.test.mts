@@ -1,8 +1,9 @@
 /**
- * `npm test` — 학과 TOP 3 회귀: 대운 · 발음오행 · 십신을 더하기 전 결과
- * (fixtures/top3-baseline.json, fixtures/gen-baseline.mts로 만듦)와 2,484가지
- * 입력 모두 학과 · 점수까지 같아야 한다. 이미 결과를 공유한 사용자의 순위가
- * 바뀌면 안 된다.
+ * `npm test` — 학과 TOP 3 회귀: 2,484가지 입력의 학과 · 점수가
+ * fixtures/top3-baseline.json(fixtures/gen-baseline.mts로 만듦)과 같아야 한다.
+ * 대운 · 발음오행 · 십신 같은 근거용 계산이 순위를 바꾸지 못하게 지킨다.
+ * 2026-11: 점수 규칙을 바꾸며(오행 비중 · 일간 궁합 5단계 · 분야 보정) 기준을 새로 만들었다.
+ * 점수 규칙을 일부러 바꿀 때만 gen-baseline.mts로 다시 만든다.
  */
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
@@ -18,6 +19,7 @@ const CONTENT: Content = {
   dayMasters: readJson("day-masters.json"),
   insights: readJson("insights.json"),
   scoring: readJson("scoring.json"),
+  fields: readJson("field-elements.json"),
   sipsin: { aptitude: readJson("sipsin-aptitude.json"), majors: readJson("sipsin-majors.json") },
 };
 const BASELINE: Record<string, Array<[string, number]>> = JSON.parse(

@@ -46,10 +46,14 @@ export type Analysis = {
 export type AnalysisResult = { ok: true; analysis: Analysis } | { ok: false; error: string };
 
 const RELATION_TEXT = {
-  same: "내 일간과 같은 기운",
-  fed: "내 일간이 생(生)해 주는 기운 — 재능을 펼치는 방향",
-  other: "내 일간과 직접 이어지지는 않는 기운",
+  same: "내 일간과 같은 기운(비겁)",
+  fed: "내 일간이 생(生)해 주는 기운(식상) — 재능을 펼치는 방향",
+  controlled: "내 일간이 다스리는 기운(재성) — 성과를 만드는 방향",
+  feeder: "내 일간을 생해 주는 기운(인성) — 배우고 도움받는 방향",
+  controller: "내 일간을 다스리는 기운(관성) — 규칙과 긴장이 따르는 방향",
 } as const;
+
+const ROLE_TEXT = { main: "주 오행", sub: "보조 오행", field: "분야 보정" } as const;
 
 /** 은/는 after the element's 한글 name. */
 const TOPIC: Record<Element, string> = { 목: "은", 화: "는", 토: "는", 금: "은", 수: "는" };
@@ -77,7 +81,7 @@ function reasonsFor(
 ): ReasonStep[] {
   const s = content.scoring;
   const strengthOrder = byStrength(counts);
-  const weaknessOrder = byWeakness(counts);
+  const weakest = ELEMENTS.filter((e) => counts[e] === Math.min(...ELEMENTS.map((x) => counts[x])));
   const dm = saju.dayMaster;
 
   const step1: ReasonStep = {
@@ -102,26 +106,38 @@ function reasonsFor(
     lines: [
       ELEMENTS.map((e) => `${e} ${counts[e]}`).join(" · "),
       `가장 강한 기운: ${elementLabel(strengthOrder[0])} ${counts[strengthOrder[0]]}개`,
-      `가장 약한 기운: ${elementLabel(weaknessOrder[0])} ${counts[weaknessOrder[0]]}개, 다음으로 약한 기운: ${elementLabel(weaknessOrder[1])} ${counts[weaknessOrder[1]]}개`,
+      weakest.length > 1
+        ? `가장 약한 기운: ${weakest.map(elementLabel).join(" · ")} 각 ${counts[weakest[0]]}개 (똑같이 부족해요)`
+        : `가장 약한 기운: ${elementLabel(weakest[0])} ${counts[weakest[0]]}개`,
     ],
   };
 
-  const tendencyLines = pick.tendencyParts.map((t, i) => {
-    const role = i === 0 ? "주 오행" : "보조 오행";
-    return `${role} ${elementLabel(t.element)}: 내 사주에 ${t.count}개(가장 많은 기운 ${t.maxCount}개 대비), ${RELATION_TEXT[t.relation]} → ${percent(t.points)}`;
-  });
+  const parts = pick.tendencyParts;
+  const shareText = (t: (typeof parts)[number]) =>
+    `${elementLabel(t.element)} ${Math.round(t.share * 100)}%(${t.roles.map((r) => ROLE_TEXT[r]).join("+")})`;
   const step3: ReasonStep = {
     title: "3. 점수 계산",
     lines: [
-      `성향 ${Math.round(s.tendencyWeight * 100)}% — 내 기운을 따라가는가`,
-      ...tendencyLines.map((l) => `· ${l}`),
-      `보완 ${Math.round(s.complementWeight * 100)}% — 부족한 기운을 채우는가`,
-      pick.filled
-        ? `· ${elementLabel(pick.filled.element)}${TOPIC[pick.filled.element]} 내 사주에서 ${pick.filled.rank === 1 ? "가장" : "두 번째로"} 약한 기운이라 채워 줘요 → ${percent(pick.complement)}`
-        : "· 내 사주에서 약한 기운을 직접 채우지는 않아요 → 0점",
+      `이 학과의 기운: ${parts.map(shareText).join(" · ")}`,
+      `성향 ${Math.round(s.presenceWeight * 100)}% — 내 강한 기운을 따라가는가 → ${percent(pick.tendency)}`,
+      ...parts.map(
+        (t) =>
+          `· ${elementLabel(t.element)}: 내 사주의 ${Math.round(t.ratio * 100)}%(${t.count}개, 가장 많은 기운 ${t.maxCount}개 대비 ${percent(t.presence)})`,
+      ),
+      `일간 궁합 ${Math.round(s.dayMasterWeight * 100)}% — 내 일간(${dm.hangul}${dm.element})에 어울리는가 → ${percent(pick.dayMaster)}`,
+      ...parts.map((t) => `· ${elementLabel(t.element)}: ${RELATION_TEXT[t.relation]} → ${percent(t.dayPoints)}`),
+      `보완 ${Math.round(s.complementWeight * 100)}% — 부족한 기운을 채우는가 → ${percent(pick.complement)}`,
+      ...(pick.filled.length > 0
+        ? pick.filled.map(
+            (f) =>
+              `· ${elementLabel(f.element)}${TOPIC[f.element]} 내 사주에 ${counts[f.element] === 0 ? "없어서" : `${Math.round((counts[f.element] / charCount) * 100)}%뿐이라`}(고르게 나누면 ${Math.round(s.deficitBelow * 100)}%) 채워 줘요 → ${percent(f.deficit)}`,
+          )
+        : [`· 이 학과의 기운은 내 사주에 이미 ${Math.round(s.deficitBelow * 100)}% 이상 있어 따로 채우지는 않아요 → 0점`]),
       `종합 ${percent(pick.total)} → 적합도 ${pick.display}점 (${s.displayMin}~${s.displayMax}점으로 환산)`,
       ...(ties > 0
-        ? [`같은 점수의 학과군이 ${ties}개 더 있어요. 이럴 땐 내 사주 글자로 순서를 정해, 같은 사주면 언제나 같은 학과가 나와요.`]
+        ? [
+            `같은 점수의 학과군이 ${ties}개 더 있어요. 이럴 땐 부족한 기운을 더 채우는 학과, 주 오행이 일간과 더 잘 맞는 학과 순으로 정하고, 그래도 같으면 내 사주 글자로 순서를 정해 같은 사주면 언제나 같은 학과가 나와요.`,
+          ]
         : []),
     ],
   };
@@ -157,7 +173,7 @@ export function analyze(input: BirthInput, content: Content): AnalysisResult {
   if (!dayMaster) return { ok: false, error: `일간 유형 문구가 없어요: ${saju.dayMaster.hangul}` };
 
   const seed = saju.pillars.map((p) => p.hangul).join("");
-  const ranked = rankMajors(content.majors, { counts, dayMaster: saju.dayMaster.element, seed }, content.scoring);
+  const ranked = rankMajors(content.majors, { counts, dayMaster: saju.dayMaster.element, seed }, content.scoring, content.fields);
   const top = pickTop(ranked, content.scoring.topCount);
   if (top.length === 0) return { ok: false, error: "학과 표가 비어 있어요" };
 

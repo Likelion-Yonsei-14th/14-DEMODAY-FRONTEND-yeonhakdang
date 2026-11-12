@@ -1,14 +1,21 @@
 {
-  "tendencyWeight": 0.7,
-  "complementWeight": 0.3,
-  "presenceShare": 0.5,
-  "dayMasterShare": 0.5,
-  "sameAsDayMaster": 1,
-  "fedByDayMaster": 0.5,
-  "subElementWeight": 0.5,
-  "fillsWeakest": 1,
-  "fillsSecondWeakest": 0.5,
-  "displayMin": 60,
-  "displayMax": 99,
+  "presenceWeight": 0.45,
+  "dayMasterWeight": 0.35,
+  "complementWeight": 0.2,
+  "mainShare": 0.55,
+  "subShare": 0.3,
+  "fieldShare": 0.15,
+  "dayMasterRelation": {
+    "fed": 1,
+    "same": 0.85,
+    "feeder": 0.7,
+    "controlled": 0.6,
+    "controller": 0.4
+  },
+  "deficitBelow": 0.2,
+  "totalFloor": 0.3,
+  "totalCeil": 0.8,
+  "displayMin": 30,
+  "displayMax": 98,
   "topCount": 3
 }

@@ -3,6 +3,7 @@
  * /data. Tests import the rule modules directly with their own content.
  */
 import dayMasters from "@/data/day-masters.json";
+import fields from "@/data/field-elements.json";
 import insights from "@/data/insights.json";
 import majors from "@/data/majors.json";
 import paid from "@/data/paid.json";
@@ -21,6 +22,7 @@ export const CONTENT = {
   dayMasters,
   insights,
   scoring,
+  fields,
   sipsin: { aptitude: sipsinAptitude, majors: sipsinMajors },
 } as Content;
 

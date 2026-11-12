@@ -29,6 +29,7 @@ const CONTENT: Content = {
   dayMasters: readJson("day-masters.json"),
   insights: readJson("insights.json"),
   scoring: readJson("scoring.json"),
+  fields: readJson("field-elements.json"),
   sipsin: { aptitude: readJson("sipsin-aptitude.json"), majors: readJson("sipsin-majors.json") },
 };
 
