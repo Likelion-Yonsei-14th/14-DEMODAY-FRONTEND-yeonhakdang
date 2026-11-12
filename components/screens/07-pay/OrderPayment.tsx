@@ -15,7 +15,7 @@ import { CheckboxRow } from "@/components/ui/CheckboxRow";
 import { HintText } from "@/components/ui/HintText";
 import { Icon } from "@/components/ui/Icon";
 import { Tap } from "@/components/ui/Tap";
-import { ApiError, USE_BACKEND, errorMessage } from "@/lib/backend";
+import { ApiError, PAY_METHODS, USE_BACKEND, errorMessage, type PayMethod as PayMethodKind } from "@/lib/backend";
 import { openPolicy } from "@/lib/business";
 import { SINGLES_TOTAL } from "@/lib/catalog";
 import { checkout } from "@/lib/checkout";
@@ -32,6 +32,12 @@ import {
 } from "@/lib/proto";
 
 /** Figma: 결제 수단 rows (31:1521 · 31:1528). */
+const PAY_METHOD_ROWS: Record<PayMethodKind, { brand: string; brandClass: string; brandTextClass: string; title: string; caption: string }> = {
+  card: { brand: "CARD", brandClass: "bg-black", brandTextClass: "text-text-inverse", title: "신용·체크카드", caption: "페이앱 결제창에서 결제" },
+  kakao: { brand: "pay", brandClass: "bg-system-kakao", brandTextClass: "text-system-kakao-text", title: "카카오페이", caption: "카카오톡에서 바로 결제" },
+  toss: { brand: "toss", brandClass: "bg-brand-secondary", brandTextClass: "text-text-inverse", title: "토스페이", caption: "토스 앱으로 간편 결제" },
+};
+
 function PayMethod({
   brand,
   brandClass,
@@ -128,7 +134,12 @@ export function OrderPayment() {
   const price = won(orderPrice(state));
   const isPackage = state.plan === "package";
   const upsell = PACKAGE_PRICE - PRODUCTS[state.product].price;
-  const methodName = state.payMethod === "card" ? "신용·체크카드" : state.payMethod === "kakao" ? "카카오페이" : "토스페이";
+  // A method saved earlier may not be one the server accepts now.
+  const payMethod = PAY_METHODS.includes(state.payMethod) ? state.payMethod : PAY_METHODS[0];
+  const methodName = PAY_METHOD_ROWS[payMethod].title;
+  useEffect(() => {
+    if (payMethod !== state.payMethod) update({ payMethod });
+  }, [payMethod, state.payMethod, update]);
 
   const { replace, go, setDemo } = proto;
   const payFail = proto.demo.payFail;
@@ -253,33 +264,14 @@ export function OrderPayment() {
         )}
         <p className="relative shrink-0 whitespace-nowrap text-h3-18">결제 수단</p>
 
-        <PayMethod
-          brand="CARD"
-          brandClass="bg-black"
-          brandTextClass="text-text-inverse"
-          title="신용·체크카드"
-          caption="페이앱 결제창에서 결제"
-          selected={state.payMethod === "card"}
-          onPress={() => update({ payMethod: "card" })}
-        />
-        <PayMethod
-          brand="pay"
-          brandClass="bg-system-kakao"
-          brandTextClass="text-system-kakao-text"
-          title="카카오페이"
-          caption="카카오톡에서 바로 결제"
-          selected={state.payMethod === "kakao"}
-          onPress={() => update({ payMethod: "kakao" })}
-        />
-        <PayMethod
-          brand="toss"
-          brandClass="bg-brand-secondary"
-          brandTextClass="text-text-inverse"
-          title="토스페이"
-          caption="토스 앱으로 간편 결제"
-          selected={state.payMethod === "toss"}
-          onPress={() => update({ payMethod: "toss" })}
-        />
+        {PAY_METHODS.map((method) => (
+          <PayMethod
+            key={method}
+            {...PAY_METHOD_ROWS[method]}
+            selected={payMethod === method}
+            onPress={() => update({ payMethod: method })}
+          />
+        ))}
 
         <CheckboxRow
           label="[필수] 주문 내용 확인 및 결제 동의"

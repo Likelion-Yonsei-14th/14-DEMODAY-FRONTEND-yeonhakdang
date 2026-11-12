@@ -22,6 +22,7 @@ import {
   priceMismatches,
   prepareOrder,
   payAppPaymentUrl,
+  payMethods,
   resetCsrf,
   resultSummary,
   reusableResult,
@@ -220,4 +221,17 @@ test("retrying a pending or reviewed payment never creates a new checkout", () =
   assert.equal(checkoutAction({ status: "PARTIALLY_REFUNDED" }), "paid");
   assert.equal(checkoutAction({ status: "READY" }), "prepare");
   assert.equal(checkoutAction({ status: "CANCELLED" }), "new");
+});
+
+test("only the methods the server accepts are offered", () => {
+  assert.deepEqual(payMethods(false, "CARD"), ["card", "kakao", "toss"]);
+  assert.deepEqual(payMethods(true, undefined), ["card"]);
+  assert.deepEqual(payMethods(true, ""), ["card"]);
+  assert.deepEqual(payMethods(true, "CARD, kakao,TOSS"), ["card", "kakao", "toss"]);
+  assert.deepEqual(payMethods(true, "BOGUS"), ["card"]);
+});
+
+test("newer server codes read as sentences", () => {
+  assert.notEqual(errorMessage(new ApiError(409, "ALREADY_OWNED")), errorMessage(new ApiError(500, "INTERNAL_ERROR")));
+  assert.notEqual(errorMessage(new ApiError(409, "PAYMENT_STATE_CHANGED")), errorMessage(new ApiError(500, "INTERNAL_ERROR")));
 });

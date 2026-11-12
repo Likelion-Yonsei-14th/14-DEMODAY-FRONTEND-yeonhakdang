@@ -11,7 +11,8 @@ const nextConfig: NextConfig = {
   async rewrites() {
     if (!backend) return [];
     return [
-      { source: "/api/:path*", destination: `${backend}/api/:path*` },
+      // Everything but /api/admin: operator tools use the backend's own address.
+      { source: "/api/:path((?!admin(?:/|$)).*)", destination: `${backend}/api/:path` },
       // 카카오 login: the start, and the callback 카카오 redirects back to.
       { source: "/oauth2/:path*", destination: `${backend}/oauth2/:path*` },
       { source: "/login/oauth2/:path*", destination: `${backend}/login/oauth2/:path*` },

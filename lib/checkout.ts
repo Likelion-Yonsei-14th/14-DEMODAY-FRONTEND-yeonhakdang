@@ -73,7 +73,18 @@ export async function syncLocker(update: Update, account?: string | null, select
 
 /** Server confirmation, then the locker, so 7-4 shows what was really bought. */
 export async function confirmOrder(orderId: string, update: Update): Promise<Order> {
-  const order = await completeOrder(orderId);
+  // PayApp's callback can apply the same payment while this call is in flight: the
+  // server then answers 409 PAYMENT_STATE_CHANGED. Asking again reads the new state.
+  let order: Order;
+  for (let attempt = 0; ; attempt++) {
+    try {
+      order = await completeOrder(orderId);
+      break;
+    } catch (error) {
+      if (!(error instanceof ApiError && error.code === "PAYMENT_STATE_CHANGED") || attempt === 2) throw error;
+      await new Promise((r) => setTimeout(r, 500));
+    }
+  }
   const result = confirmation(order);
   // Paid, or dead (cancelled orders cannot be paid again): the next checkout is a new order.
   if (result !== "pending") update({ checkout: null });

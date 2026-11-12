@@ -1,76 +1,106 @@
-# 백엔드 담당자께 — 프론트·백엔드 통신 점검 결과
+# 백엔드 담당자께: 프론트·백엔드 통신 점검 결과 (2차)
 
-> 작성 2026-11-05 · 기준: 프론트 `main` `96f211d`, 백엔드 `main` `7e9d30f`
-> 프론트 연동 방식 전체는 [BACKEND_INTEGRATION.md](BACKEND_INTEGRATION.md)에 있습니다. 이 문서는 **맞춰야 할 것**만 모았습니다.
+> 작성 2026-11-12 · 기준: 프론트 `main` `e3e73f5`, 백엔드 `main` `e2dd1b6`
+> 프론트 연동 방식 전체는 [BACKEND_INTEGRATION.md](BACKEND_INTEGRATION.md)에 있습니다. 이 문서는 **백엔드에서 맞춰야 할 것**만 모았습니다.
+> 결정되거나 처리되면 체크하고, 아래 "답변"에 한 줄 남겨 주세요.
 
-기본 통신(API 경로·CSRF·쿠키 세션·`Idempotency-Key`·오류 코드·로그인 복귀 `/#9-1`·`/#2-4`·상품 가격)은 명세와 맞습니다.
-아래 항목을 확인 부탁드립니다. 결정이 나면 체크하고 아래 "답변"에 한 줄 남겨 주세요.
+API 경로·메서드 24개와 요청·응답 필드는 프론트와 맞습니다. 확인한 항목은 맨 아래에 있습니다.
+1차 점검(11/5)의 페이앱 전환, 부적 1,000원 가격, 열람 기록 문제는 해결된 것을 확인했습니다. 남은 것은 아래 4건입니다.
 
-## 🔴 1. 결제사가 서로 다릅니다 (가장 시급)
+## 🔴 1. 프록시 뒤에서 카카오 로그인 콜백이 실패합니다 (배포 설정)
 
-프론트는 2026-11-04에 **페이앱** 기준으로 바뀌었는데, 백엔드 `main`은 아직 **포트원** 기준입니다.
-지금은 `SALES_ENABLED=false`라 `503 PAID_CONTENT_NOT_READY`에 가려져 있지만, 판매를 켜면 결제가 전부 실패합니다.
+브라우저는 백엔드를 직접 부르지 않습니다. Next가 `/api/*`, `/oauth2/*`, `/login/oauth2/*`를 `BACKEND_ORIGIN`으로 프록시합니다.
+그래서 카카오 콜백은 `https://yeonhakdang.vercel.app/login/oauth2/code/kakao`로 들어와 백엔드로 전달됩니다.
 
-| | 프론트가 기대하는 것 | 백엔드 `main` 현재 |
+- 프록시는 `Host`를 백엔드 주소로 바꾸고, 원래 주소는 `X-Forwarded-Host`(Vercel은 `X-Forwarded-Proto`도)에 담아 보냅니다.
+- 백엔드 `application.yml`의 `server.forward-headers-strategy`는 `${FORWARD_HEADERS_STRATEGY:none}`이라 이 헤더를 무시합니다.
+- Spring Security는 콜백 요청 URL로 redirect_uri를 다시 계산해서, 로그인 시작 때 저장한 값(`KAKAO_REDIRECT_URI`, 프론트 도메인)과 비교합니다.
+  값이 다르면 `invalid_redirect_uri_parameter`로 실패하고, 사용자는 `/#2-4`(로그인 실패)로 돌아갑니다.
+
+- [ ] 개발·운영 서버 환경변수에 `FORWARD_HEADERS_STRATEGY=framework` 추가
+  - 호스팅 앞단 프록시가 `X-Forwarded-*`를 덮어쓰는지도 확인해 주세요. 원래 호스트가 `yeonhakdang.vercel.app`으로 남아야 합니다.
+- [ ] `docs/DEPLOYMENT.md` 56행 수정: `KAKAO_REDIRECT_URI=https://<실제-API-호스트>/...`가 아니라 **프론트 도메인**이어야 합니다.
+  `docs/PAYAPP_DEPLOYMENT.md` 20행과 같은 값입니다. 카카오 콘솔의 Redirect URI도 같은 값으로 등록합니다.
+  - 운영: `https://yeonhakdang.vercel.app/login/oauth2/code/kakao`
+  - 로컬: `http://localhost:3000/login/oauth2/code/kakao`
+- [ ] `docs/DEPLOYMENT.md`의 `COOKIE_SAME_SITE=None` 권장 삭제. 프록시 구조에서는 쿠키가 프론트 도메인의 first-party 쿠키라 `lax`면 충분합니다.
+
+확인 방법: 배포 후 `https://yeonhakdang.vercel.app`에서 카카오 로그인을 했을 때 `/#9-1`(또는 첫 로그인이면 약관 화면)로 돌아오면 정상입니다.
+
+## 🟠 2. 패키지 부분 환불 금액이 화면 안내와 다릅니다
+
+V5 마이그레이션에서 `product.price`만 1,000원으로 바뀌었고, `RefundPolicy.java`는 그대로입니다.
+
+```java
+// RefundPolicy.java:8, 12
+PRICES = Map.of("compat",2900,"benefactor",1900,"charm",990);   // ← 990
+return (int)(3790L*...sum()/5790);                              // ← 5790
+```
+
+프론트 환불규정 화면(`lib/catalog.ts`의 `packageRefund`)은 1,000원, 합계 5,800원 기준입니다. 환불 신청 6가지 조합 전부 금액이 다릅니다.
+
+| 열지 않은 상품 | 화면 안내 (÷5,800) | 실제 환불 (÷5,790) |
 |---|---|---|
-| `POST /orders/{id}/prepare` 요청 | `{ method, phone }` | `{ method }` (`PrepareInput`) |
-| `/prepare` 응답 | `{ provider: "PAYAPP", payUrl: "https://…payapp.kr/…" }` | 포트원 SDK 객체 (`storeId`, `channelKey`, …) |
-| 결제 후 복귀 | 페이앱 → 백엔드 반환 경로 → 프론트 `/?checkoutOrder=주문ID` | 포트원 `redirectUrl`로 바로 복귀 |
-| 결제 통보 | 페이앱 피드백 | `/api/webhooks/portone`만 존재 |
-| 오류 코드 | `PAYMENT_PHONE_REQUIRED`, `PAYAPP_NOT_CONFIGURED`, `PAYAPP_MINIMUM_AMOUNT`, `PAYAPP_UNAVAILABLE`, `PAYAPP_REQUEST_REJECTED`, `PAYMENT_REQUEST_UNKNOWN` | 없음 |
-| 명세 문서 | 백엔드 `docs/PAYAPP.md` | 리포에 없음 (원격 브랜치도 `main`뿐) |
+| 궁합 | 1,895원 | 1,898원 |
+| 귀인 | 1,241원 | 1,243원 |
+| 궁합 + 귀인 | 3,136원 | 3,141원 |
+| 부적 | 653원 | 648원 |
+| 궁합 + 부적 | 2,548원 | 2,546원 |
+| 귀인 + 부적 | 1,895원 | 1,891원 |
 
-프론트 쪽 구현: `lib/backend.ts`의 `prepareOrder`, `payAppPaymentUrl`, `lib/checkout.ts`의 `checkout`.
-
-- [ ] 페이앱 작업이 로컬에만 있고 아직 push 전인가요? → push 부탁드립니다.
-- [ ] 아니면 포트원으로 유지하나요? → 알려주시면 프론트를 포트원 SDK 방식으로 되돌리겠습니다.
-- [ ] **부적 단품 990원 → 1,000원 확정** (페이앱 최소 결제금액 1,000원, 미만이면 오류 50054). 서버는 DB `product.price`로 청구하므로 백엔드 변경 없이는 계속 결제 불가입니다.
-  - 마이그레이션 추가 (예: `V1_3__charm_price_1000.sql`): `UPDATE product SET price = 1000 WHERE code = 'charm';`
-  - `RefundPolicy.java`: `PRICES`의 `charm` 990 → 1000, 부분 환불 분모 `5790` → `5800` (3종 패키지 3,790원은 그대로).
-  - 예: 귀인 + 부적 미열람 시 ⌊3790 × 2900 / 5800⌋ = 1,895원 (기존 1,891원). 프론트 `packageRefund`는 이미 5,800 기준이라, 백엔드 반영 전까지 화면 환불액과 실제 환불액이 몇 원 어긋납니다.
-  - 기존 990원 주문은 저장된 `amount` 그대로 둡니다 (프론트 구매 내역은 서버 `amount`를 표시).
-  - 배포 순서: 백엔드 마이그레이션과 동시 또는 직후에 프론트 배포.
-
-## 🔴 2. 열람 기록이 남지 않아 단순 변심 환불이 항상 통과됩니다 (정책 결정)
-
-- 관리자가 콘텐츠를 등록하지 않으면 `POST /orders/{id}/products/{kind}/open`은 항상 `409 CONTENT_PENDING`이고 `first_viewed_at`을 남기지 않습니다.
-- 프론트는 유료 결과 화면을 직접 그리므로, 사용자는 결과를 다 본 뒤에도 서버 기준 "미열람" → `CHANGE_OF_MIND` 환불이 통과됩니다.
-- 부수 효과로 결과를 열 때마다 "결과를 준비하고 있어요" 토스트가 뜹니다 (`lib/useOpenRecord.ts`).
-
-- [ ] (가) 콘텐츠 없이도 열람을 기록하는 방법 추가 (예: 프론트 렌더 결과용 `content_ready=false` 허용 옵션, 또는 별도 `POST …/viewed`) — **프론트 권장**
-- [ ] (나) 콘텐츠 등록 전에는 프론트가 결과를 가림
+- [ ] `PRICES`의 `charm`을 `1000`으로, 분모를 `5800`으로 수정 (가능하면 `PRICES` 합계에서 계산)
+- [ ] `RefundPolicyTest` 기대값 갱신
+- [ ] 결정 필요: 부적 990원 시절에 산 패키지 주문의 부분 환불에 새 공식을 적용할지 정해 주세요.
+  패키지 금액(3,790원)은 같아서 차이는 몇 원이지만, 환불규정 문구와 맞아야 합니다.
 
 ## 🟡 3. 응답에 내부 필드가 섞여 나옵니다
 
-`POST /api/orders`, `GET /api/orders/{id}`가 `select *` 행 전체를 돌려줘서 `member_id`, `result_id`, `idempotency_key`,
-`request_fingerprint`, `consent_*` 등이 프론트로 옵니다 (`OrderService.create` → `db.order`, `Store.owned`).
-프론트가 쓰는 필드는 `id, product_code, amount, currency, status, payment_id, created_at, paid_at` 그리고 복원용 `universities, relation`입니다.
+| API | 원인 | 노출되는 필드 |
+|---|---|---|
+| `GET /api/orders/{id}/refunds` | `RefundService.get` → `select *` | `reviewed_by`(처리한 관리자 계정 UUID), `cancellation_id`, `baseline_cancelled` |
+| `POST /api/orders`, `GET /api/orders/{id}` | `db.order` / `db.owned` → `select *` | `member_id`, `result_id`, `idempotency_key`, `request_fingerprint`, `consent_*`, `sync_revision` |
 
-- [ ] 주문 응답 필드 추리기
+프론트가 쓰는 필드는 아래와 같습니다.
+- 환불: `id, order_id, reason, status, amount, created_at, reviewed_at`
+- 주문: `id, product_code, amount, currency, status, payment_id, created_at, paid_at`
 
-## 🟡 4. 프록시 구조라는 점 공유
+- [ ] 두 응답의 필드를 위 목록으로 줄이기 (특히 관리자 UUID)
 
-프론트는 브라우저가 백엔드를 직접 부르지 않고 Next가 `/api/*`, `/oauth2/*`, `/login/oauth2/*`를 `BACKEND_ORIGIN`으로 프록시합니다
-(`next.config.ts`). 그래서 백엔드 `FRONTEND_HANDOFF.md`의 CORS 직접 호출 전제와 설정이 다릅니다.
+## 🟡 4. 결제 수단: 프론트는 `PAYAPP_METHODS`와 같은 값을 써야 합니다
 
-- [ ] `KAKAO_REDIRECT_URI` = 프론트 도메인 (`https://yeonhakdang.vercel.app/login/oauth2/code/kakao`, 로컬 `http://localhost:3000/login/oauth2/code/kakao`), 카카오 콘솔도 동일
-- [ ] `FRONTEND_ORIGIN` = `https://yeonhakdang.vercel.app` (로컬 `http://localhost:3000`)
-- [ ] 프록시 뒤 리다이렉트 주소가 백엔드 도메인으로 만들어지지 않는지 확인 (필요 시 `server.forward-headers-strategy=framework`)
-- [ ] 개발 서버 HTTPS 주소 공유 → 프론트 `BACKEND_ORIGIN`에 넣겠습니다
-- 참고: `/api/*` 전체 프록시라 `/api/admin/*`·웹훅도 프론트 도메인으로 닿습니다. 프론트에서 제외할 예정이니 관리자 도구는 백엔드 주소로 직접 쓰시면 됩니다.
+예전에는 프론트가 카드·카카오페이·토스페이를 모두 보여줬습니다. 백엔드 기본값 `PAYAPP_METHODS=CARD`에서는 나머지 둘이 주문과 스냅샷을 만든 **뒤에**
+`503 CHANNEL_NOT_CONFIGURED`로 실패해서, 쓰이지 않는 `CREATED` 주문이 남았습니다.
 
-## 🟢 5. 프론트가 아직 안 쓰는 API (프론트 작업 예정, 의견 있으면 알려주세요)
+프론트를 고쳐서 이제 `NEXT_PUBLIC_PAY_METHODS`(기본 `CARD`)에 있는 수단만 보여줍니다.
 
-| API | 프론트 계획 |
+- [ ] `PAYAPP_METHODS`를 바꿀 때는 알려 주세요. 프론트 Vercel 환경변수 `NEXT_PUBLIC_PAY_METHODS`도 같은 값으로 바꾸고 다시 배포해야 합니다.
+
+## 참고: 프론트에서 이번에 고친 것
+
+| 내용 | 위치 |
 |---|---|
-| `POST /orders/{id}/complete` 재호출 | 구매 내역의 "확인 중"(`PENDING`·`REVIEW_REQUIRED`) 주문에 "결제 상태 다시 확인" 버튼 |
-| `GET /orders/{id}` | 다른 기기 로그인 시 주문의 `universities`·`relation` 복원 |
-| `GET /results` | 재로그인·다른 기기에서 기존 결과 ID 재사용 |
-| `/locker`의 `content_ready`·`first_viewed_at`, `REFUND_PENDING` | 보관함에 "준비 중 / 열람함 / 환불 처리 중" 표시 |
+| `/orders/{id}/complete`가 `409 PAYMENT_STATE_CHANGED`(페이앱 통보와 동시에 처리된 경우)를 주면 0.5초 간격으로 최대 3번 다시 시도 (`/me/library`와 같은 방식) | `lib/checkout.ts` `confirmOrder` |
+| `ALREADY_OWNED`, `PAYMENT_STATE_CHANGED` 안내 문구 추가 | `lib/backend.ts` `MESSAGES` |
+| 결제 수단을 `NEXT_PUBLIC_PAY_METHODS`로 제한 | `lib/backend.ts` `PAY_METHODS`, `OrderPayment.tsx` |
+| `/api/admin/*`은 프록시하지 않음. 관리자 도구는 백엔드 주소로 직접 접속해 주세요 | `next.config.ts` |
 
-질문: 사주 입력 원본은 서버에 안 보내므로 다른 기기에서는 결과 화면을 그대로 다시 그릴 수 없습니다. "같은 기기에서만 다시 보기"로 둬도 될까요?
+웹훅(`/api/webhooks/payapp`)과 결제 복귀(`/api/payments/payapp/return`)는 계속 프록시합니다. `BACKEND_PUBLIC_ORIGIN`을 프론트 도메인으로 두든 백엔드 도메인으로 두든 둘 다 동작합니다.
+
+## 일치를 확인한 항목
+
+- CSRF: `/api/csrf`, `X-CSRF-TOKEN`, 토큰 만료 시 403 한 번 재시도. 로그아웃은 `POST /api/logout` → 204
+- 401 공통 처리(`UNAUTHENTICATED`, `ACCOUNT_INACTIVE`)
+- `Idempotency-Key` 형식(`checkout_<UUID>`), 주문 본문(관계 4종, 대학 최대 6곳, 동의 플래그)
+- 결과 요약: 오행 키 5개, 합계 6 또는 8, 학과 점수 0–100 정수
+- 분석 프로필: `accountId`·`revision`·`profile`, 이름 10자, `YYYY.MM.DD`. 분석이 끝난 뒤에만 저장
+- 결과 스냅샷: 상품별 필수 배열, 부적 4종 중 첫 번째가 `results.charm`, 대학·관계가 주문과 일치
+- 페이앱: `{ method, phone }` → `{ provider: "PAYAPP", payUrl }`, `payapp.kr` HTTPS 도메인 검사(양쪽 동일), 복귀 `/?checkoutOrder=`
+- 초대·친구 명단 응답 형식, 보관함·주문 필드, 환불이 없을 때 404
+- 상품 가격 2,900 / 1,900 / 1,000 / 3,790
+- 저장된 결과 열람(`saved-results/{kind}/open`)이 `first_viewed_at`을 기록함
+
+실제 서버·카카오·페이앱과 붙여서 브라우저로 확인한 것은 아닙니다. 1번 설정이 반영되면 [BACKEND_INTEGRATION.md](BACKEND_INTEGRATION.md)의 실서버 체크리스트로 같이 확인하면 좋겠습니다.
 
 ## 답변
 
-<!-- 예: 1. 페이앱 브랜치 11/6 push 예정 — 홍길동 -->
-
+<!-- 예: 1. FORWARD_HEADERS_STRATEGY 11/13 반영 — 담당자 이름 -->

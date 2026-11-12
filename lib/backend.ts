@@ -83,6 +83,19 @@ export type Refund = {
 export type PayMethod = "card" | "kakao" | "toss";
 const PAY_METHOD: Record<PayMethod, "CARD" | "KAKAO" | "TOSS"> = { card: "CARD", kakao: "KAKAO", toss: "TOSS" };
 
+/**
+ * The methods the server will accept. It must match the backend's PAYAPP_METHODS
+ * (default CARD): anything else fails with CHANNEL_NOT_CONFIGURED only after the
+ * order was created. The demo shows every method.
+ */
+export function payMethods(useBackend: boolean, configured: string | undefined): PayMethod[] {
+  if (!useBackend) return ["card", "kakao", "toss"];
+  const byServerName = Object.fromEntries(Object.entries(PAY_METHOD).map(([k, v]) => [v, k as PayMethod]));
+  const listed = (configured || "CARD").split(",").map((m) => byServerName[m.trim().toUpperCase()]).filter(Boolean);
+  return listed.length ? [...new Set(listed)] : ["card"];
+}
+export const PAY_METHODS = payMethods(USE_BACKEND, process.env.NEXT_PUBLIC_PAY_METHODS);
+
 /* ── Errors ───────────────────────────────────────────────────────── */
 
 /** `{ code }` from the server; status 0 / NETWORK_ERROR when it never answered. */
@@ -137,6 +150,8 @@ const MESSAGES: Record<string, string> = {
   PAYMENT_REQUEST_UNKNOWN: "기존 결제 요청을 확인 중이에요. 새로 결제하지 말고 고객센터에 문의해 주세요.",
   INVALID_PAYMENT_URL: "결제창 주소를 확인하지 못했어요. 고객센터에 문의해 주세요.",
   PORTONE_NOT_CONFIGURED: "결제 준비 중이에요. 잠시 후 다시 시도해 주세요.",
+  ALREADY_OWNED: "이미 같은 결과를 구매했어요. 보관함에서 확인해 주세요.",
+  PAYMENT_STATE_CHANGED: "결제 상태가 방금 바뀌었어요. 구매 내역에서 확인해 주세요.",
   INTERNAL_ERROR: "일시적인 오류가 생겼어요. 잠시 후 다시 시도해 주세요.",
 };
 
