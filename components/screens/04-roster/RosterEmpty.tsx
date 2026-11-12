@@ -43,7 +43,7 @@ export function RosterEmpty() {
           친구의 링크로 들어와 내 학과 결과 확인
         </NumberedRow>
         <NumberedRow n={3} gap={12} weight="regular">
-          사주 궁합으로 정한 재미 순위예요 · 실제 합격과 무관해요
+          궁합으로 매긴 재미 순위, 합격과 무관
         </NumberedRow>
       </div>
 
