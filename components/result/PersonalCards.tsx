@@ -10,7 +10,6 @@ import {
   ELEMENTS,
   ELEMENT_HANJA,
   FOCUS,
-  SUPPORT_BASIS,
   daewoonBasisLine,
   elementLabel,
   nameFlowLine,
@@ -78,15 +77,15 @@ export function DaewoonCard({ className }: { className?: string }) {
 
   return (
     <div className={cn("relative flex w-full shrink-0 flex-col items-start gap-[12px]", className)}>
-      <SectionTitle
-        title="나의 10년 운 흐름"
-        caption={`대운 · ${d.forward ? "순행" : "역행"} · 대운수 ${d.number} · 날짜 기준`}
-      />
+      <SectionTitle title="나의 10년 운 흐름" caption="타고난 사주 위에 10년마다 새 기운(대운)이 들어와요" />
       <div className="relative flex w-full shrink-0 flex-col gap-[4px] rounded-[16px] border border-line-default bg-surface-default p-[8px]">
         {d.periods.map((p) => (
           <PeriodRow key={p.hangul} p={p} />
         ))}
       </div>
+      <p className="text-caption-12 text-text-secondary">
+        채움은 내게 부족한 {elementLabel(target)} 기운이 들어오는 10년, 도움은 그 기운을 거들어 주는 10년이에요
+      </p>
       <MascotTipSmall>
         {exam
           ? `입시 때는 ${exam.hangul} 대운!\n${exam.support === "none" ? "내 강점으로 밀고 가자" : `${target} 기운이 힘이 돼`}`
@@ -99,9 +98,6 @@ export function DaewoonCard({ className }: { className?: string }) {
           </p>
         )}
         <p className="text-caption-12 text-text-tertiary">{daewoonBasisLine(d, personal.birth)}</p>
-        <p className="text-caption-12 text-text-tertiary">
-          채움 · 도움은 부족한 {elementLabel(target)} 기운 기준이에요. {SUPPORT_BASIS.note}
-        </p>
       </div>
     </div>
   );
@@ -115,7 +111,7 @@ export function NameElementCard({ className }: { className?: string }) {
 
   return (
     <div className={cn("relative flex w-full shrink-0 flex-col items-start gap-[12px]", className)}>
-      <SectionTitle title="이름이 채워주는 기운" caption="이름 글자의 첫소리로 본 발음오행" />
+      <SectionTitle title="이름이 채워주는 기운" caption="이름을 부를 때 나는 소리에도 오행이 담겨 있어요(발음오행)" />
       <div className="relative flex w-full shrink-0 flex-col gap-[14px] rounded-[16px] border border-line-default bg-surface-default p-[18px]">
         <div className="flex flex-wrap items-center gap-[6px]">
           {name.chars.map((c, i) => (
@@ -135,6 +131,10 @@ export function NameElementCard({ className }: { className?: string }) {
             </span>
           ))}
         </div>
+        <p className="text-caption-12 text-text-tertiary">
+          {name.flow.length > 0 && "생: 이웃한 두 글자가 서로 살려 줘요 · 극: 서로 견제해요 · =: 같은 기운 · "}
+          회색 칸은 성
+        </p>
         <p className="text-caption-12 text-text-secondary">
           {ELEMENTS.filter((e) => name.counts[e] > 0)
             .map((e) => `${e} ${name.counts[e]}`)
