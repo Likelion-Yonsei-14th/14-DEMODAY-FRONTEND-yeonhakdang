@@ -61,6 +61,10 @@ export type Scoring = {
   displayMax: number;
   /** TOP N, each from a different 중계열. */
   topCount: number;
+  /** 예체능계열 picks allowed in TOP N. */
+  artsMax: number;
+  /** A 2nd 예체능 pick must out-total the best eligible non-예체능 row by this much. */
+  artsSecondMargin: number;
 };
 
 /** data/field-elements.csv: "대계열/중계열" → 0–3 보정 per 오행. */

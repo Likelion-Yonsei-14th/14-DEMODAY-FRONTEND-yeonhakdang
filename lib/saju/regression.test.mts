@@ -3,6 +3,7 @@
  * fixtures/top3-baseline.json(fixtures/gen-baseline.mts로 만듦)과 같아야 한다.
  * 대운 · 발음오행 · 십신 같은 근거용 계산이 순위를 바꾸지 못하게 지킨다.
  * 2026-11: 점수 규칙을 바꾸며(오행 비중 · 일간 궁합 5단계 · 분야 보정) 기준을 새로 만들었다.
+ * 2026-11: 예체능 몰림 제한(최대 2개, 2번째는 artsSecondMargin 이상 앞설 때만)으로 다시 만들었다.
  * 점수 규칙을 일부러 바꿀 때만 gen-baseline.mts로 다시 만든다.
  */
 import assert from "node:assert/strict";
@@ -39,6 +40,13 @@ test("학과 TOP 3가 이전과 완전히 같다", () => {
     assert.ok(r.ok, key);
     assert.deepEqual(r.analysis.top.map((p) => [p.major.id, p.display]), BASELINE[key], key);
   }
+});
+
+test("예체능은 TOP 3에 몰리지 않는다: 3개는 0건, 2개는 7% 이하", () => {
+  const counts = Object.values(BASELINE).map((top) => top.filter(([id]) => id.startsWith("A")).length);
+  assert.equal(counts.filter((n) => n >= 3).length, 0);
+  const two = counts.filter((n) => n === 2).length / counts.length;
+  assert.ok(two <= 0.07, `예체능 2개 비율 ${(two * 100).toFixed(1)}%`);
 });
 
 test("같은 입력 = 같은 분석 (근거 문장까지)", () => {

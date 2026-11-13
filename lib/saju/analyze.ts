@@ -174,7 +174,7 @@ export function analyze(input: BirthInput, content: Content): AnalysisResult {
 
   const seed = saju.pillars.map((p) => p.hangul).join("");
   const ranked = rankMajors(content.majors, { counts, dayMaster: saju.dayMaster.element, seed }, content.scoring, content.fields);
-  const top = pickTop(ranked, content.scoring.topCount);
+  const top = pickTop(ranked, content.scoring.topCount, content.scoring);
   if (top.length === 0) return { ok: false, error: "학과 표가 비어 있어요" };
 
   // 순위가 정해진 뒤에 근거만 붙인다: 십신은 TOP 3 점수에 들어가지 않는다.

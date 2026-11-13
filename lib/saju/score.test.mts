@@ -9,7 +9,7 @@ import { test } from "node:test";
 import { analyze } from "./analyze.ts";
 import type { BirthInput } from "./birth.ts";
 import type { Content, MajorRow } from "./content.ts";
-import { majorShares, pickTop, rankMajors, relationTo, scoreMajor, toDisplay } from "./score.ts";
+import { majorShares, pickTop, rankMajors, relationTo, scoreMajor, toDisplay, type MajorScore } from "./score.ts";
 
 const readJson = (name: string) =>
   JSON.parse(readFileSync(new URL(`../../data/${name}`, import.meta.url), "utf8"));
@@ -128,4 +128,24 @@ test("1990~2012년 생 전체: TOP 3 화면 점수가 겹치는 사람이 없다
       }
     }
   }
+});
+
+/** A ranked row with only what pickTop reads. */
+const ranked = (id: string, 대계열: string, total: number) =>
+  ({ major: { ...row(id, "화", null, id), 대계열 }, total, display: Math.round(total * 100) }) as unknown as MajorScore;
+const ARTS_RULE = { artsMax: 2, artsSecondMargin: 0.01 };
+
+test("예체능은 TOP 3에 최대 2개", () => {
+  const list = [ranked("A1", "예체능계열", 0.9), ranked("A2", "예체능계열", 0.89), ranked("A3", "예체능계열", 0.88)];
+  const top = pickTop(list, 3, ARTS_RULE);
+  assert.deepEqual(top.map((t) => t.major.id), ["A1", "A2"]);
+  const withRest = pickTop([...list, ranked("H1", "인문사회계열", 0.5)], 3, ARTS_RULE);
+  assert.deepEqual(withRest.map((t) => t.major.id), ["A1", "A2", "H1"]);
+});
+
+test("2번째 예체능은 남은 비예체능보다 artsSecondMargin 이상 앞설 때만 들어간다", () => {
+  const close2 = [ranked("A1", "예체능계열", 0.9), ranked("A2", "예체능계열", 0.805), ranked("H1", "인문사회계열", 0.8), ranked("H2", "인문사회계열", 0.7)];
+  assert.deepEqual(pickTop(close2, 3, ARTS_RULE).map((t) => t.major.id), ["A1", "H1", "H2"]);
+  const clear = [ranked("A1", "예체능계열", 0.9), ranked("A2", "예체능계열", 0.85), ranked("H1", "인문사회계열", 0.8), ranked("H2", "인문사회계열", 0.7)];
+  assert.deepEqual(pickTop(clear, 3, ARTS_RULE).map((t) => t.major.id), ["A1", "A2", "H1"]);
 });

@@ -17,5 +17,7 @@
   "totalCeil": 0.8,
   "displayMin": 30,
   "displayMax": 98,
-  "topCount": 3
+  "topCount": 3,
+  "artsMax": 2,
+  "artsSecondMargin": 0.01
 }

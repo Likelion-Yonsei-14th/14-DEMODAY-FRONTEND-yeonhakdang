@@ -195,19 +195,38 @@ export function tiedWith(ranked: MajorScore[], pick: MajorScore): number {
   return ranked.filter((r) => r !== pick && Math.abs(r.total - pick.total) <= TIE_EPSILON).length;
 }
 
+/** The 대계열 whose picks are capped in TOP N (see pickTop). */
+export const ARTS = "예체능계열";
+
 /**
  * The top N, no two from the same 중계열, and no two with the same shown
  * score: a pick that rounds to (or above) the one before it shows one point
  * less, so 1위 > 2위 > 3위 always reads as such.
+ *
+ * 예체능 is capped: at most `artsMax` picks, and a second one only gets in
+ * when its total beats the best still-eligible non-예체능 row by
+ * `artsSecondMargin` — otherwise TOP 3 clusters on 예체능 for 화-short 사주.
  */
-export function pickTop(ranked: MajorScore[], count: number): MajorScore[] {
+export function pickTop(ranked: MajorScore[], count: number, s?: Pick<Scoring, "artsMax" | "artsSecondMargin">): MajorScore[] {
+  const artsMax = s?.artsMax ?? Infinity;
+  const margin = s?.artsSecondMargin ?? 0;
   const seen = new Set<string>();
   const top: MajorScore[] = [];
-  for (const s of ranked) {
-    if (seen.has(s.major.중계열)) continue;
-    seen.add(s.major.중계열);
+  let arts = 0;
+  for (let i = 0; i < ranked.length; i++) {
+    const r = ranked[i];
+    if (seen.has(r.major.중계열)) continue;
+    if (r.major.대계열 === ARTS) {
+      if (arts >= artsMax) continue;
+      if (arts >= 1) {
+        const rival = ranked.slice(i + 1).find((o) => o.major.대계열 !== ARTS && !seen.has(o.major.중계열));
+        if (rival && r.total - rival.total < margin) continue;
+      }
+      arts++;
+    }
+    seen.add(r.major.중계열);
     const prev = top[top.length - 1];
-    top.push(prev && s.display >= prev.display ? { ...s, display: prev.display - 1 } : s);
+    top.push(prev && r.display >= prev.display ? { ...r, display: prev.display - 1 } : r);
     if (top.length === count) break;
   }
   return top;

@@ -19,7 +19,7 @@ export const USE_BACKEND = process.env.NEXT_PUBLIC_USE_BACKEND === "true";
 export const LOGIN_PATH = "/oauth2/authorization/kakao";
 
 /** Bump when the saju scoring changes, so stored summaries say which engine made them. */
-export const ENGINE_VERSION = "frontend-saju-2";
+export const ENGINE_VERSION = "frontend-saju-3";
 
 /* ── Types (field names as the server sends them) ─────────────────── */
 
